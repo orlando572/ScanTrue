@@ -1,0 +1,41 @@
+{
+  "input": "/home/orlando/Documentos/ScanTrue/datasets/experimentos_balanceados/pequeno_mejorado",
+  "input_sha256": {
+    "entrenamiento": "5cf23eeb9160c6e35cb6b3d58502be0fc7d3efa20edbf0f5c1a7c44277321b55",
+    "validacion": "77427ceee309e26e8adcc539302b5ee92055742ebaffe4ab940b86461a25a32e"
+  },
+  "embeddings": "/home/orlando/Documentos/ScanTrue/datasets/embeddings_preentrenados/cc.es.300.vec.gz",
+  "embedding_source": "fasttext_cc",
+  "embedding_file_size": 1285580896,
+  "coverage": {
+    "vocabulario": 29998,
+    "vectores_encontrados": 27716,
+    "cobertura": 0.9239282618841256,
+    "lineas_invalidas_relevantes": 0,
+    "sin_vector": 2282
+  },
+  "output": "/home/orlando/Documentos/ScanTrue/datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42",
+  "device": "cuda",
+  "torch": "2.14.1+cu130",
+  "cuda_runtime": "13.0",
+  "seed": 42,
+  "epochs_max": 20,
+  "patience": 4,
+  "batch_size": 32,
+  "max_len": 192,
+  "vocab_size": 30000,
+  "embedding_dim": 300,
+  "hidden_dim": 64,
+  "dropout": 0.3,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "labels": {
+    "0": "falsa",
+    "1": "real"
+  },
+  "validation_only": true,
+  "rows": {
+    "entrenamiento": 3066,
+    "validacion": 170
+  }
+}
