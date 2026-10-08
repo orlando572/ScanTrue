@@ -12,3 +12,13 @@ __pycache__/
 # Datasets are kept local by default; keep the directory placeholder in Git.
 datasets/**
 !datasets/.gitkeep
+!datasets/DATASETS_NOTICIAS_FALSAS_ES.md
+
+# Checkpoint seleccionado para usar el BiLSTM desde un clon limpio.
+!datasets/modelos_balanceados/
+datasets/modelos_balanceados/**
+!datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/
+datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/**
+!datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/mejor_modelo.pt
+!datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/config.json
+!datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/resultados.json

@@ -6,7 +6,7 @@ Esta guía instala las dependencias del modelo BiLSTM en Windows 10/11, dentro d
 
 - Windows 10 u 11 de 64 bits.
 - GPU NVIDIA compatible con CUDA 13.0 y controlador NVIDIA 580 o posterior.
-- Python 3.14.4 de 64 bits para coincidir con el entorno BiLSTM actual de Linux. El índice oficial de PyTorch publica ruedas CUDA 12.6 para Windows y Python 3.14.
+- Python 3.14.4 de 64 bits para coincidir con el entorno BiLSTM actual de Linux. La configuración prevista usa la rueda de PyTorch para CUDA 13.0.
 - El repositorio ScanTrue descargado en el equipo.
 
 ## 1. Comprobar Python y la GPU
@@ -60,7 +60,7 @@ python -m pip install torch==2.14.1 --index-url https://download.pytorch.org/whl
 
 El índice oficial publica la rueda `torch 2.14.1+cu130` para Windows x64 y Python 3.14. No instales una rueda CPU. Para la distribución precompilada no hace falta instalar el CUDA Toolkit por separado; sí se necesita un controlador NVIDIA compatible (CUDA 13.x requiere la rama 580 o posterior para compatibilidad menor).
 
-En Ubuntu, el entorno actual usa PyTorch con CUDA 12.6. Para que ambos equipos usen CUDA 13.0, cambia también el build de PyTorch en Ubuntu. No es necesario desinstalar el CUDA Toolkit 12.5 del sistema si solo entrenas con las ruedas precompiladas de PyTorch. Si compilas extensiones CUDA con `nvcc`, entonces sí necesitas instalar y configurar el Toolkit 13.0.
+En Ubuntu, el entorno actual usa PyTorch 2.14.1+cu130 y una operación CUDA se ejecutó correctamente. No es necesario desinstalar un CUDA Toolkit anterior del sistema si solo entrenas con las ruedas precompiladas de PyTorch. Si compilas extensiones CUDA con `nvcc`, entonces sí necesitas instalar y configurar el Toolkit 13.0.
 
 ## 4. Instalar las dependencias fijadas del proyecto
 
@@ -70,7 +70,7 @@ Manteniendo `(.venv)` activo, ejecuta:
 python -m pip install -r bilstm\requirements.txt
 ```
 
-Las versiones directas coinciden con las registradas en el entorno BiLSTM de Linux. `torchvision` está instalado en ese entorno, pero no se necesita para clasificar texto con BiLSTM. PyTorch incluye las capas LSTM y las herramientas de carga de datos (`Dataset` y `DataLoader`).
+Las versiones directas coinciden con las registradas en el entorno BiLSTM de Linux. `openpyxl` 3.1.5 permite leer los XLSX de los datasets con pandas. `torchvision` está instalado en ese entorno, pero no se necesita para clasificar texto con BiLSTM. PyTorch incluye las capas LSTM y las herramientas de carga de datos (`Dataset` y `DataLoader`).
 
 ## 5. Verificar que PyTorch usa la GPU
 
