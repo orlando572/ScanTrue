@@ -1,0 +1,6 @@
+transformers==5.19.0
+datasets==5.1.0
+accelerate==1.15.0
+scikit-learn==1.9.1
+numpy
+# Instalar torch==2.13.0+cu130 desde el índice oficial de PyTorch para CUDA 13.

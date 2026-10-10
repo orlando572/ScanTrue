@@ -1,0 +1,39 @@
+{
+  "selection_sha256": "ddccaeaeb4f3c6ab3f4e12fbe608598992df10bd1abf379c16a843a2ed38f28a",
+  "step3_manifest_sha256": "89fb73d779c85bfef692e1366732bf48deba8a035bccc5299edb4606294371fa",
+  "step2_matches_sha256": "a1fd377504acdd4e44445bd8c96136ad0f5f936e7bc167fa9dac6cc89ae1e18d",
+  "step2_verification_sha256": "f75e8b64e97b17d8ed0b43ac4f4701e42a34a68634f246aa236d394112d76f5a",
+  "partitions": {
+    "prueba": "634d0c11724384d3f753b5442fe198a8878b62d86796a018b5638da5d9f24767",
+    "externa": "60f323e4f09ed48778d1f6841809ef58b2a03f160b779d6311d8fce03a5a4460"
+  },
+  "models": {
+    "old_E1": {
+      "path": "D:\\ScanTrue\\mBERT\\runs\\E1_len256_seed44_20261007-202946_bda20c1f\\best_model",
+      "sha256": "7e6a88893c10f0d9ea89ec6b9347e00f872f140ce2752b7fa00011ccb634ff5c",
+      "length": 256
+    },
+    "new_seed42": {
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len512_seed42_20261008-174942_e351bfac\\best_model",
+      "sha256": "8e21f4bb801605f970c997a827b4c30784cdb8b1464af3a8b351b000e9b70c79",
+      "length": 512
+    },
+    "new_seed43": {
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len512_seed43_20261008-175737_516f4097\\best_model",
+      "sha256": "44490ba53c6639cb3cd106895f4b2a4872b667751ccd1854515f855c032e294f",
+      "length": 512
+    },
+    "new_seed44": {
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len512_seed44_20261008-180518_64a3bd04\\best_model",
+      "sha256": "e375c57d7dcdbbf5c7d576f2825af26ef76ce3ba2857f274ec341809df139825",
+      "length": 512
+    }
+  },
+  "new_selected": "new_seed43",
+  "tokenizer": "D:\\ScanTrue\\mBERT\\assets\\tokenizer_mbert_cased",
+  "tokenizer_sha256": "f4a4d5bf7301717e261fafbe26e1eb967f6ba4cb3ae0ab7a29f4642ec229f386",
+  "threshold": 0.5,
+  "old_input_reconstruction": "If titulo prefixes text, remove it and pass (titulo, remainder) with only_second; if title absent pass text; if title does not prefix text, pass (titulo, text).",
+  "new_input": "Exact text as one sequence; no title concatenation or normalization.",
+  "scope": "Retrospective paired comparison; test/external never used in selection."
+}

@@ -1,0 +1,5 @@
+assets/model_mbert_cased/
+runs/*
+!runs/BILSTM_ES_main_len512_seed43_20261008-175737_516f4097/
+runs/BILSTM_ES_main_len512_seed43_20261008-175737_516f4097/checkpoints/
+__pycache__/
