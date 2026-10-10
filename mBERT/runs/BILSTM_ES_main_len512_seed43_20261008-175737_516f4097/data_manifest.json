@@ -1,0 +1,7 @@
+{
+  "train_original_sha256": "46a01be6bd1c9e464396d2928f3b85c059e6ff3e18180a35c889a247bf7eb64b",
+  "validation_sha256": "8ef8d0ca6f456d4325ca034ddb03f72a87b3960a3cd5cfb8f95395d9dd242859",
+  "train_ids_sha256": "9830e083e775797342dcf33162a83a688bce147d952faa510bcbac26ff979304",
+  "validation_ids_sha256": "a775e978a2d5afb103cd735519c08cb085a4b679982ad47b8a7d1a4a71ff240f",
+  "test_or_external_accessed": false
+}

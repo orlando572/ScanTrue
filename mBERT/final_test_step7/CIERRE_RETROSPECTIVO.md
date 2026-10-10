@@ -1,0 +1,9 @@
+# Cierre provisional: mBERT con los datos BiLSTM
+
+**Fecha:** 8 de octubre de 2026. **Estado:** pasos 1–6 terminados; la prueba final inédita del paso 7 **no se ejecutó** porque no hay todavía un conjunto que pase el [protocolo de independencia y etiquetado](PROTOCOLO_PRUEBA_FINAL.md). No se inventaron etiquetas ni se reutilizó una prueba observada como si fuera inédita.
+
+Se congelaron cuatro CSV BiLSTM, se excluyeron casos de sátira, publicaciones sociales directas y 38 cruces de texto, se prepararon 2.788/132/146/569 filas para entrenamiento/validación/prueba/externa y se entrenaron **24 mBERT independientes** en dos brazos, cuatro longitudes y tres semillas. La selección usó solo validación y eligió `main/512/seed43`, con F1 macro 0,9385 en 132 filas.
+
+La [comparación pareada retrospectiva](../evaluations/bilstm_step6_20261008_v1/REPORTE_PASO_6.md) dio F1 macro **0,2325 (E1) frente a 0,8976 (nuevo)** en 146 filas de prueba y **0,3191 frente a 0,6001** en 569 externas. La nueva configuración reduce claramente el sesgo extremo de E1 hacia FALSA en esos archivos. Sin embargo, en externa marca **150/307 reales como falsas** y deja pasar **77/262 falsas**. Las tres semillas nuevas dieron F1 macro externa 0,5735 / 0,6001 / 0,5627. Los dos conjuntos ya se habían usado u observado en fases previas, contienen sesgos de fuente y no permiten declarar mejora futura ni verificación factual de una noticia individual.
+
+La [tarjeta del modelo](MODELO_NUEVO_TARJETA.md) identifica pesos, entradas, métricas y uso previsto. El modelo queda como **candidato experimental**. La comparación final de generalización queda pendiente de recibir, auditar y congelar un conjunto español nuevo con evidencia por etiqueta, varias fuentes por clase y eventos independientes. Si se recibe, su primera acción será la auditoría previa sin inferencia; solo después se podrá puntuar una vez ambos checkpoints.

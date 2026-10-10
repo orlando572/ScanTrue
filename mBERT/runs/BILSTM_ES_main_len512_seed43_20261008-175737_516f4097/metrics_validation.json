@@ -1,0 +1,91 @@
+{
+  "train": {
+    "train_runtime": 439.2922,
+    "train_samples_per_second": 19.04,
+    "train_steps_per_second": 1.195,
+    "train_loss": 2.5836309378487723,
+    "epoch": 3.0
+  },
+  "validation": {
+    "macro_f1": 0.9384943087266191,
+    "accuracy": 0.946969696969697,
+    "balanced_accuracy": 0.9306245100600993,
+    "false_alarm_rate_real_to_fake": 0.02247191011235955,
+    "real_precision": 0.9456521739130435,
+    "real_recall": 0.9775280898876404,
+    "real_f1": 0.9613259668508287,
+    "fake_precision": 0.95,
+    "fake_recall": 0.8837209302325582,
+    "fake_f1": 0.9156626506024096
+  },
+  "validation_confusion_true_rows_pred_cols_REAL_FALSA": [
+    [
+      87,
+      2
+    ],
+    [
+      5,
+      38
+    ]
+  ],
+  "validation_epoch_history": [
+    {
+      "eval_loss": 0.2672581672668457,
+      "eval_macro_f1": 0.860230457801308,
+      "eval_accuracy": 0.8712121212121212,
+      "eval_balanced_accuracy": 0.8804546642278547,
+      "eval_false_alarm_rate_real_to_fake": 0.14606741573033707,
+      "eval_real_precision": 0.95,
+      "eval_real_recall": 0.8539325842696629,
+      "eval_real_f1": 0.8994082840236687,
+      "eval_fake_precision": 0.75,
+      "eval_fake_recall": 0.9069767441860465,
+      "eval_fake_f1": 0.8210526315789474,
+      "eval_runtime": 1.2046,
+      "eval_samples_per_second": 109.584,
+      "eval_steps_per_second": 54.792,
+      "epoch": 1.0,
+      "step": 175
+    },
+    {
+      "eval_loss": 0.19472666084766388,
+      "eval_macro_f1": 0.911551862771375,
+      "eval_accuracy": 0.9242424242424242,
+      "eval_balanced_accuracy": 0.9017507185785211,
+      "eval_false_alarm_rate_real_to_fake": 0.033707865168539325,
+      "eval_real_precision": 0.9247311827956989,
+      "eval_real_recall": 0.9662921348314607,
+      "eval_real_f1": 0.945054945054945,
+      "eval_fake_precision": 0.9230769230769231,
+      "eval_fake_recall": 0.8372093023255814,
+      "eval_fake_f1": 0.8780487804878049,
+      "eval_runtime": 1.4619,
+      "eval_samples_per_second": 90.291,
+      "eval_steps_per_second": 45.146,
+      "epoch": 2.0,
+      "step": 350
+    },
+    {
+      "eval_loss": 0.22849667072296143,
+      "eval_macro_f1": 0.9384943087266191,
+      "eval_accuracy": 0.946969696969697,
+      "eval_balanced_accuracy": 0.9306245100600993,
+      "eval_false_alarm_rate_real_to_fake": 0.02247191011235955,
+      "eval_real_precision": 0.9456521739130435,
+      "eval_real_recall": 0.9775280898876404,
+      "eval_real_f1": 0.9613259668508287,
+      "eval_fake_precision": 0.95,
+      "eval_fake_recall": 0.8837209302325582,
+      "eval_fake_f1": 0.9156626506024096,
+      "eval_runtime": 1.2013,
+      "eval_samples_per_second": 109.883,
+      "eval_steps_per_second": 54.941,
+      "epoch": 3.0,
+      "step": 525
+    }
+  ],
+  "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len512_seed43_20261008-175737_516f4097\\checkpoints\\checkpoint-525",
+  "best_model_sha256": "44490ba53c6639cb3cd106895f4b2a4872b667751ccd1854515f855c032e294f",
+  "wall_seconds": 446.62,
+  "cuda_peak_gb": 3.394
+}
