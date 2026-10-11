@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { sendExtensionMessage } from '../extension-message.js';
+import PasswordVisibilityButton from '../components/PasswordVisibilityButton.jsx';
 
 function emailError(value) {
   if (!value.trim()) return 'Escribe tu correo electrónico.';
@@ -7,7 +8,7 @@ function emailError(value) {
   return '';
 }
 
-export default function LoginScreen({ onRegister, onComplete }) {
+export default function LoginScreen({ onBack, onRegister, onComplete }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
@@ -43,7 +44,12 @@ export default function LoginScreen({ onRegister, onComplete }) {
   };
 
   return <section className="flex flex-1 flex-col" aria-labelledby="login-title">
-    <h1 id="login-title" className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Iniciar sesión</h1>
+    <div className="flex items-start gap-3">
+      <button type="button" className="breakdown-back" aria-label="Volver a cuenta" title="Volver a cuenta" onClick={onBack}>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m14 5-7 7 7 7" /></svg>
+      </button>
+      <h1 id="login-title" className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Iniciar sesión</h1>
+    </div>
     <form className="mt-7 flex flex-1 flex-col" noValidate onSubmit={submit}>
       <div>
         <label className="block text-sm font-semibold text-ink" htmlFor="login-email">Correo electrónico</label>
@@ -76,13 +82,7 @@ export default function LoginScreen({ onRegister, onComplete }) {
             aria-invalid={Boolean(passwordMessage)}
             aria-describedby={passwordMessage ? 'login-password-error' : undefined}
           />
-          <button
-            type="button"
-            className="absolute inset-y-0 right-1 my-1 rounded-md px-3 text-[12px] font-semibold text-accent hover:bg-accent-soft"
-            onClick={() => setPasswordVisible((current) => !current)}
-            aria-label={`${passwordVisible ? 'Ocultar' : 'Mostrar'} contraseña`}
-            aria-pressed={passwordVisible}
-          >{passwordVisible ? 'Ocultar' : 'Mostrar'}</button>
+          <PasswordVisibilityButton visible={passwordVisible} onToggle={() => setPasswordVisible((current) => !current)} />
         </div>
         {passwordMessage && <p id="login-password-error" className="mt-1.5 text-[12px] leading-[18px] text-false" role="alert">{passwordMessage}</p>}
       </div>

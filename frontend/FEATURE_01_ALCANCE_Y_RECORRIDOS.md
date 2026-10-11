@@ -31,7 +31,7 @@ No se crearán componentes, estilos, manifiesto ni llamadas a la API durante est
 - Mostrar la selección pendiente y permitir continuar, descartarla o elegir otra.
 - Informar en P02, junto a **Analizar**, que el texto se enviará y se conservará en el historial del usuario.
 - Crear y conservar una sesión de invitado; ofrecer registro, confirmación de correo, acceso y cierre de sesión.
-- Analizar una selección y mostrar las salidas reales de BiLSTM y mBERT, el resultado unificado que entregue la API y el estado de comparación.
+- Analizar una selección y mostrar las salidas reales de BiLSTM y mBERT y el resultado unificado que entregue la API.
 - Consultar historial propio, abrir un análisis anterior y eliminarlo con confirmación.
 - Consultar métricas de evaluación publicadas.
 - Explicar estados de indisponibilidad, validación y sesión sin mostrar errores técnicos crudos.
@@ -63,7 +63,7 @@ La selección manual es una **decisión propuesta para este feature**. Si se dec
 | P02 | Selección pendiente | Popup | Revisar fragmento, analizar, descartar, elegir otro. |
 | P04 | Análisis en curso | Popup | Ver el estado de espera y recibir una respuesta, sin progreso inventado. |
 | P05 | Resultado | Popup | Leer unificado y modelos, abrir desglose o historial. |
-| P06 | Desglose por modelo | Popup | Leer BiLSTM, mBERT y la comparación disponible. |
+| P06 | Desglose por modelo | Popup | Leer BiLSTM y mBERT con sus niveles y una nota breve sobre las limitaciones de los modelos. |
 | P07 | Historial | Popup | Abrir detalle y cargar más resultados. |
 | P08 | Detalle del historial | Popup | Leer selección y resultados guardados; eliminar con confirmación. |
 | P09 | Métricas de evaluación | Popup | Leer conjuntos, medidas y limitaciones. |

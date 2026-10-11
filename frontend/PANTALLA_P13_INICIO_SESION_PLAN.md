@@ -24,7 +24,7 @@ En la primera fase el formulario no envía datos: **Iniciar sesión** está desh
 
 ## Contenido y jerarquía
 
-1. Cabecera común, acción **Volver** y título **Iniciar sesión**.
+1. Cabecera común y flecha **Volver** a la izquierda del título **Iniciar sesión**.
 2. Campo **Correo electrónico** con etiqueta visible.
 3. Campo **Contraseña** con etiqueta visible y opción accesible de mostrar u ocultar el texto.
 4. Mensaje de error junto al campo o formulario afectado, cuando corresponda.
@@ -39,7 +39,7 @@ Tras un acceso correcto, volver a P11 o a la vista de origen según el recorrido
 | --- | --- |
 | **Volver** | Regresar a P11 sin modificar la sesión invitada. |
 | **Iniciar sesión** | En la primera fase no envía datos. En la integración posterior enviará una sola solicitud y bloqueará envíos repetidos mientras espera. |
-| Mostrar u ocultar contraseña | Cambiar solo la visibilidad del campo, sin modificar su valor. |
+| Icono de ojo para mostrar u ocultar contraseña | Cambiar solo la visibilidad del campo, sin modificar su valor; conservar un nombre accesible. |
 | **Crear cuenta** | Abrir P12 dentro del popup. |
 
 Si no existe una sesión invitada con historial, iniciar sesión no promete incorporación de registros.

@@ -8,7 +8,7 @@ Planificación de la segunda pantalla del paso 2. Usa `SISTEMA_DISENO.md` y sigu
 
 ## Objetivo de P02
 
-Permitir que el usuario revise el fragmento capturado antes de enviarlo. Debe reconocer el texto que eligió y decidir entre **Analizar** o **Seleccionar de nuevo**, sin confundir ninguna de esas acciones con una clasificación ya realizada.
+Permitir que el usuario revise y edite el texto antes de enviarlo. Puede agregar otras selecciones de la página, pegar texto y borrar partes, y después decidir si pulsa **Analizar**.
 
 ## Entrada y salida
 
@@ -18,17 +18,17 @@ Permitir que el usuario revise el fragmento capturado antes de enviarlo. Debe re
 | El popup se cerró durante la selección | Conservar el fragmento y mostrarlo cuando el usuario vuelva a abrir el popup. |
 | No se capturó texto o el usuario canceló | Volver a P01 o mostrar una indicación breve para escoger texto. |
 | El usuario pulsa **Analizar** | Iniciar el análisis del fragmento y mostrar P04 mientras se espera la respuesta. |
-| El usuario pulsa **Seleccionar de nuevo** | Permitir otra selección. El fragmento anterior se reemplaza solo cuando se capture uno nuevo. |
+| El usuario pulsa **Seleccionar nuevo texto** | Permitir otra selección. El fragmento nuevo se agrega al texto existente sin borrarlo. |
+| El usuario escribe, pega o borra texto | Actualizar el borrador conservado en la sesión del navegador. |
 
 ## Contenido y jerarquía
 
 1. Cabecera común de ScanTrue, con **Volver** y acceso a Historial si cabe sin distraer de la tarea.
-2. Título breve: **Texto seleccionado**.
+2. Título breve: **Texto para analizar**, con el icono de **Volver** a su izquierda.
 3. Origen de la selección: dominio de la página cuando exista una URL válida. Si no existe, se omite la fila de origen.
-4. Fragmento completo en un panel de lectura con línea lateral verde azulada. Si es largo, el panel se desplaza sin ocultar las acciones.
-5. Aviso breve junto a la acción: **“Al analizar, enviaremos este texto y lo guardaremos en tu historial.”** Si se enviará la dirección de la página, indicarlo también de forma breve cuando corresponda.
-6. Acción principal: **Analizar**.
-7. Acción secundaria: **Seleccionar de nuevo**.
+4. Texto completo en un campo editable con línea lateral verde azulada. Si es largo, el campo se desplaza sin ocultar las acciones.
+5. Acción principal: **Analizar**.
+6. Acción secundaria: **Seleccionar nuevo texto**.
 
 No mostrar nombres de modelos, porcentajes, conteos de tokens ni lenguaje técnico en esta vista. El texto de la imagen es solo un ejemplo de maquetación; no se insertará como contenido predeterminado.
 
@@ -37,7 +37,8 @@ No mostrar nombres de modelos, porcentajes, conteos de tokens ni lenguaje técni
 | Acción | Resultado esperado |
 | --- | --- |
 | **Analizar** | Iniciar una sola solicitud de análisis y abrir P04 para mostrar el progreso. Evitar pulsaciones duplicadas. El texto no se envía antes de esta decisión. |
-| **Seleccionar de nuevo** | Volver a la página para elegir otro fragmento. Conservar el anterior hasta recibir la nueva selección, para que una cancelación no borre el trabajo del usuario. |
+| **Seleccionar nuevo texto** | Volver a la página para elegir otro fragmento. Conservar el borrador y añadir la captura nueva al final; cancelar no borra el texto existente. |
+| **Editar o pegar** | Permitir escribir, pegar y eliminar partes directamente en el campo. Analizar usa la última versión guardada. |
 | **Volver** | Regresar a P01 sin perder el fragmento pendiente; al reabrir P02, seguir mostrándolo. |
 | **Historial** | Abrir P07 dentro del popup, conservando temporalmente la selección para poder volver. |
 
@@ -47,9 +48,9 @@ No mostrar nombres de modelos, porcentajes, conteos de tokens ni lenguaje técni
 | --- | --- |
 | Texto listo | Mostrar fragmento y ambas acciones. |
 | Texto largo | Mostrarlo en un área de lectura desplazable, con principio y final accesibles. |
-| Nueva selección en curso | Indicar de forma breve que el usuario debe escoger texto en la página; al volver, mostrar el nuevo fragmento si existe. |
+| Nueva selección en curso | Conservar el borrador mientras el usuario escoge más texto; al volver, mostrar ambos fragmentos. |
 | Selección cancelada | Mantener el texto anterior si lo había; si no había ninguno, volver a P01. |
-| Texto rechazado por la API | Conservar el fragmento, mostrar el mensaje de corrección y ofrecer **Seleccionar de nuevo**. |
+| Texto rechazado por la API | Conservar el borrador y ofrecer **Seleccionar nuevo texto**. Si falta longitud, mostrar “El texto es muy corto. Añade más contenido.” |
 | Página incompatible con la captura | Explicar que no se pudo seleccionar texto en esa página y sugerir otra página compatible. |
 
 La API decide si el texto cumple las reglas de longitud y legibilidad. La interfaz puede orientar, pero no reemplaza esa validación con un criterio propio que bloquee el envío.
@@ -57,18 +58,17 @@ La API decide si el texto cumple las reglas de longitud y legibilidad. La interf
 ## Aplicación del sistema de diseño
 
 - Mantener paleta, tipografía, espaciado, radios, foco y cabecera definidos en `SISTEMA_DISENO.md`.
-- Tratar el fragmento como una ficha de lectura: fondo blanco, borde sutil, línea lateral de acento y texto alineado a la izquierda.
-- Un único botón sólido para la acción principal; **Seleccionar de nuevo** usa el tratamiento secundario.
+- Tratar el texto como un campo editable: fondo blanco, borde sutil, línea lateral de acento y texto alineado a la izquierda.
+- Un único botón sólido para la acción principal; **Seleccionar nuevo texto** usa el tratamiento secundario.
 - No añadir ilustraciones o tarjetas decorativas a P02: el texto elegido es el contenido principal.
 - Mostrar el dominio como dato secundario, nunca como garantía de fiabilidad de la noticia.
-- Integrar el aviso sobre envío y guardado como una línea discreta en P02, sin otra pantalla ni confirmación adicional.
 - Las vistas y confirmaciones permanecen dentro del popup.
 
 ## Plan de implementación posterior
 
 1. Construir la vista React de P02 con los elementos y estados anteriores, reutilizando los componentes y tokens de P01.
 2. Leer la selección pendiente del almacenamiento temporal de la extensión y presentar el texto completo, incluso si el popup se cerró o el service worker se reinició.
-3. Conectar **Seleccionar de nuevo** con el flujo de captura iniciado desde P01. Reemplazar el texto anterior únicamente al recibir una selección nueva.
+3. Conectar **Seleccionar nuevo texto** con el flujo de captura iniciado desde P01. Añadir el fragmento nuevo al borrador sin perder lo editado o pegado.
 4. Conectar **Analizar** directamente con el inicio de la solicitud y P04, evitando envíos duplicados y manteniendo la selección hasta que termine el flujo.
 5. Comprobar el diseño con texto breve, texto largo, ausencia de URL, cancelación y error de validación.
 
@@ -76,9 +76,10 @@ La vista y el inicio de la solicitud ya están implementados. P04 y P05 tienen p
 
 ## Criterios de aceptación de P02
 
-- Muestra exactamente el texto escogido por el usuario, sin sustituirlo por ejemplos ni añadir contenido de la página.
+- Muestra el texto escogido y los cambios que haga el usuario, sin sustituirlo por ejemplos ni añadir contenido de la página.
 - El texto permanece disponible al cerrar y reabrir el popup durante la sesión del navegador.
-- **Analizar** y **Seleccionar de nuevo** son visibles y fáciles de distinguir.
+- **Analizar** y **Seleccionar nuevo texto** son visibles y fáciles de distinguir.
+- El usuario puede pegar texto, añadir otra captura y borrar cualquier parte antes de analizar.
 - No se envía un análisis antes de que el usuario pulse **Analizar**; al pulsarlo, el flujo pasa directamente a P04.
 - Volver o cancelar una nueva selección no borra el fragmento anterior sin confirmación.
 - El texto largo puede leerse completo y las acciones siguen siendo alcanzables con teclado.

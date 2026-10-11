@@ -4,6 +4,8 @@
 
 Pantalla implementada en el popup según `SISTEMA_DISENO.md`. La imagen presenta una composición con cifras ilustrativas; la pantalla real muestra exclusivamente las evaluaciones publicadas por la API.
 
+La simplificación de textos, nombres y tamaños de P09 está implementada según `FEATURE_P09_METRICAS_SIMPLIFICADAS_PLAN.md`. Para la presentación de esa pantalla prevalece el plan del feature sobre las descripciones anteriores de este archivo.
+
 ![Concepto visual de P09](referencias/p09-concepto.png)
 
 ## Objetivo de P09
@@ -14,22 +16,21 @@ Permitir consultar el rendimiento publicado de los modelos en conjuntos de evalu
 
 | Dato de `/metricas` | Uso en P09 |
 | --- | --- |
-| `modelo` y `version` | Identificar qué modelo y versión fueron evaluados. |
+| `modelo` | Identificar qué modelo fue evaluado; la versión no se muestra en la vista simplificada. |
 | `evaluaciones[]` | Mostrar una sección por conjunto recibido, sin crear conjuntos adicionales. |
-| `conjunto`, `n` y `fuente` | Identificar el conjunto, el número de ejemplos y la procedencia cuando existan. |
-| `exactitud` y `f1_macro` | Mostrar las dos medidas principales si la API las aporta. |
-| `precision_falsa`, `recall_falsa` y `f1_falsa` | Ofrecer más detalle en una sección desplegable cuando estén disponibles. |
-| `limitaciones` | Presentar un resumen legible de las limitaciones informadas. |
+| `conjunto`, `n` y `fuente` | Identificar la prueba, el número de textos evaluados y el origen cuando existan. |
+| `exactitud` | Mostrar **Aciertos en las pruebas** cuando el valor sea válido. |
+| `f1_macro`, `precision_falsa`, `recall_falsa` y `f1_falsa` | Se reciben, pero no se muestran en la vista simplificada. |
+| `limitaciones` | Presentar el contenido recibido en **Sobre estas pruebas**. |
 
 Las medidas decimales de 0 a 1 se multiplican por 100 solo para presentarlas como porcentajes, con un redondeo consistente. La matriz de confusión y `orden_clases` se reservan para una decisión posterior sobre una presentación comprensible; no se mostrarán como JSON ni como tabla cruda en esta primera propuesta. Los nombres y valores finales dependen de la respuesta confirmada del backend.
 
 ## Contenido y jerarquía
 
-1. Cabecera común, acción **Volver** y título **Métricas de evaluación**.
-2. Nombre y versión del modelo evaluado.
-3. Por cada conjunto: nombre, cantidad de ejemplos y medidas principales **Exactitud** y **F1 macro**, solo si existen.
-4. Acción **Ver más medidas** para desplegar precisión, cobertura y F1 de la clase falsa cuando la respuesta las incluya.
-5. Sección breve **Limitaciones** con el texto recibido, adaptado a lectura sin cambiar su sentido.
+1. Cabecera común, acción **Volver** y título **Pruebas del modelo**.
+2. Nombre del modelo evaluado, sin versión visible.
+3. Por cada conjunto: nombre, **Aciertos en las pruebas**, cantidad de textos evaluados y **Datos** de origen, solo cuando existan.
+4. Apartado desplegable **Sobre estas pruebas** con las limitaciones recibidas.
 
 No mostrar estadísticas de uso, tiempos de respuesta, conteos de análisis ni métricas de mBERT si `/metricas` solo publica BiLSTM. Evitar cifras ilustrativas en la interfaz real.
 
@@ -38,7 +39,8 @@ No mostrar estadísticas de uso, tiempos de respuesta, conteos de análisis ni m
 | Acción | Resultado |
 | --- | --- |
 | **Volver** | Regresar a la pantalla desde la que se abrió P09. |
-| **Ver más medidas** | Expandir o contraer las medidas adicionales del conjunto, sin otra solicitud. |
+| **Datos** abreviados | Desplegar el origen completo sin otra solicitud. |
+| **Sobre estas pruebas** | Expandir o contraer las limitaciones recibidas. |
 | **Intentar de nuevo** tras error | Volver a solicitar `/metricas`. |
 
 ## Variantes y estados
@@ -47,7 +49,7 @@ No mostrar estadísticas de uso, tiempos de respuesta, conteos de análisis ni m
 | --- | --- |
 | Datos disponibles | Mostrar únicamente modelos, conjuntos y medidas recibidos. |
 | Más de un conjunto | Apilar secciones compactas con separadores y desplazamiento vertical. |
-| Sin evaluaciones publicadas | Mostrar **Aún no hay métricas disponibles** y permitir volver. |
+| Sin evaluaciones publicadas | Mostrar **Aún no hay pruebas disponibles** y permitir volver. |
 | Medida ausente | Omitir esa medida; no mostrar 0 % como sustituto. |
 | Limitaciones ausentes | Omitir la sección, sin redactar una limitación inventada. |
 | API inaccesible o error | Mostrar mensaje breve y **Intentar de nuevo**. |
@@ -57,8 +59,8 @@ No mostrar estadísticas de uso, tiempos de respuesta, conteos de análisis ni m
 - Usar la cabecera, tipografía, colores, espaciado y foco de `SISTEMA_DISENO.md`.
 - Organizar los datos como una ficha de evaluación: modelo arriba, conjuntos separados y cifras alineadas para comparar.
 - Mantener visibles las etiquetas de cada medida; no usar solo porcentajes grandes.
-- Dar más peso a nombre del conjunto y a las dos medidas principales que a la versión o la fuente.
-- Usar una sola zona desplegable por conjunto para el detalle, sin tarjetas decorativas.
+- Dar más peso al porcentaje de aciertos que al nombre y origen de la prueba.
+- Permitir consultar el origen completo solo si su presentación se abrevia o resulta larga.
 - Conservar el contenido dentro del popup con desplazamiento y controles accesibles por teclado.
 
 ## Implementación

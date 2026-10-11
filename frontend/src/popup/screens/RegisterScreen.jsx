@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { sendExtensionMessage } from '../extension-message.js';
+import PasswordVisibilityButton from '../components/PasswordVisibilityButton.jsx';
 
 const initialValues = { email: '', password: '', confirmation: '' };
 const initialTouched = { email: false, password: false, confirmation: false };
@@ -37,19 +38,13 @@ function PasswordField({ id, label, value, onChange, onBlur, error }) {
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
       />
-      <button
-        type="button"
-        className="absolute inset-y-0 right-1 my-1 rounded-md px-3 text-[12px] font-semibold text-accent hover:bg-accent-soft"
-        onClick={() => setVisible((current) => !current)}
-        aria-label={`${visible ? 'Ocultar' : 'Mostrar'} ${label.toLowerCase()}`}
-        aria-pressed={visible}
-      >{visible ? 'Ocultar' : 'Mostrar'}</button>
+      <PasswordVisibilityButton visible={visible} onToggle={() => setVisible((current) => !current)} label={label} />
     </div>
     {error && <p id={`${id}-error`} className="mt-1.5 text-[12px] leading-[18px] text-false" role="alert">{error}</p>}
   </div>;
 }
 
-export default function RegisterScreen({ onLogin, onComplete }) {
+export default function RegisterScreen({ onBack, onLogin, onComplete }) {
   const [values, setValues] = useState(initialValues);
   const [touched, setTouched] = useState(initialTouched);
   const [submitting, setSubmitting] = useState(false);
@@ -79,7 +74,12 @@ export default function RegisterScreen({ onLogin, onComplete }) {
   };
 
   return <section className="flex flex-1 flex-col" aria-labelledby="register-title">
-    <h1 id="register-title" className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Crear cuenta</h1>
+    <div className="flex items-start gap-3">
+      <button type="button" className="breakdown-back" aria-label="Volver a cuenta" title="Volver a cuenta" onClick={onBack}>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m14 5-7 7 7 7" /></svg>
+      </button>
+      <h1 id="register-title" className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Crear cuenta</h1>
+    </div>
     <form className="mt-7 flex flex-1 flex-col" noValidate onSubmit={submit}>
       <div>
         <label className="block text-sm font-semibold text-ink" htmlFor="register-email">Correo electrónico</label>

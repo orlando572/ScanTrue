@@ -4,6 +4,8 @@
 
 Pantalla implementada para abrir un elemento de P07 dentro del popup. P08 muestra los datos guardados de ese análisis y aplica `SISTEMA_DISENO.md`. La imagen usa contenido ilustrativo; la interfaz real utiliza únicamente los datos recibidos.
 
+La actualización visual del resultado unificado para igualarlo a P05 está implementada según `FEATURE_P08_RESULTADO_COMO_P05_PLAN.md`. Para ese panel prevalece el plan del feature sobre las descripciones anteriores de este archivo.
+
 ![Concepto visual de P08](referencias/p08-concepto.png)
 
 ## Objetivo de P08
@@ -16,8 +18,8 @@ Permitir releer el texto analizado y su resultado guardado, abrir el desglose po
 | --- | --- |
 | `id` | Consultar y, si el usuario confirma, eliminar el registro correcto. |
 | `fecha`, `url` y `texto` | Mostrar cuándo se analizó, de qué página provenía si consta y el fragmento completo. |
-| `resultado_unificado.probabilidad_falsa` y `modelos_utilizados` | Presentar la salida guardada y cuántos modelos participaron, cuando exista. |
-| `resultados` y `comparacion` | Abrir P06 con las salidas individuales guardadas; un modelo puede faltar en un registro antiguo. |
+| `resultado_unificado.probabilidad_falsa` | Presentar el porcentaje unificado guardado con el indicador visual de P05, cuando exista. |
+| `resultados` | Abrir P06 con las salidas individuales guardadas; un modelo puede faltar en un registro antiguo. |
 
 Los datos proceden del detalle almacenado, no de una nueva predicción. P08 no reconstruye el texto desde `hash_texto` ni calcula un nuevo resultado.
 
@@ -26,7 +28,7 @@ Los datos proceden del detalle almacenado, no de una nueva predicción. P08 no r
 1. Cabecera común, acción **Volver** y título **Análisis anterior**.
 2. Fecha y dominio, si están disponibles.
 3. Fragmento completo en una zona de lectura con la línea lateral de selección del sistema de diseño. Si no está guardado, mostrar **Texto no disponible**.
-4. Resultado unificado guardado con etiqueta **Salida para falsa**, porcentaje y número de modelos participantes, cuando los datos sean válidos.
+4. Resultado unificado guardado con el anillo, porcentaje, etiqueta de nivel y carita compartidos con P05, cuando el dato sea válido.
 5. Acción **Ver desglose por modelo** cuando haya datos individuales disponibles; P06 vuelve a P08 en este recorrido.
 6. Acción secundaria **Eliminar análisis** al final de la vista.
 
@@ -42,7 +44,7 @@ El contenido largo se desplaza dentro del popup. La eliminación no se mezcla vi
 | **Cancelar** en la confirmación | Cerrar la confirmación y mantener el registro. |
 | **Eliminar** en la confirmación | Enviar una única eliminación; tras confirmación de la API, volver a P07 y actualizar la lista. |
 
-La confirmación dirá **¿Eliminar este análisis?** y **Se quitará de tu historial.** Las acciones serán **Cancelar** y **Eliminar**. Si la solicitud falla, permanecer en P08 con el registro visible y ofrecer reintento.
+La confirmación dirá **¿Eliminar este análisis?** y ofrecerá las acciones **Cancelar** y **Eliminar**. Si la solicitud falla, permanecer en P08 con el registro visible y ofrecer reintento.
 
 ## Variantes y estados
 

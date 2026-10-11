@@ -65,7 +65,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message?.type === 'GET_METRICS' && !sender.tab) {
-    getPublishedMetrics()
+    getPublishedMetrics(message.model)
       .then((metrics) => sendResponse({ ok: true, metrics }))
       .catch(() => sendResponse({ ok: false, error: 'No pudimos cargar las métricas.' }));
     return true;
@@ -133,9 +133,18 @@ async function saveSelection(text, tab) {
   const items = await chrome.storage.session.get(SELECTION_TARGET);
   if (items[SELECTION_TARGET] !== tab.id) return false;
 
+  const previous = (await chrome.storage.session.get(PENDING_SELECTION))[PENDING_SELECTION];
   const url = /^https?:\/\//.test(tab.url ?? '') && tab.url.length <= 2048 ? tab.url : null;
+  const combinedText = previous?.text?.trim()
+    ? `${previous.text}\n\n${text}`
+    : text;
   await chrome.storage.session.set({
-    [PENDING_SELECTION]: { text, url, capturedAt: Date.now() },
+    [PENDING_SELECTION]: {
+      text: combinedText,
+      url: previous ? (previous.url && previous.url === url ? url : null) : url,
+      capturedAt: Date.now(),
+      updatedBy: 'page',
+    },
   });
   const operation = (await chrome.storage.session.get('analysisOperation')).analysisOperation;
   if (operation?.status !== 'working') await chrome.storage.session.remove('analysisOperation');

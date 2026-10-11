@@ -50,11 +50,36 @@ test('rechaza pestañas que no son páginas web', async () => {
   assert.equal(worker.injected, false);
 });
 
-test('seleccionar de nuevo conserva el texto anterior hasta capturar el nuevo', async () => {
+test('agregar otra selección conserva el texto anterior y lo une al nuevo', async () => {
   const worker = createWorker();
   worker.values.pendingSelection = { text: 'Texto anterior', url: null };
   assert.equal((await worker.send({ type: 'START_SELECTION' })).ok, true);
   assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.text, 'Texto anterior');
   assert.equal((await worker.send({ type: 'SELECTION_CAPTURED', text: 'Texto nuevo' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } })).ok, true);
-  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.text, 'Texto nuevo');
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.text, 'Texto anterior\n\nTexto nuevo');
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, null);
+});
+
+test('agrega una nueva selección al borrador editado en el popup', async () => {
+  const worker = createWorker();
+  assert.equal((await worker.send({ type: 'START_SELECTION' })).ok, true);
+  assert.equal((await worker.send({ type: 'SELECTION_CAPTURED', text: 'Primera parte' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } })).ok, true);
+
+  worker.values.pendingSelection = { text: 'Texto pegado', url: null, updatedBy: 'popup' };
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.text, 'Texto pegado');
+  assert.equal((await worker.send({ type: 'START_SELECTION' })).ok, true);
+  assert.equal((await worker.send({ type: 'SELECTION_CAPTURED', text: 'Última parte' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } })).ok, true);
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.text, 'Texto pegado\n\nÚltima parte');
+});
+
+test('conserva la fuente solo si los fragmentos vienen de la misma página', async () => {
+  const worker = createWorker();
+  await worker.send({ type: 'START_SELECTION' });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } });
+  await worker.send({ type: 'START_SELECTION' });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Dos' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } });
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, 'https://ejemplo.test/noticia');
+  await worker.send({ type: 'START_SELECTION' });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Tres' }, { tab: { id: 3, url: 'https://otra.test' } });
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, null);
 });

@@ -24,10 +24,9 @@ Indicar que la selección se está analizando y mantener al usuario orientado ha
 ## Contenido visible durante la espera
 
 1. Cabecera compacta de ScanTrue.
-2. Indicador de actividad discreto, sin porcentaje de avance ni tiempo estimado.
+2. Documento con una línea de escaneo animada y un indicador de actividad discreto, sin porcentaje de avance ni tiempo estimado.
 3. Título **Analizando texto**.
-4. Mensaje **“Estamos preparando el resultado de tu selección.”**
-5. Ayuda breve **“Esto puede tardar un momento.”**
+4. Ayuda breve **“Esto puede tardar un momento.”**
 
 No mostrar nombres de modelos, resultados inventados ni una barra que sugiera un progreso que la API no comunica. La vista de espera no necesita un botón de cancelar: cuando una solicitud ya salió, cerrar el popup no garantiza que el análisis se detenga.
 
@@ -57,7 +56,7 @@ Los mensajes exactos se ajustarán a los errores reales recibidos. La vista no m
 
 - Usar la misma cabecera, colores, tipografía y espaciado de P01 y P02.
 - Mantener el indicador y el mensaje como único foco de P04; sin tarjetas ni acciones decorativas.
-- Animar el indicador con suavidad y respetar la preferencia de movimiento reducido. En ese caso, mostrar un símbolo estático con el mismo mensaje.
+- Animar suavemente la línea de escaneo y el indicador circular. Si la persona prefiere movimiento reducido, ocultar el escaneo y mantener el círculo girando más despacio con el mismo mensaje.
 - Anunciar el cambio de estado a tecnologías de asistencia sin repetir continuamente el mensaje.
 - En los errores, usar texto claro y una acción concreta, con los patrones de avisos de `SISTEMA_DISENO.md`.
 

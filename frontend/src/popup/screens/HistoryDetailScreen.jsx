@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sendExtensionMessage } from '../extension-message.js';
 import { presentHistoryDetail } from '../history-presentation.js';
+import ResultGaugePanel from '../components/ResultGaugePanel.jsx';
 
 export default function HistoryDetailScreen({ id, onBack, onBreakdown, onLoaded, onDeleted, onDeletingChange }) {
   const [status, setStatus] = useState('loading');
@@ -86,13 +87,7 @@ export default function HistoryDetailScreen({ id, onBack, onBreakdown, onLoaded,
 
     {shown && <>
       <div className="selection-preview mt-5 max-h-[220px] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-5" tabIndex="0" aria-label="Texto analizado">{shown.text ?? 'Texto no disponible'}</div>
-      <div className={`result-panel mt-5 ${shown.percentage === null ? 'result-panel--empty' : ''}`}>
-        {shown.percentage !== null ? <>
-          <p className="text-sm font-semibold text-false">Salida para falsa</p>
-          <p className="mt-2 text-[32px] leading-9 font-semibold tracking-[-0.03em] tabular-nums text-false">{shown.percentage}</p>
-          {shown.source && <p className="mt-3 text-sm leading-5 text-muted">{shown.source}</p>}
-        </> : <p className="text-sm font-semibold text-ink">Resultado no disponible</p>}
-      </div>
+      <ResultGaugePanel level={shown.level} percentage={shown.percentage} className="mt-5" />
       {shown.hasBreakdown && <button type="button" className="result-detail mt-5" onClick={() => onBreakdown(item)} disabled={deleting}>
         <span>Ver desglose por modelo</span>
         <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m9 5 7 7-7 7" /></svg>
@@ -101,7 +96,6 @@ export default function HistoryDetailScreen({ id, onBack, onBreakdown, onLoaded,
       {!confirming ? <button ref={deleteButton} type="button" className="secondary-button delete-button mt-7" onClick={() => setConfirming(true)}>Eliminar análisis</button>
         : <div className="delete-confirmation mt-7" role="dialog" aria-labelledby="delete-title" onKeyDown={(event) => { if (event.key === 'Escape') cancelDelete(); }}>
           <h2 id="delete-title" className="text-base font-semibold">¿Eliminar este análisis?</h2>
-          <p className="mt-2 text-sm text-muted">Se quitará de tu historial.</p>
           {deleteError && <p className="mt-3 text-sm text-false" role="alert">{deleteError}</p>}
           <div className="mt-5 flex gap-3">
             <button ref={cancelButton} type="button" className="secondary-button" onClick={cancelDelete} disabled={deleting}>Cancelar</button>

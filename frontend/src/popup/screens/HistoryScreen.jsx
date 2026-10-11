@@ -11,16 +11,17 @@ function HistoryRow({ item, onOpen }) {
         <span className="history-preview mt-1 text-sm leading-5 font-semibold text-ink">{shown.title}</span>
         {shown.domain && <span className="mt-1 block truncate text-[12px] leading-[18px] text-muted">{shown.domain}</span>}
       </span>
-      <span className="flex w-[110px] shrink-0 flex-col items-end text-right">
-        <span className="text-[11px] leading-4 text-muted">{shown.percentage === null ? 'Resultado no disponible' : 'Salida para falsa'}</span>
-        {shown.percentage !== null && <span className="mt-1 text-[20px] leading-6 font-semibold tabular-nums text-false">{shown.percentage}</span>}
+      <span className={`history-result min-w-0 shrink-0 text-right${shown.tone ? ` result-panel--${shown.tone}` : ''}`}>
+        {shown.percentage === null
+          ? <span className="block text-[11px] leading-4 text-muted">Resultado no disponible</span>
+          : <span className="history-percentage block font-semibold tabular-nums" aria-label={`${shown.percentage}, ${shown.level}`}>{shown.percentage}</span>}
       </span>
       <svg aria-hidden="true" className="size-4 shrink-0 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m9 5 7 7-7 7" /></svg>
     </button>
   </li>;
 }
 
-export default function HistoryScreen({ deletedAnalysis, onOpen, onChooseText }) {
+export default function HistoryScreen({ deletedAnalysis, onBack, onOpen, onChooseText }) {
   const [items, setItems] = useState([]);
   const [nextOffset, setNextOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -67,7 +68,12 @@ export default function HistoryScreen({ deletedAnalysis, onOpen, onChooseText })
   }, [deletedAnalysis]);
 
   return <section>
-    <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Historial de análisis</h1>
+    <div className="flex items-center gap-3">
+      <button type="button" className="icon-button shrink-0" aria-label="Volver" title="Volver" onClick={onBack}>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m14 5-7 7 7 7" /></svg>
+      </button>
+      <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Historial de análisis</h1>
+    </div>
     {status === 'loading' && <p className="mt-6 text-sm text-muted" role="status">Cargando historial…</p>}
     {status === 'error' && <div className="mt-6" role="alert"><p className="text-sm leading-5 text-muted">{error}</p><button type="button" className="secondary-button mt-5" onClick={() => loadPage(0)}>Intentar de nuevo</button></div>}
     {status === 'ready' && items.length === 0 && <div className="mt-8 text-center">

@@ -4,6 +4,8 @@
 
 Pantalla implementada dentro del popup según esta planificación. P07 sigue `SISTEMA_DISENO.md` y muestra exclusivamente los análisis de la sesión activa, sea invitado o cuenta. La imagen es una referencia de composición con registros ilustrativos; la interfaz real usa el historial recibido.
 
+La actualización de la cabecera y de las etiquetas y colores de las filas está implementada según `FEATURE_P07_HISTORIAL_CINCO_NIVELES_PLAN.md`. Para esos elementos prevalece el plan del feature sobre las descripciones anteriores de este documento.
+
 ![Concepto visual de P07](referencias/p07-concepto.png)
 
 ## Objetivo de P07

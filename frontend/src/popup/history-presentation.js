@@ -1,4 +1,4 @@
-import { formatProbability, presentResult } from './result-presentation.js';
+import { formatProbability, presentResult, presentResultLevel } from './result-presentation.js';
 
 export function domainFromUrl(url) {
   try {
@@ -19,12 +19,15 @@ export function formatDate(value) {
 export function presentHistoryItem(item) {
   const preview = typeof item?.vista_previa === 'string' && item.vista_previa.trim() ? item.vista_previa.trim() : null;
   const domain = domainFromUrl(item?.url);
+  const level = presentResultLevel(item?.resultado_unificado?.probabilidad_falsa);
   return {
     id: item?.id,
     date: formatDate(item?.fecha),
     title: preview ?? domain ?? 'Análisis anterior',
     domain: preview ? domain : null,
-    percentage: formatProbability(item?.resultado_unificado?.probabilidad_falsa),
+    percentage: level === null ? null : `${level.value} %`,
+    level: level?.label ?? null,
+    tone: level?.tone ?? null,
   };
 }
 
@@ -35,6 +38,7 @@ export function presentHistoryDetail(item) {
     domain: domainFromUrl(item?.url),
     text: typeof item?.texto === 'string' && item.texto.trim() ? item.texto : null,
     percentage: result.percentage,
+    level: result.level,
     source: result.source,
     hasBreakdown: result.hasBreakdown,
   };

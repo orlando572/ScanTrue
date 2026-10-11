@@ -18,7 +18,7 @@ El contrato de abajo permite preparar la interfaz de la próxima entrega. La con
 | --- | --- |
 | BiLSTM y `POST /analisis` | Modelo `pequeno_mejorado_fasttext_cc300_s42`; mínimo 100 y máximo 192 tokens medidos por el backend. |
 | mBERT | Mostrar su porcentaje solo si `estado: "ok"`; cuando no haya checkpoint o falle, mostrar “No disponible”. Nunca fabricar una predicción. |
-| Porcentaje unificado | Mostrar `resultado_unificado.probabilidad_falsa` y los modelos participantes. Con solo BiLSTM coincide con su porcentaje; con ambos usa los pesos informados por la API. |
+| Porcentaje unificado | Mostrar `resultado_unificado.probabilidad_falsa` en P05. Con solo BiLSTM coincide con su porcentaje; con ambos usa los pesos informados por la API. |
 | Invitados, cuentas e historial | Mantener la sesión invitada y permitir abrir la selección completa desde el historial propio. |
 | Métricas | `GET /metricas` publica evaluaciones del BiLSTM, no estadísticas de uso. |
 | Blockchain | Un análisis puede estar pendiente antes de que Anvil confirme la transacción. |
@@ -108,9 +108,9 @@ La respuesta acordada tendrá esta forma; los valores son ilustrativos:
 }
 ```
 
-Mostrar tres espacios: **BiLSTM**, **mBERT** y **unificado**. Cada `probabilidad_falsa` va de 0 a 1; multiplicar por 100 para mostrar el porcentaje. La escala significa 0 % = el modelo favorece “real” y 100 % = favorece “falsa”. Son **salidas de clasificación, no certeza factual**: etiquetar los valores como “salida para falsa” y evitar “certeza” o “veracidad comprobada”. Para un modelo con `estado` distinto de `ok`, mostrar “No disponible” en lugar de 0 %. No calcular el unificado en el frontend: usar `resultado_unificado` del backend y mostrar si participó uno o dos modelos.
+Presentar el unificado en P05 y las salidas individuales de **BiLSTM** y **mBERT** en P06. Cada `probabilidad_falsa` va de 0 a 1; multiplicar por 100 para mostrar el porcentaje. La escala significa 0 % = el modelo favorece “real” y 100 % = favorece “falsa”. Son **salidas de clasificación, no certeza factual**: el porcentaje se acompaña de uno de cinco niveles visuales y se evita “certeza” o “veracidad comprobada”. Para un modelo con `estado` distinto de `ok`, mostrar “No disponible” en lugar de 0 %. No calcular el unificado en el frontend: usar `resultado_unificado` del backend.
 
-El backend calculará una media ponderada: mBERT 70 % y BiLSTM 30 % cuando ambos respondan; los pesos podrán cambiar en la configuración del backend. Si solo uno responde, su peso aplicado será 100 %. `comparacion` será `coinciden` o `discrepan` únicamente con dos predicciones reales; de lo contrario será `no_disponible`. No clasificar porcentajes en niveles adicionales. Aunque haya discrepancia, mostrarla junto al unificado.
+El backend calculará una media ponderada: mBERT 70 % y BiLSTM 30 % cuando ambos respondan; los pesos podrán cambiar en la configuración del backend. Si solo uno responde, su peso aplicado será 100 %. `comparacion` será `coinciden` o `discrepan` únicamente con dos predicciones reales; de lo contrario será `no_disponible`. La interfaz actual muestra cinco niveles visuales según el porcentaje de P05 y de cada modelo en P06; no muestra mensajes de comparación entre modelos. Estos niveles son una interpretación de la salida, no una verificación de hechos.
 
 El backend cuenta tokens con el tokenizador del BiLSTM **sobre el texto final enviado al modelo**. El frontend puede dar una orientación aproximada, pero debe tomar el `422` de la API como decisión definitiva. El mínimo de 100 tokens es una regla operativa y no una garantía de mayor precisión.
 
@@ -169,5 +169,5 @@ Los errores de la aplicación suelen tener `{ "detail": { "codigo": "...", "mens
 - La selección íntegra se envía una sola vez; el backend decide si cumple 100–192 tokens.
 - Invitado y cuenta ven solo su propio historial; se preserva el invitado durante la confirmación de correo y la transferencia.
 - Los estados de blockchain y `verificado` se interpretan por separado.
-- Los tres espacios de porcentaje muestran valores de la API; mBERT indica “No disponible” mientras no produzca una predicción real. El unificado indica cuántos modelos participaron.
+- Los porcentajes de P05 y P06 muestran valores de la API; mBERT indica “No disponible” mientras no produzca una predicción real. P06 acompaña cada porcentaje individual con su etiqueta de nivel.
 - Ninguna clave privilegiada, token ni texto seleccionado aparece en el código publicado o en los logs de la extensión.

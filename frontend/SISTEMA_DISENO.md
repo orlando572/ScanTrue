@@ -76,14 +76,14 @@ La cabecera conserva la identidad y la navegación esencial. En vistas secundari
 
 | Elemento | Regla de diseño |
 | --- | --- |
-| Cabecera | Marca compacta, título de vista y acciones con iconos reconocibles y etiquetas accesibles. Historial y cuenta son accesos, no pantallas separadas del popup. |
+| Cabecera | Logotipo compacto de lupa con marca de verificación y nombre ScanTrue; ambos forman un botón que vuelve a P01. Título de vista y acciones con iconos reconocibles y etiquetas accesibles. Historial y cuenta son accesos dentro del popup. |
 | Botón principal | Ancho completo cuando guía el paso central; verbo concreto: **Escoger texto**, **Analizar**, **Iniciar sesión**. Estado deshabilitado con explicación cuando falte un requisito. |
 | Botón secundario | Contorno o texto para **Seleccionar de nuevo**, **Cancelar**, **Volver** y **Actualizar**. No competir visualmente con el principal. |
 | Selección de texto | Fragmento en un panel con línea lateral `accent`, vista previa legible y desplazamiento si es largo. Mostrar que pertenece a la página elegida. |
-| Resultado | Nombre **Salida para falsa**, porcentaje recibido y frase que indique qué modelo o combinación lo produjo. BiLSTM, mBERT y unificado tienen espacios diferenciados. |
-| Desglose | Desde el resultado, una fila abre P06 dentro del popup. Allí se muestra una fila por modelo con nombre, estado y porcentaje válido. Un modelo sin predicción muestra **No disponible**, no 0 %. |
+| Resultado | P05 muestra el porcentaje unificado en un anillo, la etiqueta de uno de cinco niveles y su icono debajo. P06 conserva el detalle de BiLSTM y mBERT. |
+| Desglose | Desde el resultado, una fila abre P06 dentro del popup. BiLSTM y mBERT aparecen en tarjetas compactas con nombre, clase recibida, porcentaje, etiqueta de uno de cinco niveles y barra. Debajo se explica que los modelos no comprueban hechos con fuentes externas. Un modelo sin predicción muestra **No disponible**, no 0 %. |
 | Historial | Lista de filas compactas con fecha, vista previa y salida guardada. La fila entera abre el detalle; la eliminación se solicita dentro del detalle o mediante acción claramente asociada al registro. |
-| Métricas | Nombre del conjunto, tamaño, versión y medida, acompañados de limitaciones. No usar las métricas como puntuación de la noticia abierta. |
+| Pruebas del modelo | Nombre del conjunto, porcentaje de aciertos y número de textos evaluados; origen breve cuando exista y limitaciones en un apartado desplegable. Estas cifras no son la puntuación de la noticia abierta. |
 | Formularios | Una columna, etiquetas visibles, errores bajo el campo y mensajes generales al inicio del formulario. Contraseñas nunca se muestran en registros de consola. |
 | Confirmación | Título directo, consecuencia concreta y dos acciones. |
 | Avisos | Mensaje breve que explique lo ocurrido y el siguiente paso. Errores de API transformados a lenguaje de interfaz, sin JSON crudo. |
@@ -99,7 +99,7 @@ En las pantallas de inicio y selección, usar instrucciones breves en lenguaje c
 | “Verídica” como veredicto | “El modelo favorece la clase real” cuando esa clase llegue de la API |
 | “98 % de certeza” | “98 % de salida para falsa” |
 
-El porcentaje mostrado será el valor de la API multiplicado por 100 solo para presentación. El resultado unificado y sus pesos vendrán del backend. Una discrepancia entre modelos se muestra aunque exista unificado. No añadir rangos propios como “riesgo alto” o “confianza media”.
+El porcentaje mostrado será el valor de la API multiplicado por 100 y redondeado. El resultado unificado y sus pesos vendrán del backend. P05 y las tarjetas individuales de P06 asignan los cinco niveles visuales definidos en `FEATURE_P05_INDICADOR_CINCO_NIVELES_PLAN.md`. P06 no muestra comparaciones entre modelos. Los niveles expresan la salida del modelo, no una verificación independiente de los hechos.
 
 ## Comportamiento de los estados
 

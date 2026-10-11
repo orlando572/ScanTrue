@@ -14,7 +14,7 @@ Permitir que el usuario vea y complete el formulario de registro, entienda sus c
 
 ### Contenido y jerarquía
 
-1. Cabecera común, acción **Volver** y título **Crear cuenta**.
+1. Cabecera común y flecha **Volver** a la izquierda del título **Crear cuenta**.
 2. Campo **Correo electrónico** con etiqueta visible.
 3. Campo **Contraseña** con etiqueta visible y control accesible para mostrarla u ocultarla.
 4. Campo **Confirmar contraseña** con el mismo control de visibilidad.
@@ -29,7 +29,7 @@ El formulario se puede recorrer y completar. La validación local comprueba camp
 | Acción | Resultado en la primera fase |
 | --- | --- |
 | **Volver** | Regresar a la vista de origen, normalmente P11, sin cambiar la sesión. |
-| Mostrar u ocultar contraseña | Cambiar solo la presentación del campo correspondiente. |
+| Icono de ojo para mostrar u ocultar contraseña | Cambiar solo la presentación del campo correspondiente; conservar un nombre accesible para cada acción. |
 | **Crear cuenta** | No envía datos ni simula un registro; permanece deshabilitada con explicación. |
 | **Ya tengo cuenta** | Abrir P13 dentro del popup. |
 

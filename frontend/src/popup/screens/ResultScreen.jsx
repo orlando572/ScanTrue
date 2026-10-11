@@ -1,19 +1,18 @@
 import { presentResult } from '../result-presentation.js';
+import ResultGaugePanel from '../components/ResultGaugePanel.jsx';
 
-export default function ResultScreen({ result, onBreakdown, onStartOver, clearing, error }) {
-  const { percentage, source, comparison, hasBreakdown } = presentResult(result);
+export default function ResultScreen({ result, onBack, onBreakdown, onStartOver, clearing, error }) {
+  const { percentage, level, hasBreakdown } = presentResult(result);
 
   return <section className="flex flex-1 flex-col">
-    <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Resultado del análisis</h1>
-
-    <div className={`result-panel mt-6 ${percentage ? '' : 'result-panel--empty'}`}>
-      {percentage ? <>
-        <p className="text-sm font-semibold text-false">Salida para falsa</p>
-        <p className="mt-3 text-[40px] leading-[44px] font-semibold tracking-[-0.04em] tabular-nums text-false" aria-label={`${percentage} de salida para falsa`}>{percentage}</p>
-        {source && <p className="mt-4 text-sm leading-5 text-muted">{source}</p>}
-      </> : <p className="text-base leading-[22px] font-semibold text-ink">Resultado unificado no disponible</p>}
-      {comparison && <p className="mt-5 flex items-center gap-2 text-sm leading-5 text-ink"><span className="size-2 shrink-0 rounded-full bg-accent" aria-hidden="true" />{comparison}</p>}
+    <div className="flex items-start gap-3">
+      <button type="button" className="breakdown-back" aria-label="Volver al inicio" title="Volver al inicio" onClick={onBack}>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m14 5-7 7 7 7" /></svg>
+      </button>
+      <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Resultado del análisis</h1>
     </div>
+
+    <ResultGaugePanel level={level} percentage={percentage} className="mt-6" />
 
     {hasBreakdown && <button type="button" className="result-detail mt-5" onClick={onBreakdown}>
       <span>Ver desglose por modelo</span>
