@@ -1,0 +1,60 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { runInNewContext } from 'node:vm';
+import { buildSync } from 'esbuild';
+import { fileURLToPath } from 'node:url';
+
+const workerCode = buildSync({
+  entryPoints: [fileURLToPath(new URL('../src/extension/service-worker.js', import.meta.url))],
+  bundle: true,
+  write: false,
+  format: 'iife',
+  platform: 'browser',
+}).outputFiles[0].text;
+
+function createWorker(tab = { id: 3, url: 'https://ejemplo.test/noticia' }) {
+  const values = {};
+  let listener;
+  let injected = false;
+  const chrome = {
+    runtime: { onMessage: { addListener(callback) { listener = callback; } } },
+    tabs: { async query() { return [tab]; } },
+    scripting: { async executeScript() { injected = true; } },
+    storage: { session: {
+      async get(key) { return { [key]: values[key] }; },
+      async set(items) { Object.assign(values, items); },
+      async remove(key) { delete values[key]; },
+    }, local: { async setAccessLevel() {} } },
+  };
+  runInNewContext(workerCode, { chrome });
+  const send = (message, sender = {}) => new Promise((resolve) => listener(message, sender, resolve));
+  return { send, values, get injected() { return injected; } };
+}
+
+test('captura el texto solo después de iniciar la selección', async () => {
+  const worker = createWorker();
+  assert.equal((await worker.send({ type: 'SELECTION_CAPTURED', text: 'Fragmento' }, { tab: { id: 3 } })).ok, false);
+  assert.equal((await worker.send({ type: 'START_SELECTION' })).ok, true);
+  assert.equal(worker.injected, true);
+  assert.equal((await worker.send({ type: 'SELECTION_CAPTURED', text: 'Fragmento' }, { tab: { id: 4 } })).ok, false);
+  assert.equal((await worker.send({ type: 'SELECTION_CAPTURED', text: 'Fragmento' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } })).ok, true);
+  const pending = await worker.send({ type: 'GET_PENDING_SELECTION' });
+  assert.equal(pending.selection.text, 'Fragmento');
+  assert.equal(pending.selection.url, 'https://ejemplo.test/noticia');
+  assert.equal(worker.values.selectionTargetTabId, undefined);
+});
+
+test('rechaza pestañas que no son páginas web', async () => {
+  const worker = createWorker({ id: 5, url: 'chrome://extensions' });
+  assert.equal((await worker.send({ type: 'START_SELECTION' })).ok, false);
+  assert.equal(worker.injected, false);
+});
+
+test('seleccionar de nuevo conserva el texto anterior hasta capturar el nuevo', async () => {
+  const worker = createWorker();
+  worker.values.pendingSelection = { text: 'Texto anterior', url: null };
+  assert.equal((await worker.send({ type: 'START_SELECTION' })).ok, true);
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.text, 'Texto anterior');
+  assert.equal((await worker.send({ type: 'SELECTION_CAPTURED', text: 'Texto nuevo' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } })).ok, true);
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.text, 'Texto nuevo');
+});
