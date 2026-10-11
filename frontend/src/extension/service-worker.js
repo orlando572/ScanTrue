@@ -1,7 +1,7 @@
 import { clearCompletedAnalysis, getAnalysisOperation, startAnalysis } from './analysis.js';
 import { deleteHistoryDetail, getHistoryDetail, listHistory } from './history.js';
 import { getPublishedMetrics } from './metrics.js';
-import { closeAccountSession, getAccountState } from './account.js';
+import { closeAccountSession, getAccountState, loginAccount, registerAccount } from './account.js';
 
 const PENDING_SELECTION = 'pendingSelection';
 const SELECTION_TARGET = 'selectionTargetTabId';
@@ -75,6 +75,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     getAccountState()
       .then((account) => sendResponse({ ok: true, account }))
       .catch(() => sendResponse({ ok: false, error: 'No pudimos consultar tu cuenta.' }));
+    return true;
+  }
+
+  if (message?.type === 'REGISTER_ACCOUNT' && !sender.tab) {
+    registerAccount(message.email, message.password)
+      .then((account) => sendResponse({ ok: true, account }))
+      .catch((error) => sendResponse({ ok: false, error: error?.message ?? 'No pudimos crear la cuenta.' }));
+    return true;
+  }
+
+  if (message?.type === 'LOGIN_ACCOUNT' && !sender.tab) {
+    loginAccount(message.email, message.password, message.skipGuestTransfer === true)
+      .then((account) => sendResponse({ ok: true, account }))
+      .catch((error) => sendResponse({
+        ok: false,
+        error: error?.message ?? 'No pudimos iniciar sesión.',
+        requiresTransferChoice: error?.name === 'GuestRecoveryError',
+      }));
     return true;
   }
 

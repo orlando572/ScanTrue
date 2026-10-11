@@ -144,6 +144,7 @@ export default function App() {
   const [deletedAnalysis, setDeletedAnalysis] = useState(null);
   const [detailDeleting, setDetailDeleting] = useState(false);
   const [accountSigningOut, setAccountSigningOut] = useState(false);
+  const [accountNotice, setAccountNotice] = useState('');
   const analysisLock = useRef(false);
   const popupScroll = useRef(null);
   const historyScroll = useRef(null);
@@ -285,6 +286,24 @@ export default function App() {
     finally { setClearing(false); }
   };
 
+  const accountCompleted = (account) => {
+    if (account.kind === 'pending_confirmation') {
+      setAccountNotice('Te enviamos un correo de confirmación. Confirma tu cuenta y después inicia sesión aquí. Tu sesión invitada y su historial siguen disponibles.');
+    } else {
+      const count = Number.isInteger(account.transferred) ? account.transferred : 0;
+      setAccountNotice(account.guestHistorySkipped
+        ? 'Sesión iniciada sin incorporar el historial invitado.'
+        : count > 0
+          ? `Sesión iniciada. Se incorporaron ${count} análisis de tu historial invitado.`
+          : 'Sesión iniciada.');
+      setOperation(null);
+      setSelection(null);
+      setHistoryDetail(null);
+      setSelectedAnalysisId(null);
+    }
+    setStack(['P01', 'P11']);
+  };
+
   return <div ref={popupScroll} className="popup-shell flex min-h-[500px] flex-col bg-canvas text-ink">
     <header className="flex items-center justify-between border-b border-line bg-white px-5 py-4">
       <Brand />
@@ -314,9 +333,9 @@ export default function App() {
           : current === 'P07' ? null
           : current === 'P08' ? null
           : current === 'P09' ? <MetricsScreen onBack={back} />
-          : current === 'P11' ? <AccountScreen onBack={back} onLogin={() => open('P13')} onRegister={() => open('P12')} onSigningOutChange={setAccountSigningOut} onSignedOut={() => { setOperation(null); setSelection(null); setHistoryDetail(null); setSelectedAnalysisId(null); setStack(['P01', 'P11']); }} />
-          : current === 'P12' ? <RegisterScreen onLogin={() => open('P13')} />
-          : current === 'P13' ? <LoginScreen onRegister={() => open('P12')} />
+          : current === 'P11' ? <AccountScreen notice={accountNotice} onBack={back} onLogin={() => { setAccountNotice(''); open('P13'); }} onRegister={() => { setAccountNotice(''); open('P12'); }} onSigningOutChange={setAccountSigningOut} onSignedOut={() => { setAccountNotice(''); setOperation(null); setSelection(null); setHistoryDetail(null); setSelectedAnalysisId(null); setStack(['P01', 'P11']); }} />
+          : current === 'P12' ? <RegisterScreen onLogin={() => open('P13')} onComplete={accountCompleted} />
+          : current === 'P13' ? <LoginScreen onRegister={() => open('P12')} onComplete={accountCompleted} />
           : <><h1 className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">{titles[current]}</h1><p className="mt-4 text-sm text-muted">Sección en preparación.</p></>}
       </>}
     </main>

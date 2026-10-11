@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { sendExtensionMessage } from '../extension-message.js';
 
 function emailError(value) {
   if (!value.trim()) return 'Escribe tu correo electrónico.';
@@ -6,18 +7,44 @@ function emailError(value) {
   return '';
 }
 
-export default function LoginScreen({ onRegister }) {
+export default function LoginScreen({ onRegister, onComplete }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [requiresTransferChoice, setRequiresTransferChoice] = useState(false);
+  const submitLock = useRef(false);
   const emailMessage = emailTouched ? emailError(email) : '';
   const passwordMessage = passwordTouched && !password ? 'Escribe tu contraseña.' : '';
+  const submit = async (event, skipGuestTransfer = false) => {
+    event.preventDefault();
+    if (submitLock.current) return;
+    setEmailTouched(true);
+    setPasswordTouched(true);
+    if (emailError(email) || !password) return;
+    submitLock.current = true;
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      const response = await sendExtensionMessage({
+        type: 'LOGIN_ACCOUNT', email: email.trim(), password, skipGuestTransfer,
+      });
+      if (!response?.ok || response.account?.kind !== 'account') {
+        setRequiresTransferChoice(response?.requiresTransferChoice === true);
+        throw new Error(response?.error ?? 'No pudimos iniciar sesión.');
+      }
+      onComplete(response.account);
+    } catch (error) {
+      setSubmitError(error?.message ?? 'No pudimos iniciar sesión.');
+    } finally { submitLock.current = false; setSubmitting(false); }
+  };
 
   return <section className="flex flex-1 flex-col" aria-labelledby="login-title">
     <h1 id="login-title" className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Iniciar sesión</h1>
-    <form className="mt-7 flex flex-1 flex-col" noValidate onSubmit={(event) => event.preventDefault()}>
+    <form className="mt-7 flex flex-1 flex-col" noValidate onSubmit={submit}>
       <div>
         <label className="block text-sm font-semibold text-ink" htmlFor="login-email">Correo electrónico</label>
         <input
@@ -25,7 +52,7 @@ export default function LoginScreen({ onRegister }) {
           className="auth-input mt-2"
           type="email"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => { setEmail(event.target.value); setRequiresTransferChoice(false); }}
           onBlur={() => setEmailTouched(true)}
           autoComplete="username"
           inputMode="email"
@@ -43,7 +70,7 @@ export default function LoginScreen({ onRegister }) {
             className="auth-input auth-input--password"
             type={passwordVisible ? 'text' : 'password'}
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => { setPassword(event.target.value); setRequiresTransferChoice(false); }}
             onBlur={() => setPasswordTouched(true)}
             autoComplete="current-password"
             aria-invalid={Boolean(passwordMessage)}
@@ -61,9 +88,13 @@ export default function LoginScreen({ onRegister }) {
       </div>
 
       <div className="mt-auto pt-8">
-        <button type="submit" className="primary-button auth-submit" disabled aria-describedby="login-unavailable">Iniciar sesión</button>
-        <p id="login-unavailable" className="mt-2 text-center text-[12px] leading-[18px] text-muted">El inicio de sesión aún no está disponible.</p>
-        <button type="button" className="secondary-button mt-5" onClick={onRegister}>Crear cuenta</button>
+        {submitError && <p className="mb-3 text-sm leading-5 text-false" role="alert">{submitError}</p>}
+        <button type="submit" className="primary-button auth-submit" disabled={submitting}>{submitting ? 'Iniciando sesión…' : 'Iniciar sesión'}</button>
+        {requiresTransferChoice && <>
+          <p className="mt-3 text-[12px] leading-[18px] text-muted">Puedes entrar sin incorporar el historial de invitado. Esos análisis no aparecerán en tu cuenta.</p>
+          <button type="button" className="secondary-button mt-3" onClick={(event) => submit(event, true)} disabled={submitting}>Entrar sin transferir historial</button>
+        </>}
+        <button type="button" className="secondary-button mt-5" onClick={onRegister} disabled={submitting}>Crear cuenta</button>
       </div>
     </form>
   </section>;

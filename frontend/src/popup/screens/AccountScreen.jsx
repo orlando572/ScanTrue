@@ -5,7 +5,7 @@ function AccountIcon() {
   return <div className="account-art" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="32" cy="20" r="9" /><path d="M13 55c0-11 8.5-18 19-18s19 7 19 18" /></svg></div>;
 }
 
-export default function AccountScreen({ onBack, onLogin, onRegister, onSignedOut, onSigningOutChange }) {
+export default function AccountScreen({ notice, onBack, onLogin, onRegister, onSignedOut, onSigningOutChange }) {
   const [status, setStatus] = useState('loading');
   const [account, setAccount] = useState(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -65,6 +65,8 @@ export default function AccountScreen({ onBack, onLogin, onRegister, onSignedOut
       </button>
       <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Cuenta</h1>
     </div>
+
+    {notice && <p className="mt-5 rounded-lg border border-line bg-white p-3 text-sm leading-5 text-ink" role="status">{notice}</p>}
 
     {status === 'loading' && <p className="mt-6 text-sm text-muted" role="status">Cargando cuenta…</p>}
     {status === 'error' && <div className="mt-6" role="alert"><p className="text-sm text-muted">No pudimos consultar tu cuenta.</p><button type="button" className="secondary-button mt-5" onClick={load}>Intentar de nuevo</button></div>}

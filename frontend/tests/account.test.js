@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { closeAccountSession, getAccountState } from '../src/extension/account.js';
+import { closeAccountSession, getAccountState, loginAccount, registerAccount } from '../src/extension/account.js';
 
 function storageArea(initial = {}) {
   const values = { ...initial };
@@ -109,6 +109,102 @@ test('P11 no cierra sesión mientras hay un análisis activo', async () => {
   globalThis.fetch = async () => { throw new Error('No debe enviar el cierre'); };
   try { await assert.rejects(closeAccountSession(), /termine el análisis/); }
   finally {
+    globalThis.chrome = originalChrome;
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('registro pendiente conserva la sesión invitada y guarda el correo pendiente', async () => {
+  const originalChrome = globalThis.chrome;
+  const originalFetch = globalThis.fetch;
+  const guest = { access_token: 'guest-token', refresh_token: 'guest-refresh', anonimo: true, expiresAt: Date.now() + 3_600_000 };
+  const local = storageArea({ authSession: guest });
+  globalThis.chrome = { storage: { local, session: storageArea() } };
+  globalThis.fetch = async (url, options) => {
+    assert.ok(url.endsWith('/cuentas'));
+    assert.equal(options.headers.Authorization, 'Bearer guest-token');
+    assert.deepEqual(JSON.parse(options.body), { correo: 'persona@ejemplo.org', contrasena: 'clave-segura' });
+    return response(200, { estado: 'pendiente_confirmacion', sesion: null, registros_incorporados: 0 });
+  };
+  try {
+    assert.deepEqual(await registerAccount('persona@ejemplo.org', 'clave-segura'), {
+      kind: 'pending_confirmation', email: 'persona@ejemplo.org',
+    });
+    assert.equal(local.values.authSession, guest);
+    assert.deepEqual(local.values.accountPendingConfirmation, { correo: 'persona@ejemplo.org' });
+  } finally {
+    globalThis.chrome = originalChrome;
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('inicio de sesión transfiere historial invitado y cambia tokens solo tras éxito', async () => {
+  const originalChrome = globalThis.chrome;
+  const originalFetch = globalThis.fetch;
+  const guest = { access_token: 'guest-token', refresh_token: 'guest-refresh', anonimo: true, expiresAt: Date.now() + 3_600_000 };
+  const local = storageArea({ authSession: guest, accountPendingConfirmation: { correo: 'persona@ejemplo.org' } });
+  const session = storageArea({ pendingSelection: { text: 'texto previo' } });
+  globalThis.chrome = { storage: { local, session } };
+  let validCredentials = false;
+  globalThis.fetch = async (url, options) => {
+    assert.ok(url.endsWith('/sesiones'));
+    assert.equal(options.headers['X-Guest-Token'], 'guest-token');
+    assert.deepEqual(JSON.parse(options.body), { correo: 'persona@ejemplo.org', contrasena: 'clave-segura' });
+    return validCredentials
+      ? response(200, { sesion: { usuario_id: 'account-id', anonimo: false, access_token: 'account-token', refresh_token: 'account-refresh', expires_in: 3600 }, registros_incorporados: 2 })
+      : response(401, { detail: { codigo: 'credenciales_invalidas', mensaje: 'Correo o contraseña incorrectos.' } });
+  };
+  try {
+    await assert.rejects(loginAccount('persona@ejemplo.org', 'clave-segura'), /Correo o contraseña incorrectos/);
+    assert.equal(local.values.authSession, guest);
+    assert.ok(local.values.accountPendingConfirmation);
+    validCredentials = true;
+    assert.deepEqual(await loginAccount('persona@ejemplo.org', 'clave-segura'), {
+      kind: 'account', email: 'persona@ejemplo.org', transferred: 2, guestHistorySkipped: false,
+    });
+    assert.equal(local.values.authSession.access_token, 'account-token');
+    assert.equal(local.values.authSession.anonimo, false);
+    assert.equal(local.values.accountPendingConfirmation, undefined);
+    assert.equal(session.values.pendingSelection, undefined);
+  } finally {
+    globalThis.chrome = originalChrome;
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('registro activo y sesión invitada vencida no pierden el historial', async () => {
+  const originalChrome = globalThis.chrome;
+  const originalFetch = globalThis.fetch;
+  const guest = { access_token: 'guest-token', refresh_token: 'guest-refresh', anonimo: true, expiresAt: Date.now() + 3_600_000 };
+  const local = storageArea({ authSession: guest });
+  globalThis.chrome = { storage: { local, session: storageArea() } };
+  globalThis.fetch = async (url) => {
+    if (url.endsWith('/cuentas')) return response(200, {
+      estado: 'activa', sesion: { usuario_id: 'account-id', anonimo: false, access_token: 'account-token', refresh_token: 'account-refresh', expires_in: 3600 }, registros_incorporados: 1,
+    });
+    throw new Error('No se debe llamar a otra ruta');
+  };
+  try {
+    assert.deepEqual(await registerAccount('persona@ejemplo.org', 'clave-segura'), {
+      kind: 'account', email: 'persona@ejemplo.org', transferred: 1,
+    });
+    assert.equal(local.values.authSession.access_token, 'account-token');
+    local.values.authSession = { ...guest, expiresAt: Date.now() - 1000 };
+    globalThis.fetch = async () => response(401, { detail: { codigo: 'sesion_invalida' } });
+    await assert.rejects(loginAccount('persona@ejemplo.org', 'clave-segura'), /renovar tu sesión invitada/);
+    assert.equal(local.values.authSession.access_token, 'guest-token');
+    globalThis.fetch = async (url, options) => {
+      assert.ok(url.endsWith('/sesiones'));
+      assert.equal(options.headers['X-Guest-Token'], undefined);
+      return response(200, {
+        sesion: { usuario_id: 'account-id', anonimo: false, access_token: 'new-account-token', refresh_token: 'new-account-refresh', expires_in: 3600 },
+        registros_incorporados: 0,
+      });
+    };
+    assert.deepEqual(await loginAccount('persona@ejemplo.org', 'clave-segura', true), {
+      kind: 'account', email: 'persona@ejemplo.org', transferred: 0, guestHistorySkipped: true,
+    });
+  } finally {
     globalThis.chrome = originalChrome;
     globalThis.fetch = originalFetch;
   }
