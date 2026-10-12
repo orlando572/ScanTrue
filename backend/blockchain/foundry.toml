@@ -1,0 +1,6 @@
+[profile.default]
+src = "contracts"
+out = "out"
+cache_path = "cache"
+libs = []
+auto_detect_solc = false

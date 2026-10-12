@@ -6,6 +6,11 @@
 __pycache__/
 *.py[cod]
 
+# Local credentials and environment settings
+.env
+.env.*
+!.env.example
+
 # Jupyter-generated files
 .ipynb_checkpoints/
 
