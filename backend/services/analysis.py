@@ -9,6 +9,7 @@ from typing import Protocol
 from bilstm.entrenar_baseline import TOKEN_PATTERN
 from backend.models.bilstm import BilstmPredictor
 from backend.models.mbert import MbertTokenizer
+from backend.services.text_cleaning import clean_news_text
 from backend.schemas.analysis import (
     AnalysisRequest,
     AnalysisResponse,
@@ -68,7 +69,7 @@ class AnalysisService:
         return text, truncated
 
     def analyze(self, payload: AnalysisRequest) -> AnalysisOutcome:
-        text = payload.texto.strip()
+        text = clean_news_text(payload.texto)
         if not text:
             raise InvalidAnalysisInput(
                 "texto_vacio",
@@ -76,15 +77,7 @@ class AnalysisService:
                 "Envía el cuerpo de la noticia en el campo 'texto'.",
             )
 
-        title = (payload.titulo or "").strip()
-        body_tokens = self.predictor.tokenize(text)
-        title_tokens = self.predictor.tokenize(title)
-        title_already_present = (
-            bool(title_tokens) and body_tokens[: len(title_tokens)] == title_tokens
-        )
-        model_input = (
-            f"{title}. {text}" if title_tokens and not title_already_present else text
-        )
+        model_input = text
         mbert_predictor = self.mbert_predictor
         mbert_prepare_failed = False
         if self.mbert_text_policy is not None:
@@ -201,4 +194,6 @@ class AnalysisService:
             comparacion=comparison,
             nota="Las probabilidades son salidas experimentales de clasificadores; no verifican hechos.",
         )
-        return AnalysisOutcome(response=response, text=model_input, truncated=truncated)
+        return AnalysisOutcome(
+            response=response, text=model_input, truncated=truncated,
+        )

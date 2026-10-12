@@ -2,12 +2,13 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AnalysisRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     texto: str = Field(description="Texto de la noticia que se analizará")
-    titulo: str | None = Field(default=None, max_length=200, description="Titular opcional")
     url: str | None = Field(default=None, max_length=2048, description="URL opcional de referencia")
 
 

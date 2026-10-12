@@ -94,7 +94,6 @@ def analyze(
         ) from error
     analysis_id = repository.create_analysis(
         user_id=UUID(user.id),
-        title=(payload.titulo or "").strip() or None,
         url=(payload.url or "").strip() or None,
         text=outcome.text,
         text_hash=sha256(outcome.text.encode("utf-8")).hexdigest(),

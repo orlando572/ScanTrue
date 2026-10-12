@@ -18,7 +18,6 @@ class CreatedAnalysis(AnalysisResponse):
 class HistoryBase(BaseModel):
     id: UUID
     fecha: datetime
-    titulo: str | None
     url: str | None
     hash_texto: str
     comparacion: Literal["coinciden", "discrepan", "no_disponible"]

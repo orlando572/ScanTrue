@@ -22,8 +22,8 @@ También se necesitan `forge` y `anvil` de Foundry y el compilador `solc`
 
 ## 2. Supabase y configuración local
 
-Crea un proyecto Supabase y aplica en orden los cuatro archivos
-`backend/db/migrations/001_*.sql` a `004_*.sql`. Habilita el acceso anónimo y
+Crea un proyecto Supabase y aplica en orden los cinco archivos
+`backend/db/migrations/001_*.sql` a `005_*.sql`. Habilita el acceso anónimo y
 el proveedor de correo y contraseña en Auth. Copia `backend/.env.example` a
 `backend/.env` y completa la URL, la clave publicable y la clave secreta de
 Supabase. El archivo `.env` y las claves nunca deben subirse a Git.

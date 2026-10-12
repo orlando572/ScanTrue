@@ -11,7 +11,7 @@ from backend.schemas.history import HistoryListRecord, HistoryRecord
 
 
 SELECT_HISTORY_BASE = (
-    "id,fecha,titulo,url,hash_texto,resultado_unificado,comparacion,estado_blockchain,"
+    "id,fecha,url,hash_texto,resultado_unificado,comparacion,estado_blockchain,"
     "hash_transaccion,resultados_modelo(modelo,version,clase,"
     "probabilidad_falsa,tokens_leidos)"
 )
@@ -66,7 +66,6 @@ class SupabaseRepository:
     def create_analysis(
         self,
         user_id: UUID,
-        title: str | None,
         url: str | None,
         text: str,
         text_hash: str,
@@ -85,11 +84,10 @@ class SupabaseRepository:
         ]
         value = self._request(
             "POST",
-            "rpc/crear_analisis_completo",
+            "rpc/crear_analisis_texto_unico",
             admin=True,
             body={
                 "p_usuario_id": str(user_id),
-                "p_titulo": title,
                 "p_url": url,
                 "p_texto": text,
                 "p_hash_texto": text_hash,
