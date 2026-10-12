@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "ScanTrue",
+  "version": "0.1.0",
+  "description": "Análisis de fragmentos de texto seleccionados en páginas web.",
+  "action": {
+    "default_title": "ScanTrue",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "extension/service-worker.js"
+  },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["http://127.0.0.1:8000/*"]
+}

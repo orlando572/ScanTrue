@@ -1,0 +1,888 @@
+{
+  "matrix_status_sha256": "06a9afe64a7418c72e5514cd6cf4f00b97c81dda7d252202e2e505dd3e03d960",
+  "scope": "training and validation only",
+  "aggregate": [
+    {
+      "arm": "main",
+      "length": 128,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mean_macro_f1": 0.8828949997170921,
+      "stdev_macro_f1": 0.012655541155375956,
+      "mean_false_alarm_rate": 0.08239700374531835,
+      "mean_seconds": 161.59666666666666,
+      "max_cuda_peak_gb": 3.383
+    },
+    {
+      "arm": "main",
+      "length": 192,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mean_macro_f1": 0.8920700379914225,
+      "stdev_macro_f1": 0.021168630849439526,
+      "mean_false_alarm_rate": 0.08239700374531835,
+      "mean_seconds": 162.69666666666666,
+      "max_cuda_peak_gb": 3.385
+    },
+    {
+      "arm": "main",
+      "length": 256,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mean_macro_f1": 0.9116545250938315,
+      "stdev_macro_f1": 0.013435757280536493,
+      "mean_false_alarm_rate": 0.06741573033707865,
+      "mean_seconds": 162.85666666666665,
+      "max_cuda_peak_gb": 3.406
+    },
+    {
+      "arm": "main",
+      "length": 512,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mean_macro_f1": 0.9219884828992531,
+      "stdev_macro_f1": 0.01433204137311961,
+      "mean_false_alarm_rate": 0.0449438202247191,
+      "mean_seconds": 444.95,
+      "max_cuda_peak_gb": 3.396
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 128,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mean_macro_f1": 0.8596011548893028,
+      "stdev_macro_f1": 0.01568392128495411,
+      "mean_false_alarm_rate": 0.11610486891385767,
+      "mean_seconds": 80.15666666666667,
+      "max_cuda_peak_gb": 3.38
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 192,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mean_macro_f1": 0.876140960491298,
+      "stdev_macro_f1": 0.005434912118890875,
+      "mean_false_alarm_rate": 0.07865168539325842,
+      "mean_seconds": 67.35,
+      "max_cuda_peak_gb": 3.385
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 256,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mean_macro_f1": 0.8907083838138302,
+      "stdev_macro_f1": 0.012787690766475696,
+      "mean_false_alarm_rate": 0.07116104868913857,
+      "mean_seconds": 59.95,
+      "max_cuda_peak_gb": 3.406
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 512,
+      "seeds": [
+        42,
+        43,
+        44
+      ],
+      "mean_macro_f1": 0.8985213864394711,
+      "stdev_macro_f1": 0.02701412085078649,
+      "mean_false_alarm_rate": 0.05243445692883895,
+      "mean_seconds": 131.06,
+      "max_cuda_peak_gb": 3.396
+    }
+  ],
+  "runs": [
+    {
+      "arm": "main",
+      "length": 128,
+      "seed": 42,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len128_seed42_20261008-172222_2f3f6967",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.8690476190476191,
+        "accuracy": 0.8787878787878788,
+        "balanced_accuracy": 0.8920825712045989,
+        "false_alarm_rate_real_to_fake": 0.14606741573033707,
+        "real_precision": 0.9620253164556962,
+        "real_recall": 0.8539325842696629,
+        "real_f1": 0.9047619047619048,
+        "fake_precision": 0.7547169811320755,
+        "fake_recall": 0.9302325581395349,
+        "fake_f1": 0.8333333333333334
+      },
+      "confusion": [
+        [
+          76,
+          13
+        ],
+        [
+          3,
+          40
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len128_seed42_20261008-172222_2f3f6967\\checkpoints\\checkpoint-175",
+      "wall_seconds": 164.91,
+      "cuda_peak_gb": 3.383
+    },
+    {
+      "arm": "main",
+      "length": 128,
+      "seed": 43,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len128_seed43_20261008-172532_f52b0e34",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.8857751447780071,
+        "accuracy": 0.9015151515151515,
+        "balanced_accuracy": 0.8788868565455971,
+        "false_alarm_rate_real_to_fake": 0.056179775280898875,
+        "real_precision": 0.9130434782608695,
+        "real_recall": 0.9438202247191011,
+        "real_f1": 0.9281767955801105,
+        "fake_precision": 0.875,
+        "fake_recall": 0.813953488372093,
+        "fake_f1": 0.8433734939759037
+      },
+      "confusion": [
+        [
+          84,
+          5
+        ],
+        [
+          8,
+          35
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len128_seed43_20261008-172532_f52b0e34\\checkpoints\\checkpoint-350",
+      "wall_seconds": 159.56,
+      "cuda_peak_gb": 3.381
+    },
+    {
+      "arm": "main",
+      "length": 128,
+      "seed": 44,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len128_seed44_20261008-172831_21e9b1db",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.89386223532565,
+        "accuracy": 0.9090909090909091,
+        "balanced_accuracy": 0.884504834073687,
+        "false_alarm_rate_real_to_fake": 0.0449438202247191,
+        "real_precision": 0.9139784946236559,
+        "real_recall": 0.9550561797752809,
+        "real_f1": 0.9340659340659341,
+        "fake_precision": 0.8974358974358975,
+        "fake_recall": 0.813953488372093,
+        "fake_f1": 0.8536585365853658
+      },
+      "confusion": [
+        [
+          85,
+          4
+        ],
+        [
+          8,
+          35
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len128_seed44_20261008-172831_21e9b1db\\checkpoints\\checkpoint-350",
+      "wall_seconds": 160.32,
+      "cuda_peak_gb": 3.38
+    },
+    {
+      "arm": "main",
+      "length": 192,
+      "seed": 42,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len192_seed42_20261008-173130_4a5b42b4",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.8728731942215089,
+        "accuracy": 0.8863636363636364,
+        "balanced_accuracy": 0.8796707603867259,
+        "false_alarm_rate_real_to_fake": 0.10112359550561797,
+        "real_precision": 0.9302325581395349,
+        "real_recall": 0.898876404494382,
+        "real_f1": 0.9142857142857143,
+        "fake_precision": 0.8043478260869565,
+        "fake_recall": 0.8604651162790697,
+        "fake_f1": 0.8314606741573034
+      },
+      "confusion": [
+        [
+          80,
+          9
+        ],
+        [
+          6,
+          37
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len192_seed42_20261008-173130_4a5b42b4\\checkpoints\\checkpoint-350",
+      "wall_seconds": 168.03,
+      "cuda_peak_gb": 3.385
+    },
+    {
+      "arm": "main",
+      "length": 192,
+      "seed": 43,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len192_seed43_20261008-173438_3f2a8ea2",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.9147727272727273,
+        "accuracy": 0.9242424242424242,
+        "balanced_accuracy": 0.9197805069244839,
+        "false_alarm_rate_real_to_fake": 0.06741573033707865,
+        "real_precision": 0.9540229885057471,
+        "real_recall": 0.9325842696629213,
+        "real_f1": 0.9431818181818182,
+        "fake_precision": 0.8666666666666667,
+        "fake_recall": 0.9069767441860465,
+        "fake_f1": 0.8863636363636364
+      },
+      "confusion": [
+        [
+          83,
+          6
+        ],
+        [
+          4,
+          39
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len192_seed43_20261008-173438_3f2a8ea2\\checkpoints\\checkpoint-525",
+      "wall_seconds": 162.6,
+      "cuda_peak_gb": 3.385
+    },
+    {
+      "arm": "main",
+      "length": 192,
+      "seed": 44,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len192_seed44_20261008-173740_de00cca9",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.8885641924800312,
+        "accuracy": 0.9015151515151515,
+        "balanced_accuracy": 0.8909067154429057,
+        "false_alarm_rate_real_to_fake": 0.07865168539325842,
+        "real_precision": 0.9318181818181818,
+        "real_recall": 0.9213483146067416,
+        "real_f1": 0.9265536723163842,
+        "fake_precision": 0.8409090909090909,
+        "fake_recall": 0.8604651162790697,
+        "fake_f1": 0.8505747126436781
+      },
+      "confusion": [
+        [
+          82,
+          7
+        ],
+        [
+          6,
+          37
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len192_seed44_20261008-173740_de00cca9\\checkpoints\\checkpoint-350",
+      "wall_seconds": 157.46,
+      "cuda_peak_gb": 3.385
+    },
+    {
+      "arm": "main",
+      "length": 256,
+      "seed": 42,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len256_seed42_20261008-174038_520584f0",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.924537889855809,
+        "accuracy": 0.9318181818181818,
+        "balanced_accuracy": 0.9374183433498824,
+        "false_alarm_rate_real_to_fake": 0.07865168539325842,
+        "real_precision": 0.9761904761904762,
+        "real_recall": 0.9213483146067416,
+        "real_f1": 0.9479768786127167,
+        "fake_precision": 0.8541666666666666,
+        "fake_recall": 0.9534883720930233,
+        "fake_f1": 0.9010989010989011
+      },
+      "confusion": [
+        [
+          82,
+          7
+        ],
+        [
+          2,
+          41
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len256_seed42_20261008-174038_520584f0\\checkpoints\\checkpoint-350",
+      "wall_seconds": 168.15,
+      "cuda_peak_gb": 3.406
+    },
+    {
+      "arm": "main",
+      "length": 256,
+      "seed": 43,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len256_seed43_20261008-174345_5498cbb8",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.9126984126984127,
+        "accuracy": 0.9242424242424242,
+        "balanced_accuracy": 0.9077606480271754,
+        "false_alarm_rate_real_to_fake": 0.0449438202247191,
+        "real_precision": 0.9340659340659341,
+        "real_recall": 0.9550561797752809,
+        "real_f1": 0.9444444444444444,
+        "fake_precision": 0.9024390243902439,
+        "fake_recall": 0.8604651162790697,
+        "fake_f1": 0.8809523809523809
+      },
+      "confusion": [
+        [
+          85,
+          4
+        ],
+        [
+          6,
+          37
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len256_seed43_20261008-174345_5498cbb8\\checkpoints\\checkpoint-525",
+      "wall_seconds": 157.79,
+      "cuda_peak_gb": 3.406
+    },
+    {
+      "arm": "main",
+      "length": 256,
+      "seed": 44,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len256_seed44_20261008-174641_bd6c22a5",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.8977272727272727,
+        "accuracy": 0.9090909090909091,
+        "balanced_accuracy": 0.9025346224196499,
+        "false_alarm_rate_real_to_fake": 0.07865168539325842,
+        "real_precision": 0.9425287356321839,
+        "real_recall": 0.9213483146067416,
+        "real_f1": 0.9318181818181818,
+        "fake_precision": 0.8444444444444444,
+        "fake_recall": 0.8837209302325582,
+        "fake_f1": 0.8636363636363636
+      },
+      "confusion": [
+        [
+          82,
+          7
+        ],
+        [
+          5,
+          38
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len256_seed44_20261008-174641_bd6c22a5\\checkpoints\\checkpoint-525",
+      "wall_seconds": 162.63,
+      "cuda_peak_gb": 3.4
+    },
+    {
+      "arm": "main",
+      "length": 512,
+      "seed": 42,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len512_seed42_20261008-174942_e351bfac",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.9126984126984127,
+        "accuracy": 0.9242424242424242,
+        "balanced_accuracy": 0.9077606480271754,
+        "false_alarm_rate_real_to_fake": 0.0449438202247191,
+        "real_precision": 0.9340659340659341,
+        "real_recall": 0.9550561797752809,
+        "real_f1": 0.9444444444444444,
+        "fake_precision": 0.9024390243902439,
+        "fake_recall": 0.8604651162790697,
+        "fake_f1": 0.8809523809523809
+      },
+      "confusion": [
+        [
+          85,
+          4
+        ],
+        [
+          6,
+          37
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len512_seed42_20261008-174942_e351bfac\\checkpoints\\checkpoint-350",
+      "wall_seconds": 455.94,
+      "cuda_peak_gb": 3.396
+    },
+    {
+      "arm": "main",
+      "length": 512,
+      "seed": 43,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len512_seed43_20261008-175737_516f4097",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.9384943087266191,
+        "accuracy": 0.946969696969697,
+        "balanced_accuracy": 0.9306245100600993,
+        "false_alarm_rate_real_to_fake": 0.02247191011235955,
+        "real_precision": 0.9456521739130435,
+        "real_recall": 0.9775280898876404,
+        "real_f1": 0.9613259668508287,
+        "fake_precision": 0.95,
+        "fake_recall": 0.8837209302325582,
+        "fake_f1": 0.9156626506024096
+      },
+      "confusion": [
+        [
+          87,
+          2
+        ],
+        [
+          5,
+          38
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len512_seed43_20261008-175737_516f4097\\checkpoints\\checkpoint-525",
+      "wall_seconds": 446.62,
+      "cuda_peak_gb": 3.394
+    },
+    {
+      "arm": "main",
+      "length": 512,
+      "seed": 44,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len512_seed44_20261008-180518_64a3bd04",
+      "train_count": 2788,
+      "validation": {
+        "macro_f1": 0.9147727272727273,
+        "accuracy": 0.9242424242424242,
+        "balanced_accuracy": 0.9197805069244839,
+        "false_alarm_rate_real_to_fake": 0.06741573033707865,
+        "real_precision": 0.9540229885057471,
+        "real_recall": 0.9325842696629213,
+        "real_f1": 0.9431818181818182,
+        "fake_precision": 0.8666666666666667,
+        "fake_recall": 0.9069767441860465,
+        "fake_f1": 0.8863636363636364
+      },
+      "confusion": [
+        [
+          83,
+          6
+        ],
+        [
+          4,
+          39
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_main_len512_seed44_20261008-180518_64a3bd04\\checkpoints\\checkpoint-525",
+      "wall_seconds": 432.29,
+      "cuda_peak_gb": 3.393
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 128,
+      "seed": 42,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len128_seed42_20261008-181250_158fd4f6",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.8728731942215089,
+        "accuracy": 0.8863636363636364,
+        "balanced_accuracy": 0.8796707603867259,
+        "false_alarm_rate_real_to_fake": 0.10112359550561797,
+        "real_precision": 0.9302325581395349,
+        "real_recall": 0.898876404494382,
+        "real_f1": 0.9142857142857143,
+        "fake_precision": 0.8043478260869565,
+        "fake_recall": 0.8604651162790697,
+        "fake_f1": 0.8314606741573034
+      },
+      "confusion": [
+        [
+          80,
+          9
+        ],
+        [
+          6,
+          37
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len128_seed42_20261008-181250_158fd4f6\\checkpoints\\checkpoint-216",
+      "wall_seconds": 75.66,
+      "cuda_peak_gb": 3.38
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 128,
+      "seed": 43,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len128_seed43_20261008-181424_08d7cf33",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.8636363636363636,
+        "accuracy": 0.8787878787878788,
+        "balanced_accuracy": 0.8680428534099818,
+        "false_alarm_rate_real_to_fake": 0.10112359550561797,
+        "real_precision": 0.9195402298850575,
+        "real_recall": 0.898876404494382,
+        "real_f1": 0.9090909090909091,
+        "fake_precision": 0.8,
+        "fake_recall": 0.8372093023255814,
+        "fake_f1": 0.8181818181818182
+      },
+      "confusion": [
+        [
+          80,
+          9
+        ],
+        [
+          7,
+          36
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len128_seed43_20261008-181424_08d7cf33\\checkpoints\\checkpoint-144",
+      "wall_seconds": 82.21,
+      "cuda_peak_gb": 3.38
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 128,
+      "seed": 44,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len128_seed44_20261008-181605_31884516",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.8422939068100358,
+        "accuracy": 0.8560606060606061,
+        "balanced_accuracy": 0.8571988502743664,
+        "false_alarm_rate_real_to_fake": 0.14606741573033707,
+        "real_precision": 0.926829268292683,
+        "real_recall": 0.8539325842696629,
+        "real_f1": 0.8888888888888888,
+        "fake_precision": 0.74,
+        "fake_recall": 0.8604651162790697,
+        "fake_f1": 0.7956989247311828
+      },
+      "confusion": [
+        [
+          76,
+          13
+        ],
+        [
+          6,
+          37
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len128_seed44_20261008-181605_31884516\\checkpoints\\checkpoint-144",
+      "wall_seconds": 82.6,
+      "cuda_peak_gb": 3.38
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 192,
+      "seed": 42,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len192_seed42_20261008-181749_23fc6042",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.8792788084661616,
+        "accuracy": 0.8939393939393939,
+        "balanced_accuracy": 0.8792788084661616,
+        "false_alarm_rate_real_to_fake": 0.07865168539325842,
+        "real_precision": 0.9213483146067416,
+        "real_recall": 0.9213483146067416,
+        "real_f1": 0.9213483146067416,
+        "fake_precision": 0.8372093023255814,
+        "fake_recall": 0.8372093023255814,
+        "fake_f1": 0.8372093023255814
+      },
+      "confusion": [
+        [
+          82,
+          7
+        ],
+        [
+          7,
+          36
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len192_seed42_20261008-181749_23fc6042\\checkpoints\\checkpoint-144",
+      "wall_seconds": 65.96,
+      "cuda_peak_gb": 3.385
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 192,
+      "seed": 43,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len192_seed43_20261008-181916_11df75a8",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.8792788084661616,
+        "accuracy": 0.8939393939393939,
+        "balanced_accuracy": 0.8792788084661616,
+        "false_alarm_rate_real_to_fake": 0.07865168539325842,
+        "real_precision": 0.9213483146067416,
+        "real_recall": 0.9213483146067416,
+        "real_f1": 0.9213483146067416,
+        "fake_precision": 0.8372093023255814,
+        "fake_recall": 0.8372093023255814,
+        "fake_f1": 0.8372093023255814
+      },
+      "confusion": [
+        [
+          82,
+          7
+        ],
+        [
+          7,
+          36
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len192_seed43_20261008-181916_11df75a8\\checkpoints\\checkpoint-216",
+      "wall_seconds": 81.98,
+      "cuda_peak_gb": 3.385
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 192,
+      "seed": 44,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len192_seed44_20261008-182052_ebd3d25c",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.8698652645415708,
+        "accuracy": 0.8863636363636364,
+        "balanced_accuracy": 0.8676509014894174,
+        "false_alarm_rate_real_to_fake": 0.07865168539325842,
+        "real_precision": 0.9111111111111111,
+        "real_recall": 0.9213483146067416,
+        "real_f1": 0.9162011173184358,
+        "fake_precision": 0.8333333333333334,
+        "fake_recall": 0.813953488372093,
+        "fake_f1": 0.8235294117647058
+      },
+      "confusion": [
+        [
+          82,
+          7
+        ],
+        [
+          8,
+          35
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len192_seed44_20261008-182052_ebd3d25c\\checkpoints\\checkpoint-216",
+      "wall_seconds": 54.11,
+      "cuda_peak_gb": 3.385
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 256,
+      "seed": 42,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len256_seed42_20261008-182200_1333021f",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.8777777777777778,
+        "accuracy": 0.8939393939393939,
+        "balanced_accuracy": 0.8732688790175072,
+        "false_alarm_rate_real_to_fake": 0.06741573033707865,
+        "real_precision": 0.9120879120879121,
+        "real_recall": 0.9325842696629213,
+        "real_f1": 0.9222222222222223,
+        "fake_precision": 0.8536585365853658,
+        "fake_recall": 0.813953488372093,
+        "fake_f1": 0.8333333333333334
+      },
+      "confusion": [
+        [
+          83,
+          6
+        ],
+        [
+          8,
+          35
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len256_seed42_20261008-182200_1333021f\\checkpoints\\checkpoint-72",
+      "wall_seconds": 59.65,
+      "cuda_peak_gb": 3.406
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 256,
+      "seed": 43,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len256_seed43_20261008-182313_8bd9d2c5",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.9033481994275445,
+        "accuracy": 0.9166666666666666,
+        "balanced_accuracy": 0.8961327410504312,
+        "false_alarm_rate_real_to_fake": 0.0449438202247191,
+        "real_precision": 0.9239130434782609,
+        "real_recall": 0.9550561797752809,
+        "real_f1": 0.9392265193370166,
+        "fake_precision": 0.9,
+        "fake_recall": 0.8372093023255814,
+        "fake_f1": 0.8674698795180723
+      },
+      "confusion": [
+        [
+          85,
+          4
+        ],
+        [
+          7,
+          36
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len256_seed43_20261008-182313_8bd9d2c5\\checkpoints\\checkpoint-144",
+      "wall_seconds": 59.2,
+      "cuda_peak_gb": 3.406
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 256,
+      "seed": 44,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len256_seed44_20261008-182426_657ab7e0",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.8909991742361685,
+        "accuracy": 0.9015151515151515,
+        "balanced_accuracy": 0.9029265743402142,
+        "false_alarm_rate_real_to_fake": 0.10112359550561797,
+        "real_precision": 0.9523809523809523,
+        "real_recall": 0.898876404494382,
+        "real_f1": 0.9248554913294798,
+        "fake_precision": 0.8125,
+        "fake_recall": 0.9069767441860465,
+        "fake_f1": 0.8571428571428571
+      },
+      "confusion": [
+        [
+          80,
+          9
+        ],
+        [
+          4,
+          39
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len256_seed44_20261008-182426_657ab7e0\\checkpoints\\checkpoint-216",
+      "wall_seconds": 61.0,
+      "cuda_peak_gb": 3.406
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 512,
+      "seed": 42,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len512_seed42_20261008-182540_f7d2dc0e",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.8678347934918649,
+        "accuracy": 0.8787878787878788,
+        "balanced_accuracy": 0.8860726417559446,
+        "false_alarm_rate_real_to_fake": 0.1348314606741573,
+        "real_precision": 0.9506172839506173,
+        "real_recall": 0.8651685393258427,
+        "real_f1": 0.9058823529411765,
+        "fake_precision": 0.7647058823529411,
+        "fake_recall": 0.9069767441860465,
+        "fake_f1": 0.8297872340425532
+      },
+      "confusion": [
+        [
+          77,
+          12
+        ],
+        [
+          4,
+          39
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len512_seed42_20261008-182540_f7d2dc0e\\checkpoints\\checkpoint-216",
+      "wall_seconds": 135.61,
+      "cuda_peak_gb": 3.396
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 512,
+      "seed": 43,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len512_seed43_20261008-182810_a8bc378b",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.9187136503592199,
+        "accuracy": 0.9318181818181818,
+        "balanced_accuracy": 0.9013587666579566,
+        "false_alarm_rate_real_to_fake": 0.011235955056179775,
+        "real_precision": 0.9166666666666666,
+        "real_recall": 0.9887640449438202,
+        "real_f1": 0.9513513513513514,
+        "fake_precision": 0.9722222222222222,
+        "fake_recall": 0.813953488372093,
+        "fake_f1": 0.8860759493670886
+      },
+      "confusion": [
+        [
+          88,
+          1
+        ],
+        [
+          8,
+          35
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len512_seed43_20261008-182810_a8bc378b\\checkpoints\\checkpoint-216",
+      "wall_seconds": 127.06,
+      "cuda_peak_gb": 3.396
+    },
+    {
+      "arm": "no_usmsc",
+      "length": 512,
+      "seed": 44,
+      "path": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len512_seed44_20261008-183031_6cb3a970",
+      "train_count": 1141,
+      "validation": {
+        "macro_f1": 0.9090157154673284,
+        "accuracy": 0.9242424242424242,
+        "balanced_accuracy": 0.8897308596812123,
+        "false_alarm_rate_real_to_fake": 0.011235955056179775,
+        "real_precision": 0.9072164948453608,
+        "real_recall": 0.9887640449438202,
+        "real_f1": 0.946236559139785,
+        "fake_precision": 0.9714285714285714,
+        "fake_recall": 0.7906976744186046,
+        "fake_f1": 0.8717948717948718
+      },
+      "confusion": [
+        [
+          88,
+          1
+        ],
+        [
+          9,
+          34
+        ]
+      ],
+      "best_checkpoint": "D:\\ScanTrue\\mBERT\\runs\\BILSTM_ES_no_usmsc_len512_seed44_20261008-183031_6cb3a970\\checkpoints\\checkpoint-144",
+      "wall_seconds": 130.51,
+      "cuda_peak_gb": 3.394
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "prueba/all": {
+    "method": "paired source-domain bootstrap of macro F1 difference, new minus E1",
+    "seed": 42,
+    "requested": 1000,
+    "valid": 1000,
+    "groups": 50,
+    "point_difference": 0.6650929865848924,
+    "difference_percentile_95": [
+      0.4088515640324505,
+      0.8098463308214292
+    ]
+  },
+  "prueba/no_known_old_train_or_validation_exposure": {
+    "method": "paired source-domain bootstrap of macro F1 difference, new minus E1",
+    "seed": 42,
+    "requested": 1000,
+    "valid": 657,
+    "groups": 20,
+    "point_difference": 0.7000582750582751,
+    "difference_percentile_95": [
+      0.635625681450884,
+      0.8632079377611371
+    ]
+  },
+  "externa/all": {
+    "method": "paired source-domain bootstrap of macro F1 difference, new minus E1",
+    "seed": 42,
+    "requested": 1000,
+    "valid": 1000,
+    "groups": 211,
+    "point_difference": 0.2809690251554804,
+    "difference_percentile_95": [
+      0.23023720077778592,
+      0.31989760862243305
+    ]
+  },
+  "externa/no_known_old_train_or_validation_exposure": {
+    "method": "paired source-domain bootstrap of macro F1 difference, new minus E1",
+    "seed": 42,
+    "requested": 1000,
+    "valid": 1000,
+    "groups": 209,
+    "point_difference": 0.2822800282821529,
+    "difference_percentile_95": [
+      0.23515428946370157,
+      0.3244126378027407
+    ]
+  }
+}

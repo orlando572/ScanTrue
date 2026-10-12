@@ -1,0 +1,29 @@
+{
+  "best_epoch": 8,
+  "epochs_ran": 12,
+  "validation_best": {
+    "n": 170,
+    "accuracy": 0.7647058823529411,
+    "precision_falsa": 0.7411764705882353,
+    "recall_falsa": 0.7777777777777778,
+    "f1_falsa": 0.7590361445783133,
+    "f1_macro": 0.7645755435535244,
+    "matriz_confusion_orden_0_falsa_1_real": [
+      [
+        63,
+        18
+      ],
+      [
+        22,
+        67
+      ]
+    ]
+  },
+  "coverage": {
+    "vocabulario": 29998,
+    "vectores_encontrados": 27716,
+    "cobertura": 0.9239282618841256,
+    "lineas_invalidas_relevantes": 0,
+    "sin_vector": 2282
+  }
+}
