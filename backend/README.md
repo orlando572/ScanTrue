@@ -268,10 +268,10 @@ El mínimo operativo de 100 tokens se exige a cada modelo disponible con su
 propio tokenizador. mBERT recibe hasta 512 tokens, incluidos sus tokens
 especiales; si el texto excede ese límite, la API conserva solo el prefijo
 analizado y responde `texto_recortado: true`. BiLSTM lee hasta sus primeros 192
-tokens. El historial y `hash_texto` guardan ese mismo prefijo. Si falta el tokenizador mBERT, la
-degradación usa solo BiLSTM y guarda sus primeros 192 tokens. El mínimo es una
-decisión operativa, no una mejora de precisión demostrada. La nota de cambio
-para frontend está en [CAMBIO_CONTRATO_MBERT.md](CAMBIO_CONTRATO_MBERT.md).
+tokens. El historial y `hash_texto` guardan ese mismo prefijo. Si falta el
+tokenizador mBERT, la degradación usa solo BiLSTM y guarda sus primeros 192
+tokens. El mínimo es una decisión operativa, no una mejora de precisión
+demostrada.
 
 ## Verificación operativa
 
