@@ -1,5 +1,8 @@
-html, body, #root { margin: 0; min-width: 400px; min-height: 1px; }
-body { font-family: Arial, sans-serif; }
-.popup-fallback { box-sizing: border-box; width: 400px; padding: 20px; color: #17324d; background: #f3f7f7; }
-.popup-fallback strong { font-size: 18px; }
-.popup-fallback p { margin: 12px 0 0; font-size: 13px; line-height: 1.5; }
+html, body, #root { margin: 0; min-height: 1px; background: #05080f; }
+/* El popup necesita un ancho mínimo; el panel lateral se adapta al ancho que le dé Chrome. */
+body:not(.in-panel), body:not(.in-panel) #root { min-width: 400px; }
+.in-panel .popup-fallback { width: auto; }
+body { font-family: 'Courier New', monospace; }
+.popup-fallback { box-sizing: border-box; width: 400px; padding: 20px; color: #e6f4ff; background: #05080f; border-top: 2px solid #38e1ff; }
+.popup-fallback strong { font-size: 16px; letter-spacing: .12em; text-transform: uppercase; color: #38e1ff; }
+.popup-fallback p { margin: 12px 0 0; font-size: 13px; line-height: 1.5; color: #8fa8c4; }

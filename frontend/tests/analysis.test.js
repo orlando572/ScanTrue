@@ -52,7 +52,8 @@ test('Analizar inicia una sola solicitud y guarda el resultado recibido', async 
     const completed = await waitForStatus('completed');
     assert.equal(completed.result.id, 'resultado-1');
     assert.equal(analysisCalls, 1);
-    assert.equal(session.values.pendingSelection, undefined);
+    // La selección se conserva tras analizar para poder editarla y volver a analizarla.
+    assert.equal(session.values.pendingSelection.text, 'Texto elegido');
     assert.equal(local.values.authSession.access_token, 'token');
   } finally {
     globalThis.chrome = originalChrome;

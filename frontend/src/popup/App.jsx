@@ -9,57 +9,57 @@ import MetricsScreen from './screens/MetricsScreen.jsx';
 import AccountScreen from './screens/AccountScreen.jsx';
 import RegisterScreen from './screens/RegisterScreen.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
+import ScreenHeader from './components/ScreenHeader.jsx';
+import { CoreGrid, LedStrip, Radar, SegmentTrack } from './components/HudDecor.jsx';
+import { countWords, meterState, presentFragments } from './selection-presentation.js';
+import { presentServices } from './service-presentation.js';
 import scanTrueMark from './assets/scantrue-mark.svg';
+
+// Misma App en el panel lateral (sidepanel.html) y en el popup (popup.html).
+const inPanel = typeof document !== 'undefined' && document.body.classList.contains('in-panel');
+
+// Tiempo que se muestran los avisos que se cierran solos (la barra de cuenta atrás usa el mismo valor).
+const NOTICE_MS = 6000;
 
 const titles = { P01: 'Inicio', P02: 'Texto para analizar', P04: 'Analizando texto', P05: 'Resultado del análisis', P06: 'Desglose por modelo', P07: 'Historial de análisis', P08: 'Análisis anterior', P09: 'Pruebas del modelo', P11: 'Cuenta', P12: 'Crear cuenta', P13: 'Iniciar sesión' };
 
 function Icon({ name }) {
   const paths = {
-    history: <><path d="M3 12a9 9 0 1 0 2.6-6.4M3 4v4h4" /><path d="M12 7v5l3 2" /></>,
+    history: <><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4" /><path d="M12 7v5l3 2" /></>,
     metrics: <><path d="M3 20h18" /><path d="M5 17v-5h3v5M10.5 17V5h3v12M16 17V9h3v8" /></>,
-    account: <><circle cx="12" cy="8" r="3.5" /><path d="M5 21a7 7 0 0 1 14 0" /></>,
+    account: <><path d="M12 3l4 4-4 4-4-4z" /><path d="M4 21v-3l4-4h8l4 4v3" /></>,
     back: <path d="m14 5-7 7 7 7" />,
   };
-  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>;
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square" strokeLinejoin="miter">{paths[name]}</svg>;
 }
 
 function Brand({ onHome, disabled }) {
-  return <button type="button" className="flex items-center gap-2.5 rounded-[10px] text-left text-ink hover:bg-accent-soft disabled:cursor-wait disabled:opacity-60" aria-label="ScanTrue, ir al inicio" title="Ir al inicio" onClick={onHome} disabled={disabled}>
-    <img src={scanTrueMark} alt="" className="size-9" />
-    <span className="text-[18px] font-semibold tracking-[-0.03em]">Scan<span className="text-accent">True</span></span>
+  return <button type="button" className="brand-button" aria-label="ScanTrue, ir al inicio" title="Ir al inicio" onClick={onHome} disabled={disabled}>
+    <img src={scanTrueMark} alt="" className="brand-mark" />
+    <span aria-hidden="true">
+      <span className="brand-word">SCAN<i>//</i><em>TRUE</em></span>
+      <span className="brand-sub">Análisis de noticias</span>
+    </span>
   </button>;
 }
 
-function DocumentIllustration() {
-  return <div className="document-art" aria-hidden="true">
-    <svg viewBox="0 0 112 128" fill="none" className="h-[92px] w-[81px]">
-      <path d="M16 2h55l25 25v96a3 3 0 0 1-3 3H16a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3Z" fill="#F8FBFB" stroke="#A9BEC5" strokeWidth="2.5" />
-      <path d="M71 2v22a3 3 0 0 0 3 3h22" fill="#E3EBEE" stroke="#A9BEC5" strokeWidth="2.5" strokeLinejoin="round" />
-      <rect x="26" y="35" width="25" height="22" rx="2" fill="#CEDDE1" />
-      <path d="M59 39h23M59 47h23M26 66h56" stroke="#BCCDD2" strokeWidth="5" strokeLinecap="round" />
-      <rect x="24" y="76" width="63" height="24" rx="4" fill="#CFEFEB" />
-      <path d="M29 83h49M29 92h41" stroke="#087D77" strokeWidth="5" strokeLinecap="round" />
-      <path d="M26 111h43" stroke="#BCCDD2" strokeWidth="5" strokeLinecap="round" />
-    </svg>
-  </div>;
-}
+const serviceLabels = {
+  checking: 'Comprobando servicio…',
+  available: 'Servicio disponible',
+  degraded: 'Servicio parcialmente disponible',
+  unavailable: 'La API local no responde. Enciéndela en este equipo y vuelve a intentarlo.',
+  unknown: 'No se pudo confirmar el estado del servicio.',
+};
+const serviceCodes = { checking: 'Conectando…', available: 'En línea', degraded: 'Servicio limitado', unavailable: 'Sin conexión', unknown: 'Estado desconocido' };
 
-function ServiceStatus({ health, onRetry }) {
-  const labels = {
-    checking: 'Comprobando servicio…',
-    available: 'Servicio disponible',
-    degraded: 'Servicio parcialmente disponible',
-    unavailable: 'La API local no responde. Enciéndela en este equipo y vuelve a intentarlo.',
-    unknown: 'No se pudo confirmar el estado del servicio.',
-  };
-  return <footer className="border-t border-line bg-white px-5 py-1.5" role="status" aria-live="polite">
-    <div className="flex items-start gap-2.5 text-[12px] leading-[18px] text-muted">
-      <span className={`status-dot status-dot--${health}`} aria-hidden="true" />
-      <div className="flex-1">{labels[health]}
-        {(health === 'unavailable' || health === 'unknown') && <button type="button" className="ml-2 font-semibold text-accent underline underline-offset-2" onClick={onRetry}>Reintentar</button>}
-      </div>
-    </div>
-  </footer>;
+// Aviso junto a la acción principal, solo cuando el servicio no está disponible.
+function ServiceAlert({ health, onRetry }) {
+  if (health !== 'unavailable' && health !== 'unknown') return null;
+  return <div className={`hud-panel ${health === 'unavailable' ? 'hud-panel--false' : 'hud-panel--amber'} mt-4`} role="alert">
+    <p className="hud-code" aria-hidden="true">{serviceCodes[health]}</p>
+    <p className="mt-1 text-sm leading-5 text-ink">{serviceLabels[health]}</p>
+    <button type="button" className="secondary-button mt-3" onClick={onRetry}>Reintentar</button>
+  </div>;
 }
 
 function selectionDomain(url) {
@@ -76,18 +76,53 @@ function validationMessage(operation) {
   return [operation?.message, operation?.correction].filter(Boolean).join(' ');
 }
 
-function SelectionScreen({ selection, error, selecting, submitting, onAnalyze, onAddText, onEdit, onBack }) {
+function RemoveIcon() {
+  return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M6 6l12 12M18 6 6 18" /></svg>;
+}
+
+function SelectionScreen({ selection, error, selecting, selectionMode, submitting, onAnalyze, onAddText, onEdit, onBack, onRemoveFragment, onClear }) {
   const domain = selectionDomain(selection.url);
+  const fragments = presentFragments(selection);
+  const meter = meterState(countWords(selection.text));
   return <>
-    <div className="flex items-start gap-3">
-      <button type="button" className="breakdown-back" aria-label="Volver" title="Volver" onClick={onBack}><Icon name="back" /></button>
-      <h1 className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Texto para analizar</h1>
+    <ScreenHeader title="Texto para analizar" onBack={onBack}>
+      {selectionMode && <span className="live-chip mt-2" role="status"><span aria-hidden="true">Seleccionando</span><span className="sr-only">Modo selección activo en la página</span></span>}
+    </ScreenHeader>
+    {domain && <p className="hud-readout mt-4">Origen: <b>{domain}</b></p>}
+
+    <div className={`word-meter word-meter--${meter.level} mt-4`}>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="hud-code hud-code--cyan" aria-hidden="true">Longitud</span>
+        <span className="hud-readout"><b>{meter.words}</b> palabras</span>
+      </div>
+      <SegmentTrack value={meter.value} segments={24} marker={meter.marker} />
+      <p className="mt-1.5 text-[12px] leading-[18px] text-muted">{meter.message}</p>
     </div>
-    {domain && <p className="mt-3 text-[12px] text-muted">Origen: {domain}</p>}
-    <textarea className="selection-preview mt-5 h-[160px] w-full resize-none overflow-y-auto text-sm leading-5" aria-label="Texto para analizar" placeholder="Escribe o pega texto aquí" value={selection.text} onChange={(event) => onEdit(event.target.value)} disabled={submitting || selecting} />
-    {error && <p className="mt-3 text-[12px] leading-[18px] text-[#A3342B]" role="alert">{error}</p>}
-    <button type="button" className="primary-button mt-5" onClick={onAnalyze} disabled={submitting || selecting || !selection.text.trim()}>{submitting ? 'Iniciando análisis…' : 'Analizar'}</button>
-    <button type="button" className="secondary-button mt-3" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : 'Seleccionar nuevo texto'}</button>
+
+    {/* La acción principal va junto al medidor: no hay que bajar hasta el final de la lista. */}
+    {error && <p className="hud-alert mt-3 text-[12px] leading-[18px]" role="alert">{error}</p>}
+    <button type="button" className="primary-button mt-4" onClick={onAnalyze} disabled={submitting || selecting || !selection.text.trim()}>{submitting ? 'Iniciando análisis…' : 'Analizar'}</button>
+
+    <div className="input-buffer-meta mt-5 items-center">
+      <span className="hud-code hud-code--cyan" aria-hidden="true">Fragmentos · {String(fragments.length).padStart(2, '0')} marcados</span>
+      <button type="button" className="clear-link" aria-label="Vaciar la selección" title="Empezar de cero" onClick={onClear} disabled={submitting || !selection.text.trim()}>Vaciar</button>
+    </div>
+    {fragments.length === 0
+      ? <p className="fragment-empty">{selectionMode ? 'Selecciona texto en la página para añadirlo aquí.' : 'Aún no hay fragmentos. Pulsa «Seleccionar más texto» o escribe en «Editar texto completo».'}</p>
+      : <ul className="fragment-list">{fragments.map((fragment) => <li key={fragment.id} className="fragment-item">
+        <span className="fragment-number" aria-hidden="true">#{fragment.number}</span>
+        <p className="fragment-text">{fragment.text}</p>
+        <button type="button" className="fragment-remove" aria-label={`Quitar fragmento ${fragment.number}`} title="Quitar fragmento" onClick={() => onRemoveFragment(fragment.id)} disabled={submitting}><RemoveIcon /></button>
+      </li>)}</ul>}
+
+    <details className="metrics-details mt-4">
+      <summary>Editar texto completo<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"><path d="m6 9 6 6 6-6" /></svg></summary>
+      <div className="border-t border-line p-3">
+        <textarea className="selection-preview text-editor w-full resize-none overflow-y-auto text-sm leading-5" aria-label="Texto para analizar" placeholder="Escribe o pega texto aquí" value={selection.text} onChange={(event) => onEdit(event.target.value)} disabled={submitting || selecting} />
+      </div>
+    </details>
+
+    {!selectionMode && <button type="button" className="secondary-button mt-5" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : 'Seleccionar más texto'}</button>}
   </>;
 }
 
@@ -102,8 +137,10 @@ function AnalysisScreen({ operation, onHistory, onBack, onRetry }) {
   }, [operation?.id, operation?.status, operation?.startedAt]);
 
   if (operation?.status === 'uncertain') return <section className="analysis-message" role="alert">
-    <h1 className="text-[22px] leading-7 font-semibold">No pudimos confirmar el resultado</h1>
-    <p className="mt-3 text-sm leading-5 text-muted">Revisa tu historial antes de intentarlo de nuevo.</p>
+    <div className="hud-panel hud-panel--amber">
+      <h1 className="screen-title">No pudimos confirmar el resultado</h1>
+      <p className="mt-3 text-sm leading-5 text-muted">Revisa tu historial antes de intentarlo de nuevo.</p>
+    </div>
     <button type="button" className="secondary-button mt-6" onClick={onHistory}>Revisar historial</button>
   </section>;
 
@@ -112,29 +149,20 @@ function AnalysisScreen({ operation, onHistory, onBack, onRetry }) {
     const storage = operation.status === 'storage_error';
     const title = session ? 'No pudimos iniciar tu sesión' : storage ? 'No pudimos guardar el análisis' : 'No pudimos iniciar el análisis';
     return <section className="analysis-message" role="alert">
-      <h1 className="text-[22px] leading-7 font-semibold">{title}</h1>
-      <p className="mt-3 text-sm leading-5 text-muted">{session ? 'Comprueba que el servicio esté disponible e inténtalo de nuevo.' : storage ? 'El resultado no se pudo guardar o completar.' : operation.message}</p>
+      <div className="hud-panel hud-panel--false">
+        <h1 className="screen-title">{title}</h1>
+        <p className="mt-3 text-sm leading-5 text-muted">{session ? 'Comprueba que el servicio esté disponible e inténtalo de nuevo.' : storage ? 'El resultado no se pudo guardar o completar.' : operation.message}</p>
+      </div>
       {operation.retryable && <button type="button" className="primary-button mt-6" onClick={onRetry}>Reintentar</button>}
       <button type="button" className="secondary-button mt-3" onClick={onBack}>Volver al texto</button>
     </section>;
   }
 
   return <section className="analysis-wait" role="status" aria-live="polite">
-    <div className="analysis-art" aria-hidden="true">
-      <svg viewBox="0 0 110 128" fill="none" className="h-32 w-28">
-        <path d="M20 3h53l26 26v86a7 7 0 0 1-7 7H20a7 7 0 0 1-7-7V10a7 7 0 0 1 7-7Z" stroke="#C8D9DE" strokeWidth="3" />
-        <path d="M73 3v20a6 6 0 0 0 6 6h20" stroke="#C8D9DE" strokeWidth="3" />
-        <path d="M31 49h45M31 62h45M31 75h34" stroke="#C8D9DE" strokeWidth="5" strokeLinecap="round" />
-        <path d="M31 89h29" stroke="#C8D9DE" strokeWidth="5" strokeLinecap="round" />
-        <path className="analysis-scan" d="M31 39h49" stroke="#087D77" strokeWidth="4" strokeLinecap="round" />
-      </svg>
-      <svg className="analysis-indicator" viewBox="0 0 48 48" fill="none" focusable="false">
-        <circle className="analysis-indicator-track" cx="24" cy="24" r="18" />
-        <circle className="analysis-indicator-arc" cx="24" cy="24" r="18" strokeDasharray="58 120" />
-      </svg>
-    </div>
-    <h1 className="mt-7 text-[22px] leading-7 font-semibold">Analizando texto</h1>
-    <p className="mt-2 text-[12px] leading-[18px] text-muted">{slow ? 'Está tardando más de lo habitual.' : 'Esto puede tardar un momento.'}</p>
+    <Radar active />
+    <h1 className="screen-title mt-6">Analizando texto</h1>
+    <p className={`mt-2 text-[12px] leading-[18px] ${slow ? 'text-amber' : 'text-muted'}`}>{slow ? 'Está tardando más de lo habitual.' : 'Esto puede tardar un momento.'}</p>
+    <CoreGrid />
   </section>;
 }
 
@@ -143,9 +171,12 @@ export default function App() {
   const [selection, setSelection] = useState(null);
   const [operation, setOperation] = useState(null);
   const [health, setHealth] = useState('checking');
+  const [healthData, setHealthData] = useState(null);
+  const [latency, setLatency] = useState(null);
   const [selectionError, setSelectionError] = useState('');
   const [analysisError, setAnalysisError] = useState('');
   const [selecting, setSelecting] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [resultError, setResultError] = useState('');
@@ -154,7 +185,7 @@ export default function App() {
   const [deletedAnalysis, setDeletedAnalysis] = useState(null);
   const [detailDeleting, setDetailDeleting] = useState(false);
   const [accountSigningOut, setAccountSigningOut] = useState(false);
-  const [accountNotice, setAccountNotice] = useState('');
+  const [accountNotice, setAccountNotice] = useState(null);
   const analysisLock = useRef(false);
   const draftWrite = useRef(Promise.resolve());
   const draftVersion = useRef(0);
@@ -162,6 +193,8 @@ export default function App() {
   const popupScroll = useRef(null);
   const historyScroll = useRef(null);
   const current = stack.at(-1);
+  // Desde el resultado, «Volver» regresa al texto analizado para poder editarlo.
+  const resultStack = () => (selectionRef.current?.text?.trim() ? ['P01', 'P02', 'P05'] : ['P01', 'P05']);
   selectionRef.current = selection;
 
   useLayoutEffect(() => {
@@ -172,12 +205,15 @@ export default function App() {
 
   const refreshHealth = useCallback(async () => {
     setHealth('checking');
+    const started = performance.now();
     try {
       const data = await getServiceHealth();
+      setLatency(Math.round(performance.now() - started));
+      setHealthData(data ?? null);
       if (data?.estado === 'ok' || data?.estado === 'saludable') setHealth('available');
       else if (data?.estado === 'degradado') setHealth('degraded');
       else setHealth('unknown');
-    } catch { setHealth('unavailable'); }
+    } catch { setLatency(null); setHealthData(null); setHealth('unavailable'); }
   }, []);
 
   useEffect(() => { refreshHealth(); }, [refreshHealth]);
@@ -191,8 +227,9 @@ export default function App() {
       const foundSelection = pending?.ok && typeof pending.selection?.text === 'string' ? pending.selection : null;
       const foundOperation = active?.ok ? active.operation : null;
       if (foundSelection) setSelection(foundSelection);
+      if (pending?.ok) setSelectionMode(pending.selecting === true);
       if (foundOperation) setOperation(foundOperation);
-      if (foundOperation?.status === 'completed') setStack(['P01', 'P05']);
+      if (foundOperation?.status === 'completed') setStack(foundSelection ? ['P01', 'P02', 'P05'] : ['P01', 'P05']);
       else if (['working', 'error', 'uncertain', 'session_error', 'service_error', 'storage_error'].includes(foundOperation?.status)) setStack(['P01', 'P02', 'P04']);
       else if (foundSelection) {
         setStack(['P01', 'P02']);
@@ -203,14 +240,18 @@ export default function App() {
     if (typeof chrome === 'undefined' || !chrome.storage?.onChanged) return;
     const handleChange = (changes, area) => {
       if (area !== 'session') return;
-      if (changes.pendingSelection?.newValue && changes.pendingSelection.newValue.updatedBy !== 'popup') {
-        setSelection(changes.pendingSelection.newValue);
-        setStack(['P01', 'P02']);
+      if ('selectionTargetTabId' in changes) setSelectionMode(changes.selectionTargetTabId.newValue !== undefined);
+      const pendingChange = changes.pendingSelection?.newValue;
+      // Si se borra del almacenamiento, la App no conserva una copia vieja.
+      if ('pendingSelection' in changes && !pendingChange) setSelection((previous) => previous && { text: '', fragments: [], url: null });
+      if (pendingChange && pendingChange.updatedBy !== 'popup') {
+        setSelection(pendingChange);
+        if (pendingChange.updatedBy === 'page') setStack(['P01', 'P02']);
       }
       const next = changes.analysisOperation?.newValue;
       if (!next) return;
       setOperation(next);
-      if (next.status === 'completed') setStack(['P01', 'P05']);
+      if (next.status === 'completed') setStack(resultStack());
       if (next.status === 'validation') {
         setAnalysisError(validationMessage(next));
         setStack(['P01', 'P02']);
@@ -227,7 +268,7 @@ export default function App() {
         .then((response) => {
           if (!response?.ok || !response.operation) return;
           setOperation(response.operation);
-          if (response.operation.status === 'completed') setStack(['P01', 'P05']);
+          if (response.operation.status === 'completed') setStack(resultStack());
           if (response.operation.status === 'validation') {
             setAnalysisError(validationMessage(response.operation));
             setStack(['P01', 'P02']);
@@ -252,7 +293,7 @@ export default function App() {
   };
   const back = () => setStack((items) => items.length > 1 ? items.slice(0, -1) : items);
   const editSelection = (text) => {
-    const draft = { ...selectionRef.current, text, url: null, capturedAt: Date.now(), updatedBy: 'popup' };
+    const draft = { ...selectionRef.current, text, fragments: text.trim() ? [{ id: 'manual', text }] : [], url: null, capturedAt: Date.now(), updatedBy: 'popup' };
     selectionRef.current = draft;
     setSelection(draft);
     setSelectionError('');
@@ -277,12 +318,42 @@ export default function App() {
     setAnalysisError('');
     setSelecting(true);
     try {
+      // Primero, dentro del gesto del clic: Chrome solo muestra el permiso la primera vez.
+      const granted = await chrome.permissions?.request?.({ origins: ['http://*/*', 'https://*/*'] }) ?? true;
+      if (!granted) { setSelectionError('ScanTrue necesita permiso para leer la página y marcar el texto. Pulsa «Escoger texto» y acepta el permiso.'); return; }
       if (current === 'P02' && selection) await persistSelection();
       const response = await sendExtensionMessage({ type: 'START_SELECTION' });
       if (!response?.ok) { setSelectionError(response?.error ?? 'No se puede seleccionar texto en esta pestaña.'); return; }
-      window.close();
+      if (!inPanel) { window.close(); return; }
+      // En el panel lateral la App sigue visible: se muestra la lista en vivo.
+      setSelectionMode(true);
+      setSelection((previous) => previous ?? { text: '', fragments: [], url: null });
+      setStack(['P01', 'P02']);
     } catch (error) { setSelectionError(error?.message ?? 'No se puede seleccionar texto en esta pestaña. Prueba en una página web.'); }
     finally { setSelecting(false); }
+  };
+
+  const removeFragment = async (id) => {
+    try {
+      const response = await sendExtensionMessage({ type: 'REMOVE_FRAGMENT', id });
+      if (response?.ok && response.selection) setSelection(response.selection);
+      else setSelectionError('No pudimos quitar ese fragmento.');
+    } catch { setSelectionError('No pudimos quitar ese fragmento.'); }
+  };
+  const clearSelection = async () => {
+    setSelectionError('');
+    setAnalysisError('');
+    try {
+      const response = await sendExtensionMessage({ type: 'CLEAR_FRAGMENTS' });
+      if (!response?.ok) throw new Error();
+      setSelection({ text: '', fragments: [], url: null });
+    } catch { setSelectionError('No pudimos vaciar la selección. Inténtalo de nuevo.'); }
+  };
+  const stopSelectionMode = async () => {
+    try {
+      const response = await sendExtensionMessage({ type: 'STOP_SELECTION' });
+      if (response?.ok) setSelectionMode(false);
+    } catch { /* El aviso de la página se puede cerrar desde su propia barra. */ }
   };
 
   const analyze = async () => {
@@ -292,6 +363,7 @@ export default function App() {
     setAnalysisError('');
     try {
       await persistSelection();
+      if (selectionMode) await stopSelectionMode();
       setStack(['P01', 'P02', 'P04']);
       const response = await sendExtensionMessage({ type: 'START_ANALYSIS' });
       if (!response?.ok) {
@@ -316,6 +388,8 @@ export default function App() {
     try {
       const response = await sendExtensionMessage({ type: 'CLEAR_COMPLETED_ANALYSIS' });
       if (!response?.ok) throw new Error('No se pudo limpiar el resultado.');
+      // Empezar de cero: vacía los fragmentos y quita los resaltados de la página.
+      await sendExtensionMessage({ type: 'CLEAR_FRAGMENTS' }).catch(() => {});
       setOperation(null);
       setSelection(null);
       setStack(['P01']);
@@ -323,16 +397,27 @@ export default function App() {
     finally { setClearing(false); }
   };
 
+  // Los avisos de sesión iniciada se cierran solos; el de confirmación pendiente se queda.
+  useEffect(() => {
+    if (!accountNotice?.autoHide) return;
+    const timer = setTimeout(() => setAccountNotice(null), NOTICE_MS);
+    return () => clearTimeout(timer);
+  }, [accountNotice]);
+
   const accountCompleted = (account) => {
     if (account.kind === 'pending_confirmation') {
-      setAccountNotice('Te enviamos un correo de confirmación. Confirma tu cuenta y después inicia sesión aquí. Tu sesión invitada y su historial siguen disponibles.');
+      // Persistente: pide un paso al usuario y no debe perderse.
+      setAccountNotice({ text: 'Te enviamos un correo de confirmación. Confirma tu cuenta y después inicia sesión aquí. Tu sesión invitada y su historial siguen disponibles.', autoHide: false });
     } else {
       const count = Number.isInteger(account.transferred) ? account.transferred : 0;
-      setAccountNotice(account.guestHistorySkipped
-        ? 'Sesión iniciada sin incorporar el historial invitado.'
-        : count > 0
-          ? `Sesión iniciada. Se incorporaron ${count} análisis de tu historial invitado.`
-          : 'Sesión iniciada.');
+      setAccountNotice({
+        text: account.guestHistorySkipped
+          ? 'Sesión iniciada sin incorporar el historial invitado.'
+          : count > 0
+            ? `Sesión iniciada. Se incorporaron ${count} análisis de tu historial invitado.`
+            : 'Sesión iniciada.',
+        autoHide: true,
+      });
       setOperation(null);
       setSelection(null);
       setHistoryDetail(null);
@@ -341,40 +426,46 @@ export default function App() {
     setStack(['P01', 'P11']);
   };
 
-  return <div ref={popupScroll} className={`popup-shell flex flex-col bg-canvas text-ink ${current === 'P01' ? '' : 'min-h-[500px]'}`}>
-    <header className="flex items-center justify-between border-b border-line bg-white px-5 py-4">
+  return <div ref={popupScroll} className={`popup-shell flex flex-col text-ink ${current === 'P01' ? '' : 'min-h-[500px]'}`}>
+    <header className="console-header">
+      <div className="flex items-center justify-between px-5 py-3">
       <Brand onHome={() => setStack(['P01'])} disabled={detailDeleting || accountSigningOut} />
-      <nav aria-label="Navegación principal" className="flex items-center gap-1">
+      <nav aria-label="Navegación principal" className="flex items-center gap-1.5">
         <button type="button" className="icon-button" aria-label="Historial" title="Historial" onClick={() => open('P07')} disabled={detailDeleting || accountSigningOut}><Icon name="history" /></button>
         <button type="button" className="icon-button" aria-label="Pruebas del modelo" title="Pruebas del modelo" onClick={() => open('P09')} disabled={detailDeleting || accountSigningOut}><Icon name="metrics" /></button>
         <button type="button" className="icon-button" aria-label="Cuenta" title="Cuenta" onClick={() => open('P11')} disabled={detailDeleting || accountSigningOut}><Icon name="account" /></button>
       </nav>
+      </div>
+      <LedStrip health={health} code={serviceCodes[health]} label={serviceLabels[health]} services={presentServices(healthData, health)} latency={latency} />
     </header>
-    <main className={`flex flex-col px-5 ${current === 'P01' ? 'pb-3 pt-11' : 'flex-1 pb-6 pt-7'} ${current === 'P04' ? 'bg-white' : ''}`}>
+    <main className={`flex flex-1 flex-col px-5 ${current === 'P01' ? 'pb-5 pt-2' : 'pb-6 pt-6'}`}>
       {current === 'P01' ? <>
-        <DocumentIllustration />
-        <h1 className="mt-10 text-[22px] leading-7 font-semibold tracking-[-0.03em]">Analiza un fragmento</h1>
-        <p className="mt-2 text-sm leading-5 text-muted">Escoge un fragmento de la página para analizarlo.</p>
-        <button type="button" className="primary-button mt-7" onClick={startSelection} disabled={selecting}>{selecting ? 'Preparando selección…' : 'Escoger texto'}</button>
-        {selectionError && <p className="mt-3 text-[12px] leading-[18px] text-[#A3342B]" role="alert">{selectionError}</p>}
-        {selection && <button type="button" className="mt-4 w-fit text-[12px] font-semibold text-accent underline underline-offset-4" onClick={() => open('P02')}>Ver texto para analizar</button>}
+        <div className="home-radar"><div className="radar-frame"><Radar /></div></div>
+        <div className="hud-panel">
+          <h1 className="screen-title">¿Dudas de una noticia?</h1>
+          <p className="mt-2 text-sm leading-5 text-muted">Marca el titular y unos párrafos de la noticia. Te mostramos si se parece más a una noticia falsa o a una real.</p>
+          <p className="mt-2 text-[12px] leading-[18px] text-muted opacity-80">Es una orientación, no una verificación de los hechos.</p>
+          <ServiceAlert health={health} onRetry={refreshHealth} />
+          <button type="button" className="primary-button mt-5" onClick={startSelection} disabled={selecting}>{selecting ? 'Preparando selección…' : 'Escoger texto'}</button>
+          {selectionError && <p className="hud-alert mt-3 text-[12px] leading-[18px]" role="alert">{selectionError}</p>}
+          {selection?.text?.trim() && <button type="button" className="text-link mt-4 w-fit" onClick={() => open('P02')}>Ver texto para analizar</button>}
+        </div>
       </> : <>
-        {current !== 'P02' && current !== 'P04' && current !== 'P05' && current !== 'P06' && current !== 'P07' && current !== 'P08' && current !== 'P09' && current !== 'P11' && current !== 'P12' && current !== 'P13' && <button type="button" className="mb-5 flex w-fit items-center gap-1.5 text-sm font-medium text-ink" onClick={back}><span className="size-5"><Icon name="back" /></span>Volver</button>}
+        {current !== 'P02' && current !== 'P04' && current !== 'P05' && current !== 'P06' && current !== 'P07' && current !== 'P08' && current !== 'P09' && current !== 'P11' && current !== 'P12' && current !== 'P13' && <button type="button" className="text-link mb-5 flex w-fit items-center gap-1.5" onClick={back}><span className="size-5"><Icon name="back" /></span>Volver</button>}
         {stack.includes('P07') && <div hidden={current !== 'P07'}><HistoryScreen deletedAnalysis={deletedAnalysis} onBack={back} onOpen={(id) => { historyScroll.current = popupScroll.current?.scrollTop ?? 0; setHistoryDetail(null); setSelectedAnalysisId(id); open('P08'); }} onChooseText={() => setStack(['P01'])} /></div>}
         {stack.includes('P08') && selectedAnalysisId && <div hidden={current !== 'P08'}><HistoryDetailScreen key={selectedAnalysisId} id={selectedAnalysisId} onBack={back} onLoaded={setHistoryDetail} onDeletingChange={setDetailDeleting} onBreakdown={(item) => { setHistoryDetail(item); open('P06'); }} onDeleted={(id) => { setDeletedAnalysis({ id }); setHistoryDetail(null); setSelectedAnalysisId(null); back(); }} /></div>}
-        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} submitting={submitting} onAnalyze={analyze} onAddText={startSelection} onEdit={editSelection} onBack={back} />
+        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} onAnalyze={analyze} onAddText={startSelection} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
           : current === 'P04' ? <AnalysisScreen operation={operation} onHistory={() => open('P07')} onBack={() => setStack(['P01', 'P02'])} onRetry={analyze} />
           : current === 'P05' ? <ResultScreen result={operation?.result} onBack={back} onBreakdown={() => open('P06')} onStartOver={startOver} clearing={clearing} error={resultError} />
           : current === 'P06' ? <BreakdownScreen result={stack.at(-2) === 'P08' ? historyDetail : operation?.result} onBack={back} />
           : current === 'P07' ? null
           : current === 'P08' ? null
           : current === 'P09' ? <MetricsScreen onBack={back} />
-          : current === 'P11' ? <AccountScreen notice={accountNotice} onBack={back} onLogin={() => { setAccountNotice(''); open('P13'); }} onRegister={() => { setAccountNotice(''); open('P12'); }} onSigningOutChange={setAccountSigningOut} onSignedOut={() => { setAccountNotice(''); setOperation(null); setSelection(null); setHistoryDetail(null); setSelectedAnalysisId(null); setStack(['P01', 'P11']); }} />
+          : current === 'P11' ? <AccountScreen notice={accountNotice} noticeMs={NOTICE_MS} onBack={back} onLogin={() => { setAccountNotice(null); open('P13'); }} onRegister={() => { setAccountNotice(null); open('P12'); }} onSigningOutChange={setAccountSigningOut} onSignedOut={() => { setAccountNotice(null); setOperation(null); setSelection(null); setHistoryDetail(null); setSelectedAnalysisId(null); setStack(['P01', 'P11']); }} />
           : current === 'P12' ? <RegisterScreen onBack={back} onLogin={() => open('P13')} onComplete={accountCompleted} />
           : current === 'P13' ? <LoginScreen onBack={back} onRegister={() => open('P12')} onComplete={accountCompleted} />
-          : <><h1 className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">{titles[current]}</h1><p className="mt-4 text-sm text-muted">Sección en preparación.</p></>}
+          : <><h1 className="screen-title">{titles[current]}</h1><p className="mt-4 text-sm text-muted">Sección en preparación.</p></>}
       </>}
     </main>
-    {current === 'P01' && <ServiceStatus health={health} onRetry={refreshHealth} />}
   </div>;
 }

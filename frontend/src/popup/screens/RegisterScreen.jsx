@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { sendExtensionMessage } from '../extension-message.js';
+import ScreenHeader from '../components/ScreenHeader.jsx';
 import PasswordVisibilityButton from '../components/PasswordVisibilityButton.jsx';
 
 const initialValues = { email: '', password: '', confirmation: '' };
@@ -25,7 +26,7 @@ function PasswordField({ id, label, value, onChange, onBlur, error }) {
   const [visible, setVisible] = useState(false);
 
   return <div className="mt-5">
-    <label className="block text-sm font-semibold text-ink" htmlFor={id}>{label}</label>
+    <label className="hud-label" htmlFor={id}>{label}</label>
     <div className="relative mt-2">
       <input
         id={id}
@@ -40,7 +41,7 @@ function PasswordField({ id, label, value, onChange, onBlur, error }) {
       />
       <PasswordVisibilityButton visible={visible} onToggle={() => setVisible((current) => !current)} label={label} />
     </div>
-    {error && <p id={`${id}-error`} className="mt-1.5 text-[12px] leading-[18px] text-false" role="alert">{error}</p>}
+    {error && <p id={`${id}-error`} className="hud-alert mt-1.5 text-[12px] leading-[18px]" role="alert">{error}</p>}
   </div>;
 }
 
@@ -74,15 +75,12 @@ export default function RegisterScreen({ onBack, onLogin, onComplete }) {
   };
 
   return <section className="flex flex-1 flex-col" aria-labelledby="register-title">
-    <div className="flex items-start gap-3">
-      <button type="button" className="breakdown-back" aria-label="Volver a cuenta" title="Volver a cuenta" onClick={onBack}>
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m14 5-7 7 7 7" /></svg>
-      </button>
-      <h1 id="register-title" className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Crear cuenta</h1>
-    </div>
-    <form className="mt-7 flex flex-1 flex-col" noValidate onSubmit={submit}>
+    <ScreenHeader title="Crear cuenta" titleId="register-title" backLabel="Volver a cuenta" onBack={onBack} />
+    <form className="mt-6 flex flex-1 flex-col" noValidate onSubmit={submit}>
+      <div className="hud-panel">
+      <span className="hud-code hud-code--cyan mb-4" aria-hidden="true">Terminal de autenticación</span>
       <div>
-        <label className="block text-sm font-semibold text-ink" htmlFor="register-email">Correo electrónico</label>
+        <label className="hud-label" htmlFor="register-email">Correo electrónico</label>
         <input
           id="register-email"
           className="auth-input mt-2"
@@ -95,14 +93,16 @@ export default function RegisterScreen({ onBack, onLogin, onComplete }) {
           aria-invalid={Boolean(error('email'))}
           aria-describedby={error('email') ? 'register-email-error' : undefined}
         />
-        {error('email') && <p id="register-email-error" className="mt-1.5 text-[12px] leading-[18px] text-false" role="alert">{error('email')}</p>}
+        {error('email') && <p id="register-email-error" className="hud-alert mt-1.5 text-[12px] leading-[18px]" role="alert">{error('email')}</p>}
       </div>
 
       <PasswordField id="register-password" label="Contraseña" value={values.password} onChange={change('password')} onBlur={blur('password')} error={error('password')} />
       <PasswordField id="register-confirmation" label="Confirmar contraseña" value={values.confirmation} onChange={change('confirmation')} onBlur={blur('confirmation')} error={error('confirmation')} />
 
+      </div>
+
       <div className="mt-auto pt-8">
-        {submitError && <p className="mb-3 text-sm leading-5 text-false" role="alert">{submitError}</p>}
+        {submitError && <p className="hud-alert mb-3 text-sm leading-5" role="alert">{submitError}</p>}
         <button type="submit" className="primary-button auth-submit" disabled={submitting}>{submitting ? 'Creando cuenta…' : 'Crear cuenta'}</button>
         <button type="button" className="secondary-button mt-5" onClick={onLogin} disabled={submitting}>Ya tengo cuenta</button>
       </div>

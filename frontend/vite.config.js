@@ -10,7 +10,10 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
-      input: { popup: resolve(import.meta.dirname, 'popup.html') },
+      input: {
+        popup: resolve(import.meta.dirname, 'popup.html'),
+        sidepanel: resolve(import.meta.dirname, 'sidepanel.html'),
+      },
     },
   },
 });

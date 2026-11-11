@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { sendExtensionMessage } from '../extension-message.js';
+import ScreenHeader from '../components/ScreenHeader.jsx';
 import PasswordVisibilityButton from '../components/PasswordVisibilityButton.jsx';
 
 function emailError(value) {
@@ -44,15 +45,12 @@ export default function LoginScreen({ onBack, onRegister, onComplete }) {
   };
 
   return <section className="flex flex-1 flex-col" aria-labelledby="login-title">
-    <div className="flex items-start gap-3">
-      <button type="button" className="breakdown-back" aria-label="Volver a cuenta" title="Volver a cuenta" onClick={onBack}>
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m14 5-7 7 7 7" /></svg>
-      </button>
-      <h1 id="login-title" className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Iniciar sesión</h1>
-    </div>
-    <form className="mt-7 flex flex-1 flex-col" noValidate onSubmit={submit}>
+    <ScreenHeader title="Iniciar sesión" titleId="login-title" backLabel="Volver a cuenta" onBack={onBack} />
+    <form className="mt-6 flex flex-1 flex-col" noValidate onSubmit={submit}>
+      <div className="hud-panel">
+      <span className="hud-code hud-code--cyan mb-4" aria-hidden="true">Terminal de autenticación</span>
       <div>
-        <label className="block text-sm font-semibold text-ink" htmlFor="login-email">Correo electrónico</label>
+        <label className="hud-label" htmlFor="login-email">Correo electrónico</label>
         <input
           id="login-email"
           className="auth-input mt-2"
@@ -65,11 +63,11 @@ export default function LoginScreen({ onBack, onRegister, onComplete }) {
           aria-invalid={Boolean(emailMessage)}
           aria-describedby={emailMessage ? 'login-email-error' : undefined}
         />
-        {emailMessage && <p id="login-email-error" className="mt-1.5 text-[12px] leading-[18px] text-false" role="alert">{emailMessage}</p>}
+        {emailMessage && <p id="login-email-error" className="hud-alert mt-1.5 text-[12px] leading-[18px]" role="alert">{emailMessage}</p>}
       </div>
 
       <div className="mt-5">
-        <label className="block text-sm font-semibold text-ink" htmlFor="login-password">Contraseña</label>
+        <label className="hud-label" htmlFor="login-password">Contraseña</label>
         <div className="relative mt-2">
           <input
             id="login-password"
@@ -84,11 +82,13 @@ export default function LoginScreen({ onBack, onRegister, onComplete }) {
           />
           <PasswordVisibilityButton visible={passwordVisible} onToggle={() => setPasswordVisible((current) => !current)} />
         </div>
-        {passwordMessage && <p id="login-password-error" className="mt-1.5 text-[12px] leading-[18px] text-false" role="alert">{passwordMessage}</p>}
+        {passwordMessage && <p id="login-password-error" className="hud-alert mt-1.5 text-[12px] leading-[18px]" role="alert">{passwordMessage}</p>}
+      </div>
+
       </div>
 
       <div className="mt-auto pt-8">
-        {submitError && <p className="mb-3 text-sm leading-5 text-false" role="alert">{submitError}</p>}
+        {submitError && <p className="hud-alert mb-3 text-sm leading-5" role="alert">{submitError}</p>}
         <button type="submit" className="primary-button auth-submit" disabled={submitting}>{submitting ? 'Iniciando sesión…' : 'Iniciar sesión'}</button>
         {requiresTransferChoice && <>
           <p className="mt-3 text-[12px] leading-[18px] text-muted">Puedes entrar sin incorporar el historial de invitado. Esos análisis no aparecerán en tu cuenta.</p>

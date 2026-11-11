@@ -114,8 +114,8 @@ async function performAnalysis(selection, operation) {
       invalid.name = 'InvalidResponseError';
       throw invalid;
     }
+    // La selección se conserva para poder editarla y volver a analizarla; «Escoger otro texto» la vacía.
     await finish(operation, 'completed', { result: response.data });
-    try { await chrome.storage.session.remove('pendingSelection'); } catch { /* The result is already saved. */ }
   } catch (error) {
     if (error instanceof AnalysisFailure) {
       await finish(operation, error.status, { message: error.message, retryable: error.retryable });

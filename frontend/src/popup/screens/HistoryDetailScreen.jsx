@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { sendExtensionMessage } from '../extension-message.js';
 import { presentHistoryDetail } from '../history-presentation.js';
 import ResultGaugePanel from '../components/ResultGaugePanel.jsx';
+import ScreenHeader, { ChevronIcon } from '../components/ScreenHeader.jsx';
 
 export default function HistoryDetailScreen({ id, onBack, onBreakdown, onLoaded, onDeleted, onDeletingChange }) {
   const [status, setStatus] = useState('loading');
@@ -72,31 +73,29 @@ export default function HistoryDetailScreen({ id, onBack, onBreakdown, onLoaded,
   const shown = status === 'ready' ? presentHistoryDetail(item) : null;
 
   return <section>
-    <div className="flex items-start gap-3">
-      <button type="button" className="breakdown-back" aria-label="Volver al historial" title="Volver al historial" onClick={onBack} disabled={deleting}>
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m14 5-7 7 7 7" /></svg>
-      </button>
-      <div className="min-w-0"><h1 className="text-[22px] leading-7 font-semibold tracking-[-0.03em]">Análisis anterior</h1>
-        {shown && <p className="mt-2 break-words text-[12px] leading-[18px] text-muted">{shown.date}{shown.domain ? ` · ${shown.domain}` : ''}</p>}
-      </div>
-    </div>
+    <ScreenHeader title="Análisis anterior" backLabel="Volver al historial" onBack={onBack} disabled={deleting}>
+      {shown && <p className="hud-readout mt-2 break-words">{shown.date}{shown.domain ? ` · ${shown.domain}` : ''}</p>}
+    </ScreenHeader>
 
-    {status === 'loading' && <p className="mt-6 text-sm text-muted" role="status">Cargando análisis…</p>}
+    {status === 'loading' && <p className="hud-readout mt-6" role="status">Cargando análisis…</p>}
     {status === 'not_found' && <div className="mt-6"><p className="text-sm leading-5 text-muted">Este análisis ya no está disponible</p><button type="button" className="secondary-button mt-5" onClick={onBack}>Volver al historial</button></div>}
     {status === 'error' && <div className="mt-6" role="alert"><p className="text-sm leading-5 text-muted">No pudimos abrir este análisis.</p><button type="button" className="secondary-button mt-5" onClick={load}>Intentar de nuevo</button></div>}
 
     {shown && <>
-      <div className="selection-preview mt-5 max-h-[220px] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-5" tabIndex="0" aria-label="Texto analizado">{shown.text ?? 'Texto no disponible'}</div>
-      <ResultGaugePanel level={shown.level} percentage={shown.percentage} className="mt-5" />
-      {shown.hasBreakdown && <button type="button" className="result-detail mt-5" onClick={() => onBreakdown(item)} disabled={deleting}>
+      <span className="hud-code hud-code--cyan mt-5 mb-1.5" aria-hidden="true">Texto archivado</span>
+      <div className="selection-preview max-h-[220px] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-5" tabIndex="0" aria-label="Texto analizado">{shown.text ?? 'Texto no disponible'}</div>
+      <ResultGaugePanel level={shown.level} percentage={shown.percentage} className="mt-4" />
+      {shown.hasBreakdown && <button type="button" className="result-detail mt-4" onClick={() => onBreakdown(item)} disabled={deleting}>
         <span>Ver desglose por modelo</span>
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m9 5 7 7-7 7" /></svg>
+        <ChevronIcon />
       </button>}
 
       {!confirming ? <button ref={deleteButton} type="button" className="secondary-button delete-button mt-7" onClick={() => setConfirming(true)}>Eliminar análisis</button>
-        : <div className="delete-confirmation mt-7" role="dialog" aria-labelledby="delete-title" onKeyDown={(event) => { if (event.key === 'Escape') cancelDelete(); }}>
-          <h2 id="delete-title" className="text-base font-semibold">¿Eliminar este análisis?</h2>
-          {deleteError && <p className="mt-3 text-sm text-false" role="alert">{deleteError}</p>}
+        : <div className="delete-confirmation hud-panel mt-7" role="dialog" aria-labelledby="delete-title" onKeyDown={(event) => { if (event.key === 'Escape') cancelDelete(); }}>
+          <div className="hazard-band" aria-hidden="true" />
+          <span className="hud-code hud-code--magenta" aria-hidden="true">Orden de borrado · irreversible</span>
+          <h2 id="delete-title" className="screen-title mt-1">¿Eliminar este análisis?</h2>
+          {deleteError && <p className="hud-alert mt-3 text-sm" role="alert">{deleteError}</p>}
           <div className="mt-5 flex gap-3">
             <button ref={cancelButton} type="button" className="secondary-button" onClick={cancelDelete} disabled={deleting}>Cancelar</button>
             <button type="button" className="delete-confirm-button" onClick={confirmDelete} disabled={deleting}>{deleting ? 'Eliminando…' : 'Eliminar'}</button>

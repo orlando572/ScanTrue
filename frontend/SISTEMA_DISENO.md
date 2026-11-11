@@ -2,93 +2,94 @@
 
 ## Propósito
 
-Definir el lenguaje visual y de interacción que compartirán las vistas P01, P02, P04 a P09 y P11 a P13 del popup. Este documento orienta el diseño de cada pantalla; no es un prototipo final ni implementa componentes. Antes de construir cada pantalla se preparará, con el usuario, su archivo independiente de planificación e implementación.
-
-Las cuatro imágenes entregadas sirven como referencia de jerarquía: cabecera compacta, acción principal evidente, resultado destacado, desglose plegable e historial fácil de recorrer. Sus textos y colores no son un contrato funcional. El alcance y los estados se toman de `FEATURE_01_ALCANCE_Y_RECORRIDOS.md` y los datos reales se mostrarán según la API.
+Este documento define el lenguaje visual y de interacción de las vistas P01, P02, P04 a P09 y P11 a P13 del popup. El rediseño de noviembre de 2026 sustituye la dirección anterior («ficha de lectura», fondo claro). **Solo cambia el aspecto:** pantallas, textos funcionales, estados y comportamiento se mantienen.
 
 ## Dirección visual
 
-**Concepto: ficha de lectura.** ScanTrue se sentirá como una herramienta que ayuda a examinar un fragmento, no como una alarma que dicta un veredicto. La selección textual es la pieza central; los resultados se presentan como mediciones atribuidas a modelos. Una línea lateral fina identifica la selección y reaparece en el detalle histórico para conectar ambos momentos.
+**Concepto: consola de análisis ScanTrue, terminal de vigilancia de información, 1995.** Se parece a un sistema informático especializado que imaginaba el futuro en los años 90, con la usabilidad de hoy. Referencias de composición: interfaces de ciencia ficción retro de los 80 y 90 (retículas vectoriales, centros de control, pantallas CRT), paneles técnicos del anime de esa época (módulos con código, alertas jerarquizadas, varios colores con significado) y el *cassette futurism* (teclas físicas, LEDs, reglas graduadas).
 
-- Interfaz minimalista, fondo claro y una única zona de énfasis por vista.
-- Contenido y títulos alineados a la izquierda. Centrar solo un estado vacío o una acción aislada, cuando ayude a orientar la mirada.
-- Superficies planas y bordes discretos. Reservar el color intenso para la acción primaria, el foco y los datos que lo necesiten.
-- El porcentaje puede ser grande en el resultado, pero siempre junto a su nombre y explicación. No usar un número aislado como supuesto veredicto.
-- Evitar gradientes decorativos, sombras en todas las tarjetas, iconos redundantes y etiquetas en mayúsculas sostenidas.
+- Fondo CRT casi negro y azulado, con retícula de 20 px, viñeta y líneas de escaneo.
+- Paneles modulares con dos esquinas cortadas y dos en escuadra. Los títulos van solos: sin códigos de panel ni de módulo encima.
+- Geometría vectorial luminosa: radar, dial segmentado, reglas, barras por segmentos.
+- Varios colores con función fija (tabla de paleta). El color nunca es la única señal.
+- **Evitar:** dashboard SaaS moderno (tarjetas redondeadas, sombras suaves), estética *gamer* actual (RGB, biseles agresivos) y terminal verde monocromática.
 
-## Paleta semántica
+## Paleta
 
-Los valores son la propuesta inicial del sistema; se ajustarán si la revisión visual de las pantallas muestra problemas de contraste.
+Los tokens viven en `@theme` de `src/popup/styles.css`. Los nombres antiguos se conservan, así que las utilidades de Tailwind (`text-muted`, `border-line`…) usan los valores nuevos.
 
 | Token | Valor | Uso |
 | --- | --- | --- |
-| `canvas` | `#F3F7F7` | Fondo del popup. |
-| `surface` | `#FFFFFF` | Área principal, tarjetas y formularios. |
-| `ink` | `#17324D` | Títulos, texto principal e iconos importantes. |
-| `muted` | `#506575` | Descripciones, fecha y datos secundarios. |
-| `line` | `#D6E1E4` | Separadores y contornos de campos. |
-| `accent` | `#087D77` | Acción principal, selección y foco activo. |
-| `accent-soft` | `#E2F2EF` | Fondo de una selección o estado activo. |
-| `false` | `#A3342B` | Salida de clase falsa y error; siempre acompañada de texto. |
-| `false-soft` | `#F9EAE7` | Fondo suave para esa salida. |
-| `real` | `#246B61` | Salida de clase real; no significa verificación factual. |
-| `real-soft` | `#E8F2EF` | Fondo suave para esa salida. |
-| `warning` | `#8B5A12` | Pendiente o atención sin fallo confirmado. |
-| `warning-soft` | `#FFF3DB` | Fondo de aviso. |
-| `focus` | `#1265AC` | Anillo de foco de teclado claramente visible. |
+| `canvas` | `#05080F` | Fondo del popup, con retícula. |
+| `surface` | `#0A1220` | Paneles. |
+| `surface-2` | `#0F1B2E` | Campos, filas en hover. |
+| `line` | `#1E3A5C` | Bordes, retícula, segmentos apagados. |
+| `ink` | `#E6F4FF` | Texto principal. |
+| `muted` | `#8FA8C4` | Texto secundario (contraste AA sobre `surface`). |
+| `accent` | `#38E1FF` | Cian: acción principal, marcos, iconos, búfer de entrada. |
+| `amber` | `#FFB21E` | Contadores y rótulos de estado, avisos, servicio degradado. |
+| `magenta` | `#FF3D7F` | Énfasis secundario: índices, desglose, órdenes de borrado. |
+| `false` | `#FF4A3D` | Clase falsa y errores; siempre con texto. |
+| `real` | `#3DFF9A` | Clase real y servicio disponible; no significa verificación factual. |
+| `focus` | `#FFE45C` | Anillo de foco de teclado. |
 
-Los estados nunca dependerán solo del color: cada uno tendrá nombre, icono cuando aporte información y texto explicativo.
+Escala de los cinco niveles del resultado (`result-panel--*`): `very-low` `#3DFF9A`, `low` `#2EE6C8`, `middle` `#FFB21E`, `high` `#FF7A1A`, `very-high` `#FF4A3D`. Siempre va acompañada de la etiqueta del nivel, el glifo y la escala «Nivel n/5».
 
 ## Tipografía
 
-- **Familia propuesta:** IBM Plex Sans, incluida localmente en el paquete de la extensión si se adopta en la implementación. Respaldo: fuentes sans serif del sistema. No depender de una fuente cargada desde internet.
-- **Números:** usar cifras tabulares para porcentajes, fechas y métricas comparables. Evitar una tipografía distinta solo para cifras pequeñas.
-- **Escala:** título de vista 20/26 seminegrita; título de sección 16/22 seminegrita; texto principal 14/20 regular; texto auxiliar 12/17 regular; dato destacado 40/44 seminegrita. Los tamaños se podrán ajustar en la revisión visual del popup.
-- **Caja:** frases normales, sin mayúsculas sostenidas salvo siglas y nombres de modelos. Mantener el texto de lectura en líneas cortas.
+Las tres familias van empaquetadas con `@fontsource` (sin peticiones a internet):
 
-## Dimensiones, espaciado y forma
+- **Orbitron** (`--font-display`, 500 y 700): marca y títulos de vista (`.screen-title`), en mayúsculas mediante CSS.
+- **Share Tech Mono** (`--font-mono`): rótulos, etiquetas, botones, cifras, fechas y lecturas.
+- **IBM Plex Sans** (`--font-sans`): textos de lectura, mensajes y contenido de noticias, en frase normal.
 
-- Diseñar para un popup angosto; referencia inicial de trabajo: **400 px de ancho**. El alto visible dependerá del navegador. Las vistas largas se desplazan dentro del popup.
-- Margen horizontal principal: 20 px. Separación entre secciones: 24 px. Separación entre elementos relacionados: 8 o 12 px.
-- Escala de espaciado: 4, 8, 12, 16, 20, 24 y 32 px. Elegir de esta escala antes de crear excepciones.
-- Radio: 10 px en campos y botones; 14 px en paneles de contenido. Evitar que cada elemento parezca una tarjeta independiente.
-- Bordes de 1 px para estructurar; sombra solo donde ayude a distinguir un elemento flotante, como una confirmación.
-- Área interactiva cómoda para ratón y teclado; los iconos de cabecera tendrán nombre accesible y foco visible.
+Cifras: Share Tech Mono con `tabular-nums`. Las mayúsculas sostenidas se limitan a rótulos, botones y títulos cortos. Los párrafos no.
 
-## Estructura común del popup
+## Dimensiones y forma
 
-```text
-┌──────────────────────────────────────────────┐
-│ ScanTrue          historial  cuenta  cerrar  │
-│ Título de vista                 volver, si aplica
-├──────────────────────────────────────────────┤
-│                                              │
-│ Contenido propio de la vista                 │
-│ Una acción principal claramente identificada│
-│ Estados y ayuda cerca de la acción afectada  │
-│                                              │
-└──────────────────────────────────────────────┘
-```
+- Ancho de trabajo: **panel lateral** (de 320 px en adelante; el contenido se adapta) y **400 px** en el popup. Margen horizontal: 20 px. Escala de espaciado: 4, 8, 12, 16, 20, 24 y 32 px.
+- Sin radios: los paneles tienen esquinas cortadas de 14 px (`.hud-panel`) y las teclas, chaflanes de 10 px.
+- Bordes de 1 px. El brillo (`box-shadow`, `text-shadow`, `drop-shadow`) se reserva para datos, LEDs y estados activos.
 
-La cabecera conserva la identidad y la navegación esencial. En vistas secundarias, **Volver** regresa a la vista anterior del popup; **Cerrar** cierra el popup y no equivale a cerrar sesión. Evitar más de una acción primaria a la vez. Si el contenido supera el alto disponible, desplazar el cuerpo y mantener visibles los controles solo cuando no oculten información.
-
-## Componentes y patrones compartidos
+## Componentes
 
 | Elemento | Regla de diseño |
 | --- | --- |
-| Cabecera | Logotipo compacto de lupa con marca de verificación y nombre ScanTrue; ambos forman un botón que vuelve a P01. Título de vista y acciones con iconos reconocibles y etiquetas accesibles. Historial y cuenta son accesos dentro del popup. |
-| Botón principal | Ancho completo cuando guía el paso central; verbo concreto: **Escoger texto**, **Analizar**, **Iniciar sesión**. Estado deshabilitado con explicación cuando falte un requisito. |
-| Botón secundario | Contorno o texto para **Seleccionar de nuevo**, **Cancelar**, **Volver** y **Actualizar**. No competir visualmente con el principal. |
-| Selección de texto | Fragmento en un panel con línea lateral `accent`, vista previa legible y desplazamiento si es largo. Mostrar que pertenece a la página elegida. |
-| Resultado | P05 muestra el porcentaje unificado en un anillo, la etiqueta de uno de cinco niveles y su icono debajo. P06 conserva el detalle de BiLSTM y mBERT. |
-| Desglose | Desde el resultado, una fila abre P06 dentro del popup. BiLSTM y mBERT aparecen en tarjetas compactas con nombre, clase recibida, porcentaje, etiqueta de uno de cinco niveles y barra. Debajo se explica que los modelos no comprueban hechos con fuentes externas. Un modelo sin predicción muestra **No disponible**, no 0 %. |
-| Historial | Lista de filas compactas con fecha, vista previa y salida guardada. La fila entera abre el detalle; la eliminación se solicita dentro del detalle o mediante acción claramente asociada al registro. |
-| Pruebas del modelo | Nombre del conjunto, porcentaje de aciertos y número de textos evaluados; origen breve cuando exista y limitaciones en un apartado desplegable. Estas cifras no son la puntuación de la noticia abierta. |
-| Formularios | Una columna, etiquetas visibles, errores bajo el campo y mensajes generales al inicio del formulario. Contraseñas nunca se muestran en registros de consola. |
-| Confirmación | Título directo, consecuencia concreta y dos acciones. |
-| Avisos | Mensaje breve que explique lo ocurrido y el siguiente paso. Errores de API transformados a lenguaje de interfaz, sin JSON crudo. |
+| Cabecera (`.console-header`) | Fija arriba. Logo «almendra-radar» (`scantrue-mark.svg`): un ojo curvo cian cuya pupila es un radar con barrido y un contacto ámbar, dentro del marco de esquinas cortadas; examina sin prometer un veredicto, así que la marca nunca usa ✓ ni símbolos de verificación. «SCAN//TRUE» en Orbitron y «Análisis de noticias». Accesos a historial, pruebas y cuenta como teclas iluminadas. Debajo, la tira de LEDs y la regla (`LedStrip`). |
+| Encabezado de vista (`ScreenHeader`) | Tecla volver y título en Orbitron, sin código encima. Mantiene `aria-label`, `title` e `id` de cada pantalla. |
+| Panel (`.hud-panel`) | Esquinas cortadas, escuadras de 2 px y color configurable con `--panel-color` (`--amber`, `--magenta`, `--false`). |
+| Rótulo (`.hud-code`) | Rótulo mono en mayúsculas y en español, solo como contador o rótulo de sección con dato: «Registro de operaciones · 005 entradas», «Búfer de entrada · 206 car.», «Sin conexión». **Siempre con `aria-hidden`**: es decoración y no sustituye ningún texto. No se usan códigos de panel («Panel 05 · …»), de módulo («Módulo 01 · …») ni rótulos que repitan el título. |
+| Botón principal | Tecla cian con chaflán y texto oscuro mono, sin adornos internos. Uno por vista. |
+| Botón secundario | Tecla de hardware azul acero con borde, también en los chaflanes. Variante de borrado con borde rojo; la confirmación es una tecla roja. |
+| Campos | Fondo hundido `surface-2`, base de 2 px, cursor cian, texto mono y etiqueta mono cian. El error pinta el borde de rojo y aparece debajo con ▲. |
+| Selección (P02) | Mientras el modo selección está activo, una etiqueta pequeña «● Seleccionando» (LED ámbar) bajo el título; la fila «Fragmentos · N marcados» tiene el enlace **Vaciar** para empezar de cero; se termina desde la barra de la página o al pulsar **Analizar**. Orden: medidor de longitud, **Analizar** justo debajo (con su mensaje de error, si lo hay), fragmentos, «Editar texto completo» y, al final, «Seleccionar más texto». Medidor «Longitud · N palabras» con barra de 24 segmentos de 0 a ~350 palabras y muesca en el mínimo (100). Colores por nivel: **rojo** < 100 («Faltan N palabras»), **amarillo** 100–279 («Listo para analizar»), **verde** 280–349, el 80 % del máximo («Buena longitud»), y **dorado** con brillo metálico ≥ 350 («Longitud completa: lo que siga no se analiza»). «Editar texto completo» empieza cerrado y su cuadro crece con el contenido (mínimo ~3 líneas, máximo 220 px). Lista de fragmentos con índice magenta `#01`, barra lateral cian y botón **Quitar**. El texto completo se edita en un desplegable. |
+| Texto analizado (P08) | Búfer con barra lateral cian y brillo, rótulo «Texto archivado». |
+| Barra en la página | Durante el modo selección: una sola línea fija abajo (Shadow DOM, 44 px de alto): LED ámbar, «Seleccionando» y, hasta el primer fragmento, la pista «Marca texto en la página para añadirlo»; después, «N fragmentos · N palabras» (palabras en ámbar hasta el mínimo, verde al alcanzarlo). Botones **Vaciar** (solo con fragmentos) y **Terminar**. Los fragmentos se resaltan en cian con `::highlight(scantrue-fragment)`; un clic sobre uno ofrece **Quitar fragmento**. El detalle (lista y medidor) queda en el panel. |
+| Resultado (P05, P08) | Dial de 40 segmentos en un arco de 270°, regla 0/50/100 y aguja. Porcentaje mono grande. Etiqueta del nivel en Orbitron, glifo hexagonal y escala de cinco celdas. | El veredicto es una rejilla de tres filas del alto del dial: glifo arriba, etiqueta en la fila central (a la misma altura que el porcentaje) y escala abajo. El tamaño de la etiqueta depende del ancho de su columna (`cqi`) para que «PROBABLEMENTE» quepa sin cortarse.
+| Desglose (P06) | Un módulo por modelo, con icono vectorial, LED FALSA/REAL, porcentaje y barra de 20 segmentos. «No disponible» si falta la predicción. |
+| Historial (P07) | Registro de operaciones: índice `#001`, fecha mono, vista previa, porcentaje con color de nivel y barra cian al pasar el ratón. |
+| Pruebas (P09) | Cada modelo con el color de su luz en la tira de estado (BiLSTM cian, mBERT violeta): icono vectorial (`ModelIcon`, compartido con P06) en un cuadro de su color, nombre en Orbitron de su color, contador «N pruebas» en ámbar y panel con borde y escuadras de su color. Cada conjunto lleva una etiqueta de color por tipo (Validación verde, Prueba interna magenta, Fuentes reservadas o Prueba externa ámbar) y la cantidad de textos a la derecha. «Aciertos» en grande con barra de 25 segmentos del color del modelo; **F1** como segunda barra fina en magenta. Limitaciones en un desplegable ámbar. |
+| Cuenta y acceso (P11–P13) | Avatar vectorial (128 px) en retícula giratoria y mensaje de estado en Orbitron mayúscula (`.account-status`), centrados en vertical entre el encabezado y los botones; el correo, debajo, en mono. Formularios dentro de una «Terminal de autenticación». El «Mensaje del sistema» de sesión iniciada (con o sin historial incorporado) se cierra solo a los 6 s, con una barra ámbar de cuenta atrás en su borde inferior y un desvanecido final; el de cuenta pendiente de confirmación es persistente porque pide un paso al usuario. |
+| Confirmación de borrado | Panel rojo con banda de advertencia diagonal, título directo y dos teclas. |
+| Estado del servicio | Tira bajo la cabecera, visible en todas las vistas, con **una luz por servicio real de `/salud`**, cada una con su color cuando funciona: BiLSTM cian, mBERT violeta, Cuentas e historial verde, Registro blockchain azul hielo. **Rojo** = caído (parpadea), **ámbar** = falla en parte o sin datos, apagada con parpadeo = comprobando. Si la tira tiene sitio, cada luz lleva su nombre corto; si no, solo la luz, con el nombre en `title` y para lectores de pantalla. Las luces que funcionan tienen «actividad de datos»: parpadeos breves con un ritmo aleatorio propio (2,5–6 s), nunca todas a la vez; las rojas parpadean a ritmo fijo de alarma. Entre las luces y el estado, un **bus de datos**: una regla fina por la que viajan pulsos de los colores de los servicios activos (más rápido al comprobar, detenido y en rojo con la API caída). A la derecha, el resumen «En línea / Servicio limitado / Sin conexión / Conectando… / Estado desconocido» con la latencia medida de `/salud` («En línea · 24 ms»). Lógica en `service-presentation.js`. Si la API no responde, P01 muestra junto al botón un panel con el mensaje y **Reintentar**. |
+| Inicio (P01) | En el panel lateral ocupa todo el alto: el radar, con dos anillos exteriores, se centra en el espacio libre y la tarjeta de acción queda abajo. |
+| Escala | Toda la interfaz usa `zoom: var(--ui-zoom)` (1,12). En paneles de menos de 360 px vuelve a 1 para que nada desborde. |
+| Ancho estable | `html` reserva siempre el hueco de la barra de desplazamiento (`scrollbar-gutter: stable`): el contenido no cambia de ancho cuando la barra aparece. Los títulos de vista se ajustan al ancho (`clamp`) y, si se partieran, se reparten con `text-wrap: balance`. |
+
+## Icono de la extensión
+
+`public/icons/icon-{16,32,48,128}.png`, declarados en `icons` y `action.default_icon` del manifiesto. 48 y 128 px salen del logo completo; 16 y 32 px, de `scantrue-mark-small.svg`: el mismo ojo con trazo más grueso y sin el anillo interior, para que se lea en la barra de Chrome.
+
+## Decoración
+
+- **Global:** retícula, viñeta, líneas de escaneo y un barrido CRT lento (pseudo-elementos fijos con `pointer-events: none`). Al abrir, un parpadeo breve de encendido.
+- **P01:** radar con barrido, contactos y objetivo sobre un fragmento de texto.
+- **P04:** el mismo radar con barrido rápido, tres bloques de barras de nivel (cian, ámbar y magenta) sin rótulo y un flujo hexadecimal.
+- Los gráficos decorativos están en `src/popup/components/HudDecor.jsx` y siempre llevan `aria-hidden`.
 
 ## Reglas de contenido
+
+En el inicio, hablar como a alguien que no conoce los modelos: «Marca el titular y unos párrafos de la noticia. Te mostramos si se parece más a una noticia falsa o a una real.», seguido siempre de la aclaración «Es una orientación, no una verificación de los hechos.».
 
 En las pantallas de inicio y selección, usar instrucciones breves en lenguaje cotidiano. Reservar términos como **BiLSTM**, **mBERT** y **resultado unificado** para el resultado, el desglose y las métricas, donde ayudan a interpretar datos concretos.
 
@@ -105,7 +106,7 @@ El porcentaje mostrado será el valor de la API multiplicado por 100 y redondead
 
 - **Sin selección:** mostrar una explicación breve y la acción **Escoger texto**.
 - **Selección pendiente:** reflejar el fragmento capturado; ofrecer **Analizar** o **Seleccionar de nuevo**. Mostrar junto a la acción un aviso breve sobre el envío y guardado del texto. Al pulsar **Analizar**, iniciar el análisis y mostrar P04 directamente.
-- **Carga:** identificar la operación y evitar el doble envío. No usar animaciones continuas llamativas.
+- **Carga:** identificar la operación y evitar el doble envío. La animación de espera (radar y barras) es decorativa y se detiene con movimiento reducido.
 - **Resultado parcial:** mostrar el valor de cada modelo disponible y **No disponible** para el que falló, sin inventar porcentajes.
 - **Vacío:** explicar por qué no hay elementos y ofrecer la acción que permite empezar; en historial, volver a analizar.
 - **Error recuperable:** mostrar causa comprensible y una acción concreta. En timeout tras enviar un análisis, orientar a revisar el historial antes de repetirlo.
@@ -113,11 +114,9 @@ El porcentaje mostrado será el valor de la API multiplicado por 100 y redondead
 
 ## Movimiento y accesibilidad
 
-- Animar solo cambios provocados por el usuario, como abrir el desglose o cambiar de vista, con transiciones breves. Respetar la preferencia de movimiento reducido.
-- Mantener navegación por teclado, orden de foco lógico, foco visible y nombres accesibles en botones de icono.
-- No usar rojo y verde como única diferencia entre clases. Incluir etiqueta textual y valor.
-- En contenido largo, evitar que el desplazamiento o una barra fija oculten el botón para volver o la confirmación de una acción.
-
-## Cómo se aplicará pantalla por pantalla
-
-Este sistema se aplicará en el orden P01, P02, P04 a P09 y P11 a P13. Antes de iniciar cada pantalla, se pedirá al usuario crear su archivo separado de planificación e implementación y se revisará el material visual que comparta. La pantalla se diseñará con estos tokens y patrones, se comprobará en el tamaño real del popup y solo entonces se pasará a la siguiente. Las excepciones al sistema se documentarán en el archivo de esa pantalla.
+- Las animaciones (barrido, LEDs, barras, encendido) son decorativas. Ningún elemento parpadea más de 3 veces por segundo.
+- Con `prefers-reduced-motion: reduce` se desactivan todas las animaciones y transiciones y desaparece el barrido del radar. Las barras quedan fijas.
+- Foco de teclado: contorno amarillo `focus` de 2 px. En las teclas con chaflán se dibuja hacia dentro, y en las teclas cian o rojas es discontinuo y oscuro.
+- Navegación por teclado, orden de foco lógico y nombres accesibles en los botones de icono. Los títulos en mayúsculas lo son solo por CSS, así que los lectores de pantalla leen el texto original.
+- No usar rojo y verde como única diferencia: siempre van con etiqueta, valor y glifo.
+- Comprobar cada cambio a 400 px de ancho, sin desplazamiento horizontal.
