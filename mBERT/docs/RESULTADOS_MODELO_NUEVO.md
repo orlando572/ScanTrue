@@ -76,6 +76,30 @@ Frente a B6, el ganador sube la F1 en **+0,136**. Los valores de B6, TF-IDF y lo
 
 La mediana de épocas del ganador (M3b) es **3**. Es la que usará el modelo final de la fase F (§8).
 
+## Modelo final (fase F, §8–§9)
+
+Se generó el 11 nov 2026 con `mBERT/entrenar.py final`, en `datasets/comun_v1_corridas/mbert/final/`.
+
+- **Entrenamiento.** M3b (BETO, 256 tokens, lr 2e-5, brazo `usmsc`) con todo el desarrollo (`--pliegue todo`, 4.562 filas, sin validación interna). Se usaron 3 épocas fijas, que es la mediana de las 9 corridas de M3b, y las semillas 42, 43 y 44. Cada semilla tardó unos 2,5 min y usó como máximo 2,3 GB de VRAM.
+
+| Semilla | Pérdida por época (1 / 2 / 3) | SHA-256 de `model.safetensors` |
+| --- | --- | --- |
+| 42 | 0,544 / 0,267 / 0,114 | `35863455be8c0a9e352c49f89f79549688c5ec34cc4fde0d24ee30d5562d75aa` |
+| 43 | 0,549 / 0,280 / 0,120 | `a410da7ca667500f6eaa81cfe80fb12095b58dc688cf2e6eb7d992f5ba155ffc` |
+| 44 | 0,541 / 0,282 / 0,117 | `bf792dcf3a7c98858a09ceb9bf1f9d3f7a0132159a2c53733f6d8aba583a78d4` |
+
+- **Predicciones fuera de pliegue.** Están en `final/predicciones_fuera_de_pliegue.csv` y son las 9 corridas de M3b en el formato común (§6.4): 8.634 filas, es decir, todo el desarrollo por cada semilla.
+- **Contrato.** `final/contrato.json` tiene los campos de §9. Sus valores son:
+  - versión `comun_v1.1_M3b_20261111`;
+  - `eleccion.manual = false`;
+  - `max_tokens = 256`;
+  - etiquetas `real = 0` y `falsa = 1`.
+- **Pendiente de Orlando:**
+  - `promediar_logits_semillas` queda en `null` porque lo decide Orlando con las predicciones fuera de pliegue (§8.3);
+  - la temperatura queda en `temperatura = 1.0` con `temperatura_provisional = true` hasta que Orlando la calibre (§8.4).
+- El tokenizador guardado da los mismos IDs que el de BETO base en los 2.878 fragmentos del desarrollo.
+- El backend no se ha tocado. Sigue usando el modelo de producción de octubre.
+
 ## Límites
 
 - Las cifras son de validación por fuente dentro del desarrollo. La prueba congelada se evaluará una sola vez, cuando Orlando lo indique.

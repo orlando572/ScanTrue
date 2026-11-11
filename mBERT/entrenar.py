@@ -49,17 +49,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "mBERT"))
 sys.path.insert(0, str(ROOT / "datos_comunes"))
 from comun import CONJUNTO, leer, manifiesto, particiones, sha256  # noqa: E402
-from evaluar_comun import (  # noqa: E402
-    bootstrap_pareado, cargar_predicciones, evaluar_configuracion, softmax_falsa,
-)
+from evaluar_comun import COLUMNAS_PRED, cargar_predicciones, softmax_falsa  # noqa: E402
 import modelo as bases  # noqa: E402
 
 CORRIDAS = ROOT / "datasets/comun_v1_corridas"
 ETIQUETAS = bases.ETIQUETAS
 PLIEGUES = ("F1", "F2", "F3")
 SEMILLAS = (42, 43, 44)
-UMBRAL = 0.02          # regla de decisión (plan común §6)
-UMBRAL_SEMILLAS = 0.01  # promediar logits de 3 semillas compensa si sube F1 al menos esto (§8)
+UMBRAL = 0.02  # regla de decisión (plan común §6)
 
 
 # =========================================================================== datos
@@ -526,22 +523,6 @@ def final(ganador_manual: str | None, motivo: str, corridas: Path = CORRIDAS) ->
     epocas_final = int(np.median(epocas))
 
     oof = cargar_predicciones(rutas)
-    media = (oof.groupby(["id_fragmento", "id_articulo", "fuente", "etiqueta_falsa", "pliegue"], as_index=False)
-             [["logit_real", "logit_falsa"]].mean())
-    media["p"] = softmax_falsa(media.logit_real, media.logit_falsa)
-    media["semilla"] = 0
-    individual = evaluar_configuracion(oof, bootstrap=False)["seleccion"]["f1_macro_articulo_media"]
-    promediada = evaluar_configuracion(media, bootstrap=False)["seleccion"]["f1_macro_articulo_media"]
-    promediar = promediada - individual >= UMBRAL_SEMILLAS
-    base = media if promediar else oof[oof.semilla == 42]
-    comparaciones = {}
-    for nombre, ruta in (("tfidf", corridas / "referencias/ref_tfidf_char35/predicciones.csv"),
-                         ("bilstm_B6", corridas / "bilstm/final/predicciones_fuera_de_pliegue.csv")):
-        if ruta.exists():
-            otro = cargar_predicciones([ruta])
-            if nombre == "bilstm_B6":
-                otro = otro[otro.semilla == 42]
-            comparaciones[nombre] = bootstrap_pareado(base, otro)
 
     salida_final.mkdir(parents=True, exist_ok=True)
     for semilla in SEMILLAS:
@@ -553,10 +534,8 @@ def final(ganador_manual: str | None, motivo: str, corridas: Path = CORRIDAS) ->
                                 "--epocas-fijas", str(epocas_final), *argumentos(config)],
                                check=True, stdout=log, stderr=subprocess.STDOUT)
 
-    oof.drop(columns=["p", "pliegue_dato"]).to_csv(salida_final / "predicciones_fuera_de_pliegue.csv", index=False)
-    media.drop(columns=["p", "semilla"]).assign(modelo=config.get("modelo", "mbert"),
-                                                configuracion=f"{ganador}_media_semillas") \
-        .to_csv(salida_final / "predicciones_fuera_de_pliegue_media_semillas.csv", index=False)
+    # Con estas predicciones Orlando decide si promediar las semillas y calibra la temperatura (§8.3–§8.4).
+    oof[list(COLUMNAS_PRED)].to_csv(salida_final / "predicciones_fuera_de_pliegue.csv", index=False)
     clave = config.get("modelo", "mbert")
     info = bases.resumen(clave, bases.carpeta(clave))
     modelo_s42 = salida_final / "todo_s42/best_model"
@@ -570,7 +549,7 @@ def final(ganador_manual: str | None, motivo: str, corridas: Path = CORRIDAS) ->
         "entrada": "texto_unico",
         "temperatura": 1.0, "temperatura_provisional": True,
         "umbral_falsa": 0.5,
-        "semillas": list(SEMILLAS), "promediar_logits_semillas": promediar,
+        "semillas": list(SEMILLAS), "promediar_logits_semillas": None,  # lo decide Orlando (§8.3)
         "epocas": epocas_final,
         "checkpoints": {f"s{s}": {"ruta": (salida_final / f"todo_s{s}/best_model").relative_to(ROOT).as_posix(),
                                   "sha256": sha256(salida_final / f"todo_s{s}/best_model/model.safetensors")}
@@ -581,9 +560,7 @@ def final(ganador_manual: str | None, motivo: str, corridas: Path = CORRIDAS) ->
     }
     (salida_final / "contrato.json").write_text(json.dumps(contrato, ensure_ascii=False, indent=2), "utf-8")
     resumen = {"ganador": ganador, "eleccion": eleccion, "config": config, "epocas_por_corrida": epocas,
-               "epocas_final": epocas_final, "seleccion_semilla_individual_media": individual,
-               "seleccion_media_logits": promediada, "promediar_semillas": promediar,
-               "comparaciones_bootstrap_pareado": comparaciones}
+               "epocas_final": epocas_final}
     (salida_final / "resumen_final.json").write_text(json.dumps(resumen, ensure_ascii=False, indent=2), "utf-8")
     print(json.dumps(resumen, ensure_ascii=False, indent=2))
     return resumen

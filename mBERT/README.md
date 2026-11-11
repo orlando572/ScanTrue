@@ -10,7 +10,7 @@ mBERT/
 ├── tests/               Pruebas cortas en CPU con un conjunto sintético y un BERT diminuto
 ├── docs/
 │   ├── RESULTADOS_PRODUCCION.md     El mBERT que usa hoy la app: datos, métricas, límites
-│   ├── RESULTADOS_MODELO_NUEVO.md   Experimentos con comun_v1 y modelo final (fase E)
+│   ├── RESULTADOS_MODELO_NUEVO.md   Experimentos con comun_v1 y modelo final (fases E y F)
 │   └── INFORME_TECNICO.md           Informe técnico de los entrenamientos de octubre
 └── README.md
 ```
