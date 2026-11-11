@@ -88,3 +88,17 @@ test('P09 omite aciertos inválidos y datos ausentes', () => {
   assert.equal(shown.evaluations[0].source, null);
   assert.equal(shown.evaluations[0].sourceName, null);
 });
+
+test('P09 destaca la prueba congelada y la validación; el resto queda en «Ver más»', () => {
+  const sets = ['validacion_por_fuente_articulos', 'fuente_no_vista_v1', 'prueba_congelada', 'prueba_congelada_falledesinfo'];
+  const shown = presentMetrics({ modelo: 'mbert', evaluaciones: sets.map((conjunto) => ({ conjunto, n: 10, exactitud: 0.8, f1_macro: 0.7 })) });
+  assert.deepEqual(shown.featured.map((evaluation) => evaluation.set), ['prueba_congelada', 'validacion_por_fuente_articulos']);
+  assert.deepEqual(shown.more.map((evaluation) => evaluation.set), ['fuente_no_vista_v1', 'prueba_congelada_falledesinfo']);
+  assert.match(shown.featured[0].note, /Evaluación final/);
+});
+
+test('P09 sin pruebas conocidas destaca las dos primeras', () => {
+  const shown = presentMetrics({ modelo: 'bilstm', evaluaciones: ['a', 'b', 'c'].map((conjunto) => ({ conjunto, n: 1, exactitud: 0.5 })) });
+  assert.deepEqual(shown.featured.map((evaluation) => evaluation.set), ['a', 'b']);
+  assert.deepEqual(shown.more.map((evaluation) => evaluation.set), ['c']);
+});

@@ -89,7 +89,7 @@ export function CoreGrid() {
 export function SegmentTrack({ value, segments = 20, marker }) {
   const lit = Math.round((Math.max(0, Math.min(100, value)) / 100) * segments);
   return <div className={`segment-track${marker !== undefined ? ' segment-track--marked' : ''}`} aria-hidden="true">
-    {Array.from({ length: segments }, (_, index) => <i key={index} className={index < lit ? 'on' : ''} />)}
+    {Array.from({ length: segments }, (_, index) => <i key={index} className={index < lit ? 'on' : ''} style={{ '--i': index }} />)}
     {marker !== undefined && <b className="segment-marker" style={{ left: `${marker}%` }} />}
   </div>;
 }

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { getPublishedMetrics } from '../../extension/metrics.js';
 import { presentMetrics } from '../metrics-presentation.js';
 import ScreenHeader from '../components/ScreenHeader.jsx';
 import { SegmentTrack } from '../components/HudDecor.jsx';
 import ModelIcon from '../components/ModelIcon.jsx';
+import HudLoader from '../components/HudLoader.jsx';
 
 // Cada modelo usa el mismo color que su luz en la tira de estado.
 const modelColors = { BiLSTM: { key: 'bilstm', color: '#38E1FF' }, BETO: { key: 'mbert', color: '#A98BFF' } };
@@ -15,16 +16,25 @@ const setTones = {
   'Prueba congelada: FalleDesinfo (fuente nueva)': 'amber',
 };
 
-function Evaluation({ evaluation }) {
+// Resumen en lenguaje cotidiano de las limitaciones que publica el backend (técnicas).
+const aboutTests = [
+  'Probamos cada modelo con noticias que no usó para aprender. «Aciertos» es cuántas clasificó bien de cada 100.',
+  'F1 resume en una sola cifra si acierta por igual con las noticias falsas y con las reales.',
+  'La prueba congelada es el examen final: se hizo una sola vez. Con medios que el modelo nunca vio acierta menos.',
+  'Los modelos juzgan cómo está escrito el texto, no comprueban los hechos. Úsalo como una orientación.',
+];
+
+function Evaluation({ evaluation, style }) {
   const accuracy = Number.parseFloat(evaluation.accuracy ?? '');
   const f1 = Number.parseFloat(evaluation.f1 ?? '');
-  return <section className="metrics-evaluation">
+  return <section className="metrics-evaluation" style={style}>
     <div className="flex items-start justify-between gap-3">
       <h3 className="flex min-w-0 items-center gap-2 text-[14px] leading-5 font-semibold">
         <span className={`set-tag set-tag--${setTones[evaluation.name] ?? 'neutral'}`} aria-hidden="true" />{evaluation.name}
       </h3>
       {evaluation.examples !== null && <span className="metrics-count">{evaluation.examples} textos</span>}
     </div>
+    {evaluation.note && <p className="metrics-note">{evaluation.note}</p>}
     {evaluation.accuracy !== null && <dl className="mt-3">
       <dt className="hud-label text-[11px]">Aciertos en las pruebas</dt>
       <dd className="metrics-value mt-1">{evaluation.accuracy}</dd>
@@ -35,6 +45,22 @@ function Evaluation({ evaluation }) {
       {Number.isFinite(f1) && <SegmentTrack value={f1} segments={25} />}
     </div>}
   </section>;
+}
+
+// Pruebas destacadas a la vista; el resto se despliega con «Ver más», una a una.
+function ModelEvaluations({ model }) {
+  const [open, setOpen] = useState(false);
+  const more = useId();
+  return <div className="metrics-sheet hud-panel mt-3">
+    {model.featured.map((evaluation) => <Evaluation key={evaluation.key} evaluation={evaluation} />)}
+    {open && <div id={more} className="metrics-more">
+      {model.more.map((evaluation, index) => <Evaluation key={evaluation.key} evaluation={evaluation} style={{ '--row': index }} />)}
+    </div>}
+    {model.more.length > 0 && <button type="button" className="metrics-more-toggle" aria-expanded={open} aria-controls={more} onClick={() => setOpen((value) => !value)}>
+      <span>{open ? 'Ver menos' : `Ver ${model.more.length} ${model.more.length === 1 ? 'prueba más' : 'pruebas más'}`}</span>
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"><path d="m6 9 6 6 6-6" /></svg>
+    </button>}
+  </div>;
 }
 
 export default function MetricsScreen({ onBack }) {
@@ -75,12 +101,10 @@ export default function MetricsScreen({ onBack }) {
   }, [load]);
 
   const shown = status === 'ready' ? data.map(presentMetrics) : null;
-  const testNotes = (shown?.find((model) => model.model === 'BiLSTM')?.limitations ?? [])
-    .filter((note) => note !== 'La salida de probabilidad_falsa del clasificador no está calibrada como probabilidad de falsedad factual.');
 
-  return <section>
+  return <section className="screen-boot">
     <ScreenHeader title="Pruebas del modelo" onBack={onBack} />
-    {status === 'loading' && <p className="hud-readout mt-6" role="status">Cargando pruebas…</p>}
+    {status === 'loading' && <HudLoader label="Cargando pruebas" code="Consultando pruebas" count={2} />}
     {status === 'error' && <div className="mt-6" role="alert"><p className="text-sm leading-5 text-muted">No pudimos cargar las pruebas.</p><button type="button" className="secondary-button mt-5" onClick={load}>Intentar de nuevo</button></div>}
     {shown?.map((model) => {
       const identity = modelColors[model.model] ?? { key: 'bilstm', color: '#38E1FF' };
@@ -91,12 +115,12 @@ export default function MetricsScreen({ onBack }) {
           {model.evaluations.length > 0 && <span className="hud-code ml-auto">{model.evaluations.length} {model.evaluations.length === 1 ? 'prueba' : 'pruebas'}</span>}
         </div>
         {model.evaluations.length === 0 ? <p className="mt-4 text-sm text-muted">Aún no hay pruebas disponibles</p>
-          : <div className="metrics-sheet hud-panel mt-3">{model.evaluations.map((evaluation) => <Evaluation key={evaluation.key} evaluation={evaluation} />)}</div>}
+          : <ModelEvaluations model={model} />}
       </section>;
     })}
-    {testNotes.length > 0 && <details className="metrics-details mt-5">
+    {status === 'ready' && <details className="metrics-details mt-5">
       <summary>Sobre estas pruebas<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg></summary>
-      <div className="border-t border-line px-4 py-3">{testNotes.map((note, index) => <p key={index} className="mt-1 whitespace-pre-wrap break-words text-[12px] leading-[18px] text-muted">{note}</p>)}</div>
+      <ul className="metrics-about border-t border-line px-4 py-3">{aboutTests.map((note) => <li key={note}>{note}</li>)}</ul>
     </details>}
     {status === 'ready' && unavailable.length > 0 && <div className="mt-5" role="alert">
       <p className="text-sm leading-5 text-muted">No pudimos cargar las pruebas de {unavailable.join(' y ')}.</p>

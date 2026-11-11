@@ -1,11 +1,6 @@
-import { formatProbability, presentResult, presentResultLevel } from './result-presentation.js';
+import { domainFromUrl, formatProbability, presentResult, presentResultLevel } from './result-presentation.js';
 
-export function domainFromUrl(url) {
-  try {
-    const parsed = new URL(url);
-    return /^https?:$/.test(parsed.protocol) ? parsed.hostname : null;
-  } catch { return null; }
-}
+export { domainFromUrl };
 
 export function formatDate(value) {
   if (typeof value !== 'string' || !value.trim()) return 'Fecha no disponible';

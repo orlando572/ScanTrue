@@ -74,7 +74,7 @@ export default function RegisterScreen({ onBack, onLogin, onComplete }) {
     } finally { submitLock.current = false; setSubmitting(false); }
   };
 
-  return <section className="flex flex-1 flex-col" aria-labelledby="register-title">
+  return <section className="screen-boot flex flex-1 flex-col" aria-labelledby="register-title">
     <ScreenHeader title="Crear cuenta" titleId="register-title" backLabel="Volver a cuenta" onBack={onBack} />
     <form className="mt-6 flex flex-1 flex-col" noValidate onSubmit={submit}>
       <div className="hud-panel">
