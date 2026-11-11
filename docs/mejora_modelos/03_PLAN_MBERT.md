@@ -203,6 +203,12 @@ Cada experimento es **una configuración × 3 pliegues × 3 semillas = 9 corrida
 Notas sobre el orden:
 
 - **En el paso 1, los tres modelos compiten contra M0** y entre ellos. Si dos quedan a menos de 0,02, gana el más pequeño y rápido (BETO > RoBERTa-BNE > mBERT > XLM-R).
+- **BETO y MarIA (paso 1).** `roberta_bne` es el modelo conocido como **MarIA** (Biblioteca Nacional / BSC). Los dos son más pequeños que mBERT (~110 M y ~125 M frente a ~178 M) y su vocabulario es solo español, así que en 256 o 512 tokens leen más texto que mBERT. **Se prueban los dos, pero a la app solo llega uno:** el ganador sustituye a mBERT; nunca se usan a la vez.
+- **Prueba rápida de factibilidad antes del paso 1 completo** (para no gastar horas): corre M0, M1a (BETO) y M1b (MarIA) con **una sola semilla (42) y los 3 pliegues**, a 256 tokens. Son 3 corridas por modelo, unos 10 minutos cada uno en la RTX 5060.
+  - Si un modelo queda **más de 0,02 por debajo** de M0 en esa prueba, se descarta sin más corridas.
+  - Si queda cerca o por encima, se completan sus 9 corridas (semillas 43 y 44) y se decide con la regla. **No decidas con una sola semilla:** en el BiLSTM, la diferencia entre semillas y entre versiones del conjunto fue de ~0,03, más que el umbral (ver `bilstm/docs/RESULTADOS_MODELO_NUEVO.md` §0).
+  - Guarda solo `predicciones.csv` y métricas de estas corridas; borra los `best_model` al terminar para no llenar el disco (~450–500 MB cada uno).
+  - **Hardware:** caben en la RTX 5060 de 8 GB igual que mBERT. También en una RTX 3050 de 6 GB a 256 tokens (BF16, microlote 8); a 512, con microlote 2, acumulación 8 y *gradient checkpointing*, más lento. Las versiones *large* (p. ej. `roberta-large-bne`) no son viables en estas GPU.
 - **En el paso 2,** M2a y M2b compiten contra el ganador del paso 1 y entre ellos. Después, M2c compara la longitud sobre el ganador. Si 512 no gana por 0,02, se queda 256 por ser más rápido.
 - **En el paso 3,** cada brazo se compara solo contra el ganador del paso 2. Un brazo se adopta si además mejora en al menos 2 de los 3 pliegues.
 - **No añadas experimentos a la lista** sin acordarlo antes con Orlando. Cada experimento extra aumenta la probabilidad de ganar por azar.
