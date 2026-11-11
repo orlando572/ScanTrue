@@ -83,7 +83,9 @@ y F1 macro. Las filas de la matriz son etiquetas reales y las columnas son
 predicciones; ambos ejes usan el orden `falsa`, `real`. Los catálogos
 (`backend/metrics/evaluaciones.json` y `mbert_evaluaciones.json`) se generan con
 `datos_comunes/publicar_metricas.py`; los de octubre quedan en
-`backend/metrics/archivo_octubre/`. La prueba congelada se añadirá cuando se evalúe.
+`backend/metrics/archivo_octubre/`. Incluyen también la prueba congelada, evaluada una sola vez
+(toda y solo FalleDesinfo, la única fuente nueva); ver
+[docs/mejora_modelos/05_PRUEBA_CONGELADA.md](../docs/mejora_modelos/05_PRUEBA_CONGELADA.md).
 
 ## Registro verificable local
 

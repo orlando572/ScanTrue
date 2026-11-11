@@ -24,6 +24,7 @@ const evaluationNames = {
   fuente_no_vista_fakedes: 'Fuente no vista: FakeDeS',
   fuente_no_vista_polyglot: 'Fuente no vista: Polyglot',
   prueba_congelada: 'Prueba congelada',
+  prueba_congelada_falledesinfo: 'Prueba congelada: FalleDesinfo (fuente nueva)',
 };
 
 export function presentMetrics(data) {

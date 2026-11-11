@@ -12,6 +12,7 @@ datos_comunes/
 ├── referencias.py       Referencias: solo longitud y TF-IDF de caracteres
 ├── calibrar_conjunto.py Calibración conjunta: temperaturas, combinación BiLSTM + mBERT y niveles
 ├── publicar_metricas.py Métricas de producción que muestra la extensión (backend/metrics/)
+├── prueba_congelada.py  Evaluación única de la prueba congelada con el código del backend (ya hecha)
 └── tests/               Pruebas
 ```
 

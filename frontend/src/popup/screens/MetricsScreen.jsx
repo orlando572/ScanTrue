@@ -12,6 +12,7 @@ const setTones = {
   'Validación': 'green', 'Prueba interna': 'magenta', 'Fuentes reservadas': 'amber', 'Prueba externa': 'amber', 'Prueba': 'cyan',
   'Fuentes no vistas': 'green', 'Fuente no vista: v1': 'cyan', 'Fuente no vista: FakeDeS': 'cyan',
   'Fuente no vista: Polyglot': 'cyan', 'Prueba congelada': 'magenta',
+  'Prueba congelada: FalleDesinfo (fuente nueva)': 'amber',
 };
 
 function Evaluation({ evaluation }) {

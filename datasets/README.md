@@ -24,6 +24,7 @@ datasets/
     ├── bilstm/              Experimentos B0–B8, decisiones.json y modelo final B6 (final/)
     ├── mbert/               Experimentos M0–M3c, decisiones.json y modelo final BETO M3b (final/, 3 semillas)
     ├── calibracion/         Calibración conjunta: combinacion.json, RESUMEN.md y probabilidades combinadas
+    ├── prueba_congelada/    Evaluación única de la prueba congelada (11 nov 2026): predicciones y métricas
     └── respaldo_v1.0/       Solo métricas de la versión 1.0 del conjunto
 ```
 

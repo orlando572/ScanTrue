@@ -13,7 +13,7 @@ Este cambio sustituye los modelos de octubre por los entrenados con el conjunto 
 | Configuración de pesos | `ANALYSIS_MBERT_WEIGHT` | `datasets/combinacion_produccion/combinacion.json` (la variable se ignora) |
 | Lectura máxima | mBERT 512 subpalabras; el BiLSTM, 192 dentro de ese recorte | BETO 256 subpalabras y BiLSTM 192 palabras, cada uno sobre el prefijo más largo de los dos |
 | `resultado_unificado` | `version_regla` | `version_regla` (sigue siendo `media_ponderada_v1`, lo exige la base de datos) y `version_combinacion` nuevo |
-| `GET /metricas` | Validación y pruebas de octubre | Validación por fuente no vista (global y por fuente) de B6 y BETO |
+| `GET /metricas` | Validación y pruebas de octubre | Validación por fuente no vista (global y por fuente) y prueba congelada (toda y solo FalleDesinfo) de B6 y BETO |
 
 El resto del contrato (`POST /analisis`, historial, verificación, mínimo de 100 tokens, `texto_recortado`) no cambia. No hace falta ninguna migración de Supabase: `version_combinacion` es un campo más dentro del JSON `resultado_unificado`.
 

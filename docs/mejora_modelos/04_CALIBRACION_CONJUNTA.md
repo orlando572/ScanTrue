@@ -119,7 +119,7 @@ bilstm/.venv/bin/python datos_comunes/calibrar_conjunto.py --sobrescribir
 ## 7. Límites y pendientes
 
 - **Semilla 42 en los dos modelos.** Es la semilla del checkpoint final de cada uno. Las temperaturas se ajustan con los modelos de cada pliegue, que no son exactamente el modelo final entrenado con todo el desarrollo. La prueba congelada dirá si se mantienen.
-- **Prueba congelada:** se evalúa una sola vez, con estos parámetros ya fijados (§6 del plan común), sin volver a ajustarlos después.
+- ✅ **Prueba congelada:** evaluada una sola vez el 11 nov 2026 con estos parámetros, sin ajustarlos después: combinación F1 0,826, cinco niveles dentro de objetivo. Ver [05_PRUEBA_CONGELADA.md](05_PRUEBA_CONGELADA.md).
 - ✅ **Backend:** desde el 11 nov 2026 lee los dos contratos y `datasets/combinacion_produccion/combinacion.json` y aplica la fórmula de la sección 1 (sección 8).
 - ✅ **Cortes de la extensión:** igualados el 11 nov 2026 (ver sección 4).
 

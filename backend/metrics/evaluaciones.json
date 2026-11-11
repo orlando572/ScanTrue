@@ -85,11 +85,51 @@
       "f1_falsa": 0.296551724137931,
       "f1_macro": 0.5310344827586206,
       "fuente": "datasets/comun_v1_corridas/calibracion/predicciones_combinadas_fuera_de_pliegue.csv#p_bilstm&pliegue=F3"
+    },
+    {
+      "conjunto": "prueba_congelada",
+      "n": 310,
+      "matriz_confusion": [
+        [
+          56,
+          53
+        ],
+        [
+          34,
+          167
+        ]
+      ],
+      "exactitud": 0.7193548387096774,
+      "precision_falsa": 0.6222222222222222,
+      "recall_falsa": 0.5137614678899083,
+      "f1_falsa": 0.5628140703517588,
+      "f1_macro": 0.6780816194989198,
+      "fuente": "datasets/comun_v1_corridas/prueba_congelada/probabilidades_calibradas.csv#p_bilstm"
+    },
+    {
+      "conjunto": "prueba_congelada_falledesinfo",
+      "n": 32,
+      "matriz_confusion": [
+        [
+          0,
+          10
+        ],
+        [
+          1,
+          21
+        ]
+      ],
+      "exactitud": 0.65625,
+      "precision_falsa": 0.0,
+      "recall_falsa": 0.0,
+      "f1_falsa": 0.0,
+      "f1_macro": 0.39622641509433965,
+      "fuente": "datasets/comun_v1_corridas/prueba_congelada/probabilidades_calibradas.csv#p_bilstm&fuente=falledesinfo"
     }
   ],
   "limitaciones": [
     "BiLSTM B6. Validación dejando una fuente fuera (v1, FakeDeS, Polyglot): cada fuente la predice un modelo entrenado sin ella (semilla 42). El modelo de producción se entrenó después con todo el desarrollo, así que estas cifras lo aproximan, no lo miden.",
-    "Métricas por artículo (media de las probabilidades de sus fragmentos) con umbral 0,5. La prueba congelada, nunca abierta, se evaluará una sola vez y se añadirá aquí.",
+    "Métricas por artículo (media de las probabilidades de sus fragmentos) con umbral 0,5. La prueba congelada se evaluó una sola vez con el modelo de producción (11 nov 2026). Sus artículos de v1, FakeDeS y Polyglot son de fuentes que el modelo sí vio al entrenar, por eso sus cifras son más altas que las de fuentes no vistas. FalleDesinfo es la única fuente nueva: allí no detectó ninguna de las 10 falsas (32 artículos).",
     "La probabilidad está calibrada con temperatura T = 8.4468 y el resultado unificado combina BETO (80 %) y BiLSTM (20 %) (comun_v1.1_conjunta_20261111). Mide la confianza del clasificador según el estilo del texto; no verifica hechos."
   ]
 }

@@ -39,9 +39,10 @@ def manifiesto(conjunto: Path = CONJUNTO) -> dict:
     return json.loads((conjunto / "manifest.json").read_text("utf-8"))
 
 
-def leer(nombre: str, conjunto: Path = CONJUNTO) -> pd.DataFrame:
-    """Lee un CSV del conjunto y falla si su hash no coincide con el manifiesto."""
-    if nombre == "fragmentos_prueba_congelada.csv":
+def leer(nombre: str, conjunto: Path = CONJUNTO, abrir_congelada: bool = False) -> pd.DataFrame:
+    """Lee un CSV del conjunto y falla si su hash no coincide con el manifiesto.
+    La prueba congelada solo la abre `datos_comunes/prueba_congelada.py` (`abrir_congelada=True`)."""
+    if nombre == "fragmentos_prueba_congelada.csv" and not abrir_congelada:
         raise PermissionError("La prueba congelada solo se abre en el paso final del plan")
     path = conjunto / nombre
     esperado = manifiesto(conjunto)["archivos"][nombre]["sha256"]

@@ -87,7 +87,8 @@ class MbertPredictor:
             text_policy.model_dir, local_files_only=True, use_safetensors=True
         ).to(self.device).eval()
 
-    def predict(self, text: str) -> dict[str, str | float | int]:
+    def margin(self, text: str) -> tuple[float, int]:
+        """`logit_falsa − logit_real` sin calibrar y subpalabras leídas."""
         encoded = self.text_policy.tokenizer(
             text, truncation=True, max_length=self.text_policy.max_len,
             return_tensors="pt",
@@ -102,7 +103,10 @@ class MbertPredictor:
             )
             with autocast:
                 logits = self.model(**encoded).logits.float()[0]
-        margin = float((logits[1] - logits[0]).item())
+        return float((logits[1] - logits[0]).item()), tokens_read
+
+    def predict(self, text: str) -> dict[str, str | float | int]:
+        margin, tokens_read = self.margin(text)
         probability_fake = calibrated_probability(margin, self.contract.temperature)
         return {
             "modelo": "mbert",
