@@ -18,8 +18,8 @@ Plan para mejorar el BiLSTM y mBERT con los datasets que ya existen. No incluye 
 
 ## Orden de trabajo
 
-1. Orlando construye `datasets/comun_v1/` y el evaluador común.
-2. Cada responsable ejecuta los experimentos de su modelo, en paralelo.
+1. ✅ Orlando construye `datasets/comun_v1/` (versión 1.1) y el evaluador común (`datos_comunes/`).
+2. Cada responsable ejecuta los experimentos de su modelo, en paralelo. ✅ BiLSTM: ganador B6 ([resultados](../../bilstm/docs/RESULTADOS_MODELO_NUEVO.md)). Pendiente: mBERT, en su rama `mbert` partiendo de `develop` ([03_PLAN_MBERT.md](03_PLAN_MBERT.md)).
 3. Orlando calibra, combina y comprueba los niveles de la extensión.
 4. Prueba congelada, una sola vez.
 5. Se actualizan los contratos de inferencia y el backend.
