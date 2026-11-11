@@ -1,0 +1,25 @@
+{
+  "source_run": "D:\\ScanTrue\\mBERT\\runs\\E2_len128_seed42_20261007-200010_933e4426",
+  "model_sha256": "e4b382b89182e2d067977222a875d7bcefaf92976f35a7f400929261b1539773",
+  "partition": "es_validation",
+  "n": 289,
+  "length": 128,
+  "threshold": 0.5,
+  "fake_f1": 0.35294117647058826,
+  "fake_precision": 0.967741935483871,
+  "fake_recall": 0.2158273381294964,
+  "macro_f1": 0.5416666666666666,
+  "accuracy": 0.6193771626297578,
+  "balanced_accuracy": 0.6045803357314148,
+  "average_precision_fake": 0.6521414066689224,
+  "confusion_matrix_real_fake": [
+    [
+      149,
+      1
+    ],
+    [
+      109,
+      30
+    ]
+  ]
+}

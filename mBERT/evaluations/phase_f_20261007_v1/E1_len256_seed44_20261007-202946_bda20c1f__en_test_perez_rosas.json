@@ -1,0 +1,39 @@
+{
+  "experiment": "E1",
+  "run": "E1_len256_seed44_20261007-202946_bda20c1f",
+  "partition": "en_test_perez_rosas",
+  "max_length": 256,
+  "seed": 44,
+  "model_sha256": "7e6a88893c10f0d9ea89ec6b9347e00f872f140ce2752b7fa00011ccb634ff5c",
+  "n": 949,
+  "support": {
+    "real": 490,
+    "fake": 459
+  },
+  "real_precision": 0.8,
+  "real_recall": 0.00816326530612245,
+  "real_f1": 0.01616161616161616,
+  "fake_precision": 0.4851694915254237,
+  "fake_recall": 0.9978213507625272,
+  "fake_f1": 0.6528866714183892,
+  "macro_f1": 0.33452414379000267,
+  "accuracy": 0.4868282402528978,
+  "balanced_accuracy": 0.5029923080343248,
+  "confusion_matrix_real_fake": [
+    [
+      4,
+      486
+    ],
+    [
+      1,
+      458
+    ]
+  ],
+  "tn": 4,
+  "fp": 486,
+  "fn": 1,
+  "tp": 458,
+  "average_precision_fake": 0.5354546997527252,
+  "brier_fake": 0.3448075946704445,
+  "threshold": 0.5
+}

@@ -1,0 +1,37 @@
+{
+  "experiment": "E0",
+  "run": "E0_en_seed42_phaseD_v1",
+  "partition": "es_test_polyglot_stress",
+  "max_length": null,
+  "n": 750,
+  "support": {
+    "real": 473,
+    "fake": 277
+  },
+  "real_precision": 0.7670886075949367,
+  "real_recall": 0.6405919661733616,
+  "real_f1": 0.6981566820276498,
+  "fake_precision": 0.5211267605633803,
+  "fake_recall": 0.6678700361010831,
+  "fake_f1": 0.5854430379746836,
+  "macro_f1": 0.6417998600011667,
+  "accuracy": 0.6506666666666666,
+  "balanced_accuracy": 0.6542310011372223,
+  "confusion_matrix_real_fake": [
+    [
+      303,
+      170
+    ],
+    [
+      92,
+      185
+    ]
+  ],
+  "tn": 303,
+  "fp": 170,
+  "fn": 92,
+  "tp": 185,
+  "average_precision_fake": 0.6155611955283389,
+  "brier_fake": 0.22735902615912074,
+  "threshold": 0.5
+}

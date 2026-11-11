@@ -1,0 +1,39 @@
+{
+  "experiment": "E2",
+  "run": "E2_len128_seed42_20261007-200010_933e4426",
+  "partition": "es_test_polyglot_stress",
+  "max_length": 128,
+  "seed": 42,
+  "model_sha256": "e4b382b89182e2d067977222a875d7bcefaf92976f35a7f400929261b1539773",
+  "n": 750,
+  "support": {
+    "real": 473,
+    "fake": 277
+  },
+  "real_precision": 0.6335570469798658,
+  "real_recall": 0.9978858350951374,
+  "real_f1": 0.7750410509031199,
+  "fake_precision": 0.8,
+  "fake_recall": 0.01444043321299639,
+  "fake_f1": 0.028368794326241134,
+  "macro_f1": 0.40170492261468055,
+  "accuracy": 0.6346666666666667,
+  "balanced_accuracy": 0.5061631341540669,
+  "confusion_matrix_real_fake": [
+    [
+      472,
+      1
+    ],
+    [
+      273,
+      4
+    ]
+  ],
+  "tn": 472,
+  "fp": 1,
+  "fn": 273,
+  "tp": 4,
+  "average_precision_fake": 0.44131629192230265,
+  "brier_fake": 0.362996424851197,
+  "threshold": 0.5
+}
