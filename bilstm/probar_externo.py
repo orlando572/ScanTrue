@@ -10,51 +10,20 @@ import json
 import re
 import unicodedata
 from pathlib import Path
+import sys
 
 import pandas as pd
-import torch
-
-from entrenar_baseline import BiLSTM, metrics, tokenize
-
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from backend.models.bilstm import DEFAULT_CHECKPOINT, load_model, predict_texts
+from entrenar_baseline import metrics, tokenize
 
 
 def normalize(value: str) -> str:
     return re.sub(r"\s+", " ", unicodedata.normalize("NFKC", value)).strip().casefold()
-
-
-def load_model(path: Path, device_name: str) -> tuple[BiLSTM, dict[str, int], int, torch.device]:
-    if device_name == "auto":
-        device_name = "cuda" if torch.cuda.is_available() else "cpu"
-    if device_name == "cuda" and not torch.cuda.is_available():
-        raise RuntimeError("CUDA no está disponible; usa --device cpu")
-    device = torch.device(device_name)
-    checkpoint = torch.load(path, map_location="cpu", weights_only=True)
-    config = checkpoint["config"]
-    model = BiLSTM(len(checkpoint["vocab"]), config["embedding_dim"],
-                   config["hidden_dim"], config["dropout"])
-    model.load_state_dict(checkpoint["state_dict"])
-    model.to(device).eval()
-    return model, checkpoint["vocab"], config["max_len"], device
-
-
-def predict_texts(model: BiLSTM, vocab: dict[str, int], max_len: int,
-                  device: torch.device, texts: list[str], batch_size: int = 32) -> list[float]:
-    probabilities = []
-    with torch.inference_mode():
-        for start in range(0, len(texts), batch_size):
-            sequences = []
-            for value in texts[start:start + batch_size]:
-                words = tokenize(value)[:max_len]
-                sequences.append([vocab.get(word, 1) for word in words] or [1])
-            lengths = torch.tensor([len(sequence) for sequence in sequences])
-            padded = torch.zeros((len(sequences), int(lengths.max())), dtype=torch.long)
-            for index, sequence in enumerate(sequences):
-                padded[index, :len(sequence)] = torch.tensor(sequence)
-            scores = model(padded.to(device), lengths).softmax(dim=1)
-            probabilities.extend(scores[:, 0].cpu().tolist())
-    return probabilities
 
 
 def overlap_flags(frame: pd.DataFrame, reference_dir: Path) -> list[str | None]:
@@ -126,7 +95,7 @@ def main() -> None:
     source.add_argument("--archivo", type=Path, help="Archivo UTF-8 con una noticia")
     source.add_argument("--csv", type=Path, help="CSV externo con columna texto")
     parser.add_argument("--modelo", type=Path,
-                        default=ROOT / "datasets/modelos_bilstm/sin_politica/mejor_modelo.pt")
+                        default=DEFAULT_CHECKPOINT)
     parser.add_argument("--referencia", type=Path,
                         default=ROOT / "datasets/experimentos_bilstm/sin_politica")
     parser.add_argument("--salida", type=Path, help="CSV opcional con predicciones por fila")

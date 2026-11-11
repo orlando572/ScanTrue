@@ -15,7 +15,7 @@ from comun import particiones, separar_interna  # noqa: E402
 from construir_comun import (  # noqa: E402
     agrupar, dominio, elegir_congelada, fragmentar, separar_titulo, tokenize,
 )
-from limpieza import limpiar  # noqa: E402
+from limpieza import idioma_probable, limpiar  # noqa: E402
 
 
 def oraciones(n: int, palabras: int = 10, prefijo: str = "palabra") -> str:
@@ -159,6 +159,23 @@ class CargaTests(unittest.TestCase):
         p = particiones("todo", desarrollo=self.frame)
         self.assertEqual(len(p["entrenamiento"]), 300)
         self.assertTrue(p["validacion"].empty and p["validacion_interna"].empty)
+
+
+class IdiomaTests(unittest.TestCase):
+    def test_detecta_textos_que_no_son_espanol(self):
+        self.assertEqual(idioma_probable("The editorial office of the newspaper published that it was on the list "
+                                         "and this is from the government"), "en")
+        self.assertEqual(idioma_probable("Le gouvernement est dans une situation qui pour les citoyens "
+                                         "sont avec cette crise"), "fr")
+        self.assertEqual(idioma_probable("Il governo che è della crisi sono gli stessi nel paese anche questo"), "it")
+
+    def test_espanol_con_cita_breve_sigue_siendo_espanol(self):
+        texto = ("El presidente dijo que los datos del informe son falsos y que la oposición "
+                 "miente sobre el gasto. Según el texto, «the end of the story» no está cerca.")
+        self.assertEqual(idioma_probable(texto), "es")
+
+    def test_texto_corto_sin_evidencia_queda_en_espanol(self):
+        self.assertEqual(idioma_probable("Les Corts aprueban la ley"), "es")
 
 
 if __name__ == "__main__":

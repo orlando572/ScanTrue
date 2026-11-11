@@ -116,3 +116,34 @@ def limpiar(texto: str, ejemplos: dict | None = None) -> tuple[str, list[str]]:
     texto, aplicados = normalizar(texto, ejemplos)
     texto = _aplicar(texto, PATRONES, aplicados, ejemplos)
     return texto, aplicados
+
+
+# --------------------------------------------------------------------------- idioma
+
+# Palabras funcionales exclusivas de cada idioma (sin las que comparten español, francés,
+# italiano y portugués, como «la», «de», «que», «una» o «con»).
+_FUNCIONALES = {
+    "es": frozenset("el los las y del por para como pero sus fue este esta está hay entre sobre "
+                    "desde cuando muy ya también porque según tras".split()),
+    "en": frozenset("the and of to in is that for it with as was on are by this be from at".split()),
+    "fr": frozenset("le les des est dans pour pas qui sur au avec sont ont aux cette être".split()),
+    "it": frozenset("il di che è della sono gli nel alla dei delle anche questo più stato".split()),
+    "pt": frozenset("não com os das dos em ao pela pelo são foi mais uma".split()),
+    "ca": frozenset("els amb però això aquest aquesta són dels pel perquè molt seva seu".split()),
+}
+MIN_EVIDENCIA = 3
+_PALABRA = re.compile(r"\w+")
+
+
+def idioma_probable(texto: str) -> str:
+    """Idioma con más palabras funcionales exclusivas que el español.
+
+    Devuelve «es» si el español empata o gana, o si el otro idioma tiene menos de
+    `MIN_EVIDENCIA` palabras (los textos cortos de USMSC dan cuentas de 1 o 2 por azar).
+    """
+    palabras = _PALABRA.findall(texto.lower())
+    cuentas = {idioma: sum(p in lista for p in palabras) for idioma, lista in _FUNCIONALES.items()}
+    otro = max((i for i in cuentas if i != "es"), key=cuentas.get)
+    if cuentas[otro] > cuentas["es"] and cuentas[otro] >= MIN_EVIDENCIA:
+        return otro
+    return "es"

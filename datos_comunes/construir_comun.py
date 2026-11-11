@@ -24,9 +24,9 @@ sys.path.insert(0, str(ROOT / "bilstm"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from depurar_y_particionar import UnionFind, related_keys  # noqa: E402
 from entrenar_baseline import TOKEN_PATTERN, tokenize  # noqa: E402
-from limpieza import PATRONES, PATRONES_PREVIOS, limpiar, normalizar  # noqa: E402
+from limpieza import PATRONES, PATRONES_PREVIOS, idioma_probable, limpiar, normalizar  # noqa: E402
 
-VERSION = "comun_v1.0"
+VERSION = "comun_v1.1"
 SEMILLA = 42
 ENTRADA = ROOT / "datasets/unificado_total/todos_los_textos_unicos.csv"
 SALIDA = ROOT / "datasets/comun_v1"
@@ -294,6 +294,17 @@ def construir(entrada: Path, salida: Path, tope: int) -> dict:
             frag["pliegue"] = "congelada"
         else:
             frag["pliegue"] = PLIEGUE_DE_FUENTE[frag["fuente"]]
+
+    # v1.1: fuera los artículos que no están en español (Polyglot trae algunos en inglés,
+    # francés o italiano). Se quitan después de elegir la prueba congelada para no mover
+    # el resto de la partición.
+    no_espanol = {}
+    for articulo in principales + falle:
+        idioma = idioma_probable(articulo["texto"])
+        if idioma != "es":
+            no_espanol[articulo["id_articulo"]] = idioma
+            excluidas[f"no_espanol_{idioma}:{articulo['fuente']}"] += 1
+    frag_principales = [f for f in frag_principales if f["id_articulo"] not in no_espanol]
 
     desarrollo = [f for f in frag_principales if f["pliegue"] != "congelada"]
     congelada = [f for f in frag_principales if f["pliegue"] == "congelada"]

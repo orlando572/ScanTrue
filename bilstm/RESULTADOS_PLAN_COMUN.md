@@ -2,7 +2,27 @@
 
 **Fecha:** 7 de noviembre de 2026
 **Plan:** [02_PLAN_BILSTM.md](../docs/mejora_modelos/02_PLAN_BILSTM.md) y [01_PLAN_COMUN.md](../docs/mejora_modelos/01_PLAN_COMUN.md).
-**Estado:** B0–B8 ejecutados, modelo final entrenado y temperatura **provisional**. La prueba congelada **no** se ha abierto. El backend no se ha tocado.
+**Estado (v1.0, ver §0 para v1.1):** B0–B8 ejecutados, modelo final entrenado y temperatura **provisional**. La prueba congelada **no** se ha abierto. El backend no se ha tocado.
+
+## 0. Actualización: conjunto `comun_v1.1` (7 nov 2026)
+
+`comun_v1.1` quita 8 artículos falsos de Polyglot que no estaban en español (inglés, francés o italiano). El resto del conjunto queda idéntico, fragmento por fragmento. Se repitió todo el plan (B0–B8, referencias y etapa final) con el mismo código. La versión 1.0 y sus corridas quedan en `datasets/respaldo_comun_v1.0/`.
+
+| | v1.0: F1 | v1.0: FA | v1.1: F1 | v1.1: FA |
+| --- | ---: | ---: | ---: | ---: |
+| B0 (receta actual) | 0,524 | 29,9 % | **0,497** | **19,1 %** |
+| B6 (+usmsc) | 0,582 | 26,1 % | 0,585 | 27,9 % |
+| TF-IDF caracteres 3–5 | 0,561 | 19,2 % | 0,554 | 18,9 % |
+| Solo longitud | 0,532 | 42,4 % | 0,533 | 42,3 % |
+
+- **B6 es estable** (0,582 → 0,585). **B0 no lo es:** baja 0,027 y cambia mucho su tasa de falsas alarmas al quitar el 0,4 % de los artículos. El entrenamiento es determinista (repetir una corrida da logits idénticos), así que el cambio viene de los datos, sobre todo de la validación interna que elige la época, no del azar de la GPU.
+- **La regla fijada ahora rechaza B6:** sube F1 en +0,088, pero las falsas alarmas suben 8,8 puntos frente a B0 (el límite es 2). Por eso `decisiones.json` y `final/` de v1.1 contienen **B0**, y B0 pierde con claridad contra TF-IDF: −0,055, IC 95 % [−0,084; −0,022].
+- **B6 frente a TF-IDF en v1.1:** +0,029, IC 95 % [−0,002; 0,058], P(B6 mejor) = 0,97, pero con 9 puntos más de falsas alarmas.
+- **Lectura:** las diferencias de B0 entre versiones son del mismo tamaño que el umbral de 0,02, así que la regla aplicada contra un B0 inestable no es fiable.
+- **Decisión (7 nov 2026): se elige B6 a mano**, apartándose de la regla. Motivo: es estable entre versiones y tiene el mejor F1; las falsas alarmas se miden con el umbral fijo de 0,5, que se ajustará en la calibración conjunta con mBERT. La elección y su motivo quedan en `final/contrato.json` (`eleccion`). El modelo final que daba la regla (B0) se conserva en `final_B0_por_regla/`.
+- **Modelo final v1.1:** B6, semilla 42, 4 épocas (mediana de los pliegues), `final_comun.py --ganador B6`. Temperatura provisional **T = 8,45**. Fuera de pliegue, por artículo y calibrado: F1 0,596, falsas alarmas 23,7 %, AUC 0,593, Brier 0,233. Por fragmento, los niveles calibrados quedan así: 0–20 % tiene 5 fragmentos; 20–40 % tiene 1.014 (29 % falsas, dentro del objetivo); 40–60 % tiene 1.621 (30 % falsas); 60–80 % tiene 238 (52 % falsas); 80–100 % ninguno.
+
+El resto de este documento describe la versión 1.0.
 
 ## 1. Resumen
 

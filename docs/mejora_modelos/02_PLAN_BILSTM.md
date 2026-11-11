@@ -101,3 +101,7 @@ Con el evaluador común, comparar la configuración ganadora contra **TF-IDF de 
 - [ ] Modelo final, temperatura y contrato guardados.
 - [ ] Backend actualizado y probado con la extensión.
 - [ ] Predicciones sobre la prueba congelada entregadas al evaluador común **una sola vez**.
+
+## 7. Pendiente de aprobación
+
+- **Pesos por tema (propuesto el 10 nov 2026, no aprobado):** en `comun_v1.1` algunos temas están desequilibrados (Deporte 6 % de falsas, Entretenimiento 26 %, Ciencia 23 %). Probar pesos por muestra que equilibren falsas y reales dentro de cada tema, con el tema de v1 y FakeDeS; Polyglot y USMSC no tienen tema. Coste: unas 9 corridas cortas. No ejecutar hasta que Orlando lo apruebe.

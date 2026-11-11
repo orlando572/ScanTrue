@@ -53,6 +53,7 @@ def aplicar(config: dict, cambio: dict) -> dict:
 
 
 def correr(nombre: str, config: dict) -> None:
+    (CORRIDAS / "bilstm").mkdir(parents=True, exist_ok=True)
     with (CORRIDAS / "bilstm" / f"{nombre}.log").open("a") as log:
         subprocess.run([str(PYTHON), str(ROOT / "bilstm/serie_comun.py"), nombre, "--", *argumentos(config)],
                        check=True, stdout=log, stderr=subprocess.STDOUT)

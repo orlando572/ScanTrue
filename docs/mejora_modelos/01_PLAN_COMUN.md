@@ -40,6 +40,8 @@ Documento anterior: [00_ANALISIS_DATASETS.md](00_ANALISIS_DATASETS.md). Planes p
 
 **Decisión (Orlando, 7 de noviembre de 2026):** la sátira queda **fuera del conjunto principal**, porque no es desinformación y hoy infla la validación. Su efecto se mide solo en el brazo de ablación `+satira`.
 
+**Versión 1.1 (Orlando, 7 de noviembre de 2026):** se quitan los artículos que no están en español. PolyglotFakeFacts declara todo como español, pero trae algunas falsas en inglés, francés o italiano: 8 artículos, todos falsos de Polyglot (7 del desarrollo y 1 de la prueba congelada). Se detectan con palabras funcionales exclusivas de cada idioma (`idioma_probable` en `datos_comunes/limpieza.py`) y se quitan **después** de elegir la prueba congelada, así que el resto de la partición no cambia. Además, las falsas de Polyglot vienen de medios rusos, bielorrusos o moldavos y probablemente son traducciones, mientras que sus reales son de El Mundo: es otro motivo para leer el pliegue F3 con cautela.
+
 ### 3.2. Normalización y limpieza de marcas de procedencia
 
 Aplicada **igual para los dos modelos**, antes de fragmentar:

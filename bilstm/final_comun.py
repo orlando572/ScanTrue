@@ -1,6 +1,8 @@
 """Etapa final del plan del BiLSTM (02_PLAN_BILSTM.md §4–§5, puntos 1–4).
 
-Uso: bilstm/.venv/bin/python bilstm/final_comun.py
+Uso: bilstm/.venv/bin/python bilstm/final_comun.py [--ganador B6 --motivo "…"]
+Con --ganador se elige a mano una configuración del registro en lugar del ganador de la regla;
+el motivo queda anotado en el contrato y en el resumen.
 
 1. Lee la configuración ganadora de `decisiones.json`.
 2. Compara el ganador con la referencia TF-IDF (bootstrap pareado por artículo).
@@ -14,6 +16,7 @@ No abre la prueba congelada.
 
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import json
 import subprocess
@@ -49,8 +52,19 @@ def argumentos(config: dict) -> list[str]:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--ganador", help="ID del registro (p. ej. B6) que sustituye al ganador de la regla")
+    parser.add_argument("--motivo", default="", help="Motivo de la elección manual (obligatorio con --ganador)")
+    args = parser.parse_args()
     decisiones = json.loads((CORRIDAS / "bilstm/decisiones.json").read_text("utf-8"))
     ganador, config = decisiones["ganador"], decisiones["config_ganadora"]
+    eleccion = {"ganador_regla": ganador, "manual": False}
+    if args.ganador and args.ganador != ganador:
+        if not args.motivo:
+            raise SystemExit("--ganador necesita --motivo")
+        fila = next(r for r in decisiones["registro"] if r["id"] == args.ganador)
+        ganador, config = args.ganador, fila["config"]
+        eleccion.update(manual=True, ganador_elegido=ganador, motivo=args.motivo)
     carpeta = CORRIDAS / "bilstm" / ganador
     rutas = [carpeta / f"{p}_s{s}/predicciones.csv" for s in SEMILLAS for p in ("F1", "F2", "F3")]
     epocas = [json.loads((r.parent / "resultados.json").read_text())["mejor_epoca"] for r in rutas]
@@ -111,7 +125,7 @@ def main() -> None:
         .to_csv(FINAL / "predicciones_fuera_de_pliegue_media_semillas.csv", index=False)
     fecha = dt.date.today().strftime("%Y%m%d")
     contrato = {
-        "modelo": "bilstm", "version": f"comun_v1_{ganador}_{fecha}",
+        "modelo": "bilstm", "version": f"{manifiesto()['version']}_{ganador}_{fecha}", "eleccion": eleccion,
         "etiquetas": {"real": 0, "falsa": 1},
         "max_tokens": int(config.get("max-tokens", 192)),
         "pooling": config.get("pooling", "final"), "hidden_dim": int(config.get("hidden-dim", 64)),
@@ -126,7 +140,7 @@ def main() -> None:
         "sha256_conjunto": manifiesto()["archivos"]["fragmentos_desarrollo.csv"]["sha256"],
     }
     (FINAL / "contrato.json").write_text(json.dumps(contrato, ensure_ascii=False, indent=2), "utf-8")
-    resumen = {"ganador": ganador, "config": config, "epocas_por_corrida": epocas, "epocas_final": epocas_final,
+    resumen = {"ganador": ganador, "eleccion": eleccion, "config": config, "epocas_por_corrida": epocas, "epocas_final": epocas_final,
                "seleccion_semilla_individual_media": individual, "seleccion_media_logits": promediada,
                "promediar_semillas": promediar, "comparacion_tfidf": comparacion, "calibracion": calibracion}
     (FINAL / "resumen_final.json").write_text(json.dumps(resumen, ensure_ascii=False, indent=2), "utf-8")

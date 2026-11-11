@@ -49,6 +49,8 @@ Estas cifras salen de los archivos locales y de tus propios informes ([`mBERT/IN
 
 Orlando entrega la carpeta `datasets/comun_v1/` (no va a Git). Cópiala tal cual en tu equipo, en la misma ruta relativa a la raíz del repositorio.
 
+Usa la versión **`comun_v1.1`** (campo `version` de `manifest.json`): quita 8 artículos de Polyglot que no estaban en español. Si tienes una copia con `comun_v1.0`, reemplázala.
+
 | Archivo | Para qué |
 | --- | --- |
 | `fragmentos_desarrollo.csv` | Todo el entrenamiento y la validación |
