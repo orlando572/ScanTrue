@@ -11,6 +11,10 @@ __pycache__/
 .env.*
 !.env.example
 
+# Herramientas locales de agentes de IA (no son parte del proyecto)
+.agents/
+skills-lock.json
+
 # Jupyter-generated files
 .ipynb_checkpoints/
 

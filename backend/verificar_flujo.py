@@ -26,6 +26,7 @@ TEXT = " ".join(
     ]
     * 7
 )
+SELECTED_TEXT = f"Informe local de prueba. {TEXT}"
 
 
 def require(response, status: int, step: str):
@@ -70,12 +71,20 @@ def run(email: str | None, password: str | None, timeout: int) -> None:
                 422,
                 "mínimo de tokens",
             )
+            require(
+                client.post(
+                    "/analisis", headers=headers(token_a),
+                    json={"texto": SELECTED_TEXT, "titulo": "Informe local de prueba"},
+                ),
+                422,
+                "rechazo del título separado",
+            )
             started = time.monotonic()
             created = require(
                 client.post(
                     "/analisis",
                     headers=headers(token_a),
-                    json={"texto": TEXT, "titulo": "Informe local de prueba"},
+                    json={"texto": SELECTED_TEXT},
                 ),
                 200,
                 "crear análisis",
@@ -112,12 +121,13 @@ def run(email: str | None, password: str | None, timeout: int) -> None:
             row = next((item for item in own if item["id"] == analysis_id), None)
             if row is None:
                 raise RuntimeError("El análisis no figura en el historial propio")
-            if "texto" in row or not row["vista_previa"] or row["resultado_unificado"] != unified:
+            if "texto" in row or "titulo" in row or not row["vista_previa"] or row["resultado_unificado"] != unified:
                 raise RuntimeError("El listado expone texto o no conserva el resultado")
             detail = require(client.get(f"/analisis/{analysis_id}", headers=headers(token_a)), 200, "detalle A")
-            expected_text = f"Informe local de prueba. {TEXT}"
+            expected_text = SELECTED_TEXT
             if (
-                detail["texto"] != expected_text
+                "titulo" in detail
+                or detail["texto"] != expected_text
                 or detail["hash_texto"] != sha256(expected_text.encode("utf-8")).hexdigest()
                 or detail["resultado_unificado"] != unified
             ):
@@ -134,6 +144,7 @@ def run(email: str | None, password: str | None, timeout: int) -> None:
             owner_token = token_a
             require(client.get(f"/analisis/{analysis_id}", headers=headers(token_a)), 200, "detalle renovado")
             deadline = time.monotonic() + timeout
+            verification = None
             while time.monotonic() < deadline:
                 verification = require(
                     client.get(f"/analisis/{analysis_id}/verificacion", headers=headers(token_a)),
@@ -144,7 +155,12 @@ def run(email: str | None, password: str | None, timeout: int) -> None:
                     break
                 time.sleep(2)
             else:
-                raise RuntimeError(f"Blockchain no confirmó el análisis en {timeout} segundos")
+                state = verification["estado_blockchain"] if verification else "sin_respuesta"
+                detail = verification["detalle"] if verification else "sin_respuesta"
+                raise RuntimeError(
+                    f"Blockchain no confirmó el análisis en {timeout} segundos; "
+                    f"estado={state}, detalle={detail}"
+                )
             print(f"Invitados, historial, RLS, renovación y blockchain: OK; análisis {latency:.2f} s")
 
             blockchain_client = app.state.blockchain_client
