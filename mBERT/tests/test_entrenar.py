@@ -125,7 +125,8 @@ class ReglasTests(unittest.TestCase):
 
 class ModeloBaseTests(unittest.TestCase):
     def test_verificar_detecta_archivos_cambiados(self):
-        with tempfile.TemporaryDirectory() as tmp, patch.object(bases, "BASES", Path(tmp)):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(bases, "BASES", Path(tmp)), \
+                patch.dict(bases.MODELOS["beto"], {"sha256_pesos": None}):
             ruta = Path(tmp) / "beto"
             ruta.mkdir()
             (ruta / "model.safetensors").write_bytes(b"pesos")
@@ -136,12 +137,19 @@ class ModeloBaseTests(unittest.TestCase):
             (ruta / "model.safetensors").write_bytes(b"otros pesos")
             with self.assertRaises(ValueError):
                 bases.verificar("beto")
+            # Con el SHA-256 fijado en el registro, unos pesos distintos se rechazan aunque
+            # origen.json esté al día.
+            info["archivos"]["model.safetensors"] = bases.sha256(ruta / "model.safetensors")
+            (ruta / "origen.json").write_text(json.dumps(info))
+            with patch.dict(bases.MODELOS["beto"], {"sha256_pesos": "0" * 64}), self.assertRaises(ValueError):
+                bases.verificar("beto")
 
-    def test_mbert_local_coincide_con_lo_fijado(self):
-        if not (bases.carpeta("mbert") / "origen.json").exists():
-            self.skipTest("modelo base mbert no descargado")
-        info = bases.verificar("mbert")
-        self.assertEqual(info["archivos"]["model.safetensors"], bases.MODELOS["mbert"]["sha256_pesos"])
+    def test_modelos_locales_coinciden_con_lo_fijado(self):
+        for clave, esperado in bases.MODELOS.items():
+            if not (bases.carpeta(clave) / "origen.json").exists():
+                continue
+            info = bases.verificar(clave)
+            self.assertEqual(info["archivos"]["model.safetensors"], esperado["sha256_pesos"], clave)
 
 
 class EntrenamientoTests(unittest.TestCase):

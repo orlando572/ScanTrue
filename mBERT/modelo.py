@@ -34,22 +34,24 @@ MODELOS: dict[str, dict] = {
     "beto": {
         "hub_id": "dccuchile/bert-base-spanish-wwm-cased",
         "revision": "c4d86612f51b4f46759c8390d1798c2febe71b93",
-        "sha256_pesos": None,
+        # El Hub solo trae pytorch_model.bin; este es el safetensors convertido en local.
+        "sha256_pesos": "9902e40a3c6c15e6de812cfb64062daff9ae019968aa74e16f27a8915e3aed12",
         "parametros_m": 110,
     },
     "roberta_bne": {
         # MarIA. El repositorio oficial está retirado y ya no contiene los pesos (comprobado el
-        # 10 nov 2026); BSC-LT/roberta-base-bne no existe. Pendiente de decisión.
+        # 10 nov 2026); BSC-LT/roberta-base-bne no existe. Decisión del 11 nov 2026: se omite M1b.
         "hub_id": "PlanTL-GOB-ES/roberta-base-bne",
         "revision": "90aa6e695a9a092187bbe57fbd298b9af09dc31b",
         "sha256_pesos": None,
         "parametros_m": 125,
-        "no_disponible": "El repositorio oficial de MarIA está retirado y no tiene pesos.",
+        "no_disponible": ("M1b omitido (decisión del 11 nov 2026): el repositorio oficial de MarIA está "
+                          "retirado y no tiene pesos."),
     },
     "xlmr": {
         "hub_id": "FacebookAI/xlm-roberta-base",
         "revision": "e73636d4f797dec63c3081bb6ed5c7b0bb3f2089",
-        "sha256_pesos": None,
+        "sha256_pesos": "6fd4797bc397c3b8b55d6bb5740366b57e6a3ce91c04c77f22aafc0c128e6feb",
         "parametros_m": 278,
     },
 }
@@ -120,7 +122,10 @@ def descargar(clave: str) -> dict:
         from safetensors.torch import save_file
 
         estado = torch.load(ruta / "pytorch_model.bin", map_location="cpu", weights_only=True)
-        save_file({k: v.contiguous() for k, v in estado.items()}, str(ruta / PESOS), metadata={"format": "pt"})
+        # clone(): los pesos atados (embeddings y decoder de la cabeza MLM) comparten memoria y
+        # safetensors no los guarda así; la cabeza MLM no se usa al clasificar.
+        save_file({k: v.contiguous().clone() for k, v in estado.items()}, str(ruta / PESOS),
+                  metadata={"format": "pt"})
         archivos[PESOS] = sha256(ruta / PESOS)
         convertido = "pytorch_model.bin convertido a model.safetensors en local"
     if esperado["sha256_pesos"] and archivos[PESOS] != esperado["sha256_pesos"]:
