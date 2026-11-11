@@ -5,14 +5,14 @@ from __future__ import annotations
 from contextlib import nullcontext
 from hashlib import sha256
 import json
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 
 import torch
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MBERT_ROOT = ROOT / "mBERT"
-SELECTION = MBERT_ROOT / "selection/bilstm_step5_20261008_v1/selection.json"
+MBERT_ROOT = ROOT / "datasets/mbert_produccion/modelo"
+SELECTION = MBERT_ROOT / "selection.json"
 
 
 def file_sha256(path: Path) -> str:
@@ -35,11 +35,8 @@ class MbertTokenizer:
         contract = decision["inference_contract"]
         if contract["label2id"] != {"REAL": 0, "FALSA": 1} or contract["max_length"] != 512:
             raise ValueError("El contrato mBERT no coincide con el esperado")
-        run_name = PureWindowsPath(decision["selected_run"]["path"]).name
-        self.model_dir = (MBERT_ROOT / "runs" / run_name / "best_model").resolve()
-        if not self.model_dir.is_relative_to((MBERT_ROOT / "runs").resolve()):
-            raise ValueError("La ruta del checkpoint mBERT no es válida")
-        self.tokenizer_dir = MBERT_ROOT / "assets/tokenizer_mbert_cased"
+        self.model_dir = MBERT_ROOT / "best_model"
+        self.tokenizer_dir = MBERT_ROOT / "tokenizer_mbert_cased"
         self.checkpoint = self.model_dir / "model.safetensors"
         self.expected_model_sha256 = decision["selected_run"]["model_sha256"]
         tokenizer_file = self.tokenizer_dir / "tokenizer.json"
