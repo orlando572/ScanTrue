@@ -1,5 +1,7 @@
 # Informe técnico de los entrenamientos mBERT para noticias en español
 
+> **Documento histórico (antes `mBERT/INFORME_TECNICO_ENTRENAMIENTOS_MBERT.md`).** Sus enlaces apuntan a archivos retirados en la limpieza del 10 nov 2026, que están en el historial de Git (commit `ece259a`). El modelo de producción está ahora en `datasets/mbert_produccion/`; ver [RESULTADOS_PRODUCCION.md](RESULTADOS_PRODUCCION.md).
+
 **Corte documental:** 8 de octubre de 2026. **Alcance:** archivos, scripts, manifiestos, métricas y evaluaciones ya presentes en `D:\ScanTrue`. Este informe no incorpora entrenamiento, inferencia, pruebas ni recálculos nuevos. Las cifras decimales se redondean para facilitar la lectura; los artefactos enlazados conservan su precisión original.
 
 **Estado de artefactos tras la limpieza:** se conservaron completas las 15 corridas de las cinco configuraciones del ranking. Se retiraron las otras 40 carpetas de `mBERT/runs`; sus rutas y tamaños quedaron registrados en [LIMPIEZA_CORRIDAS_20261008.json](LIMPIEZA_CORRIDAS_20261008.json). Las métricas e informes históricos siguen disponibles, pero los enlaces de este informe a pesos de las corridas retiradas ya no permiten recargarlos. Ningún dataset ni archivo `.md` fue eliminado.

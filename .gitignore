@@ -31,3 +31,9 @@ datasets/bilstm_produccion/modelo/**
 !datasets/bilstm_produccion/modelo/mejor_modelo.pt
 !datasets/bilstm_produccion/modelo/config.json
 !datasets/bilstm_produccion/modelo/resultados.json
+
+# mBERT de producción (pesos con Git LFS), para usarlo desde un clon limpio.
+!datasets/mbert_produccion/
+datasets/mbert_produccion/**
+!datasets/mbert_produccion/modelo/
+!datasets/mbert_produccion/modelo/**
