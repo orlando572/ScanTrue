@@ -33,7 +33,7 @@ La primera versión será una extensión Manifest V3 para **Chrome/Chromium 127 
 
 El service worker recibe `selectionText` y `pageUrl`, prepara la solicitud y abre el popup del prototipo. Si Chrome no abre el popup automáticamente, conserva la selección pendiente y pide abrirlo desde el icono de la extensión. El botón de “Escoger texto a analizar” del prototipo puede guiar al usuario a seleccionar texto y usar el menú contextual. [Chrome documenta `selectionText` y `pageUrl`](https://developer.chrome.com/docs/extensions/reference/api/contextMenus) y [`action.openPopup()`](https://developer.chrome.com/docs/extensions/reference/api/action).
 
-Usar como referencia visual las vistas de `backend/Avance 2.docx`: escaneo, resultado, desglose por modelo, historial y reporte. El reporte puede ocupar una página propia de la extensión si no cabe en el popup. Añadir vistas de invitado/cuenta, confirmación de correo, detalle del historial y verificación blockchain siguiendo ese lenguaje visual.
+Usar como referencia visual las vistas de [`docs/entregas/Avance_2.docx`](../../docs/entregas/Avance_2.docx): escaneo, resultado, desglose por modelo, historial y reporte. El reporte puede ocupar una página propia de la extensión si no cabe en el popup. Añadir vistas de invitado/cuenta, confirmación de correo, detalle del historial y verificación blockchain siguiendo ese lenguaje visual.
 
 ### Comunicación y sesión
 

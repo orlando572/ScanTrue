@@ -51,4 +51,4 @@ Acosta, Zenodo, FakeCovid, FLARES, RUN-AS, FactOReS, MM-COVID (descarga pendient
 
 ## Qué se borró el 10 nov 2026
 
-Copias duplicadas (`MIS DATASETS/`, su `.zip`; la carpeta `DATASETS/` de la raíz queda pendiente de borrar a mano), etapas intermedias (`estandarizados/`, `unificado_total/` salvo el CSV de entrada), los embeddings `wiki.es.vec`, los checkpoints de experimentos (de octubre y de B0–B8) y el respaldo completo de `comun_v1` 1.0 (quedan sus métricas).
+Copias duplicadas (`MIS DATASETS/`, su `.zip`; y la carpeta `DATASETS/` de la raíz), etapas intermedias (`estandarizados/`, `unificado_total/` salvo el CSV de entrada), los embeddings `wiki.es.vec`, los checkpoints de experimentos (de octubre y de B0–B8) y el respaldo completo de `comun_v1` 1.0 (quedan sus métricas).

@@ -5,7 +5,7 @@
 @import '@fontsource/share-tech-mono/latin-400.css';
 @import 'tailwindcss';
 
-/* ScanTrue · consola de análisis retro (ver SISTEMA_DISENO.md). */
+/* ScanTrue · consola de análisis retro (ver frontend/docs/SISTEMA_DISENO.md). */
 @theme {
   --font-sans: 'IBM Plex Sans', Arial, sans-serif;
   --font-display: 'Orbitron', 'Share Tech Mono', monospace;

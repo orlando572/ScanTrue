@@ -63,4 +63,4 @@ Este diccionario describe las dos tablas propias de ScanTrue y una referencia br
 
 - Esquema propio: `backend/db/migrations/001_identity_history.sql` a `005_texto_unico.sql`.
 - Esquema de referencia de Auth: columnas consultadas en el proyecto Supabase conectado. Supabase administra esta tabla y puede modificar su esquema interno.
-- Diseño físico y relaciones: [DISEÑO FÍSICO DE LA BASE DE DATOS](./DISENO_FISICO_BASE_DATOS.md).
+- Diseño físico y relaciones: [DISEÑO FÍSICO DE LA BASE DE DATOS](DISENO_FISICO_BASE_DATOS.md).

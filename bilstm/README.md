@@ -14,6 +14,7 @@ bilstm/
 └── docs/
     ├── RESULTADOS_PRODUCCION.md   Modelo de octubre, archivado (datos, métricas y límites)
     ├── RESULTADOS_MODELO_NUEVO.md Experimentos B0–B8 con el conjunto común y modelo B6
+    ├── TEORIA_ENTRENAMIENTO.md    Teoría básica del entrenamiento de un BiLSTM
     └── INSTALACION_WINDOWS.md     Instalación con GPU en Windows 11
 ```
 

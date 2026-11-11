@@ -1,6 +1,6 @@
 # Plan de implementación del backend de ScanTrue
 
-> **Nota (11 nov 2026):** los modelos, los límites de lectura y los pesos del resultado unificado cambiaron. Lo vigente está en [CAMBIO_MODELOS_CALIBRADOS.md](CAMBIO_MODELOS_CALIBRADOS.md); este documento se conserva como registro.
+> **Nota (11 nov 2026):** los modelos, los límites de lectura y los pesos del resultado unificado cambiaron. Lo vigente está en [CAMBIO_MODELOS_CALIBRADOS.md](../CAMBIO_MODELOS_CALIBRADOS.md); este documento se conserva como registro.
 
 ## Objetivo de esta entrega
 
@@ -8,7 +8,7 @@ Dejar una API local funcional y demostrable desde FastAPI. Debe analizar texto c
 
 ## Hoja de ruta actual
 
-1. **Integración con la extensión: implementada y comprobada.** Texto seleccionado, vista previa, detalle, resultado unificado persistido y cierre de sesión están disponibles. La migración 004 está aplicada; el contrato está en [FEATURE_INTEGRACION_FRONTEND.md](FEATURE_INTEGRACION_FRONTEND.md). La guía ya entregada a frontend está en [`../FRONTEND_CONTEXT.md`](../../frontend/docs/FRONTEND_CONTEXT.md) y no se modifica.
+1. **Integración con la extensión: implementada y comprobada.** Texto seleccionado, vista previa, detalle, resultado unificado persistido y cierre de sesión están disponibles. La migración 004 está aplicada; el contrato está en [FEATURE_INTEGRACION_FRONTEND.md](FEATURE_INTEGRACION_FRONTEND.md). La guía ya entregada a frontend está en [`../FRONTEND_CONTEXT.md`](../../../frontend/docs/FRONTEND_CONTEXT.md) y no se modifica.
 2. **Cierre operativo: transferencia comprobada.** Auth anónimo está habilitado; los recorridos reales cubrieron invitados, historial, eliminación, porcentajes, blockchain y transferencia a una cuenta temporal confirmada por Auth Admin. Queda por comprobar el envío y clic del correo de registro cuando termine el límite temporal de Supabase.
 3. **mBERT real: implementado y comprobado operativamente.** El checkpoint, tokenizador, mapa de clases y evaluaciones del modelo seleccionado están en `mBERT/`; el adaptador del backend carga la inferencia real. La API conserva los tres espacios de porcentaje y el resultado unificado. El recorrido con Supabase y Anvil confirmó persistencia de dos predicciones, aislamiento y blockchain. La actualización del contrato para frontend está en [CAMBIO_CONTRATO_MBERT.md](CAMBIO_CONTRATO_MBERT.md).
 4. **Texto único: implementado.** La migración 005 elimina el título separado de la base de datos; `POST /analisis` usa solo `texto` y `url` opcional. La extensión ya enviaba ese contrato.

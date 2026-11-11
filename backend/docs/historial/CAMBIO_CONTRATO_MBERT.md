@@ -1,6 +1,6 @@
 # Actualización de contrato para la persona de frontend
 
-> **Nota (11 nov 2026):** los modelos, los límites de lectura y los pesos del resultado unificado cambiaron. Lo vigente está en [CAMBIO_MODELOS_CALIBRADOS.md](CAMBIO_MODELOS_CALIBRADOS.md); este documento se conserva como registro.
+> **Nota (11 nov 2026):** los modelos, los límites de lectura y los pesos del resultado unificado cambiaron. Lo vigente está en [CAMBIO_MODELOS_CALIBRADOS.md](../CAMBIO_MODELOS_CALIBRADOS.md); este documento se conserva como registro.
 
 La guía `FRONTEND_CONTEXT.md` ya se entregó y no se modifica. Este documento
 registra el cambio que debe comunicarse junto a ella antes de actualizar la

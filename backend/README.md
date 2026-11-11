@@ -299,3 +299,13 @@ contraseña de esa cuenta sin mostrarla y se detiene mientras confirmas el
 correo. Tras pulsar Enter inicia sesión, comprueba la incorporación del
 historial y elimina el análisis de prueba. La cuenta creada permanece en
 Supabase; usa una dirección y contraseña reservadas para esta verificación.
+
+## Documentación
+
+| Documento | Contenido |
+| --- | --- |
+| [docs/ESTADO_ACTUAL.md](docs/ESTADO_ACTUAL.md) | Punto en que está el backend |
+| [docs/GUIA_ARRANQUE_Y_PRUEBAS.md](docs/GUIA_ARRANQUE_Y_PRUEBAS.md) | Cómo arrancar y probar todo |
+| [docs/FLUJO_PRINCIPAL_ANALISIS.md](docs/FLUJO_PRINCIPAL_ANALISIS.md) | Recorrido de un análisis, con fragmentos del código |
+| [docs/CAMBIO_MODELOS_CALIBRADOS.md](docs/CAMBIO_MODELOS_CALIBRADOS.md) | Modelos B6 y BETO calibrados (contrato vigente) |
+| [docs/historial/](docs/historial/) | Planes y notas de cambio ya cumplidos, conservados como registro |

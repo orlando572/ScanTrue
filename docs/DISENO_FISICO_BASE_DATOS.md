@@ -2,7 +2,7 @@
 
 Este documento representa el esquema PostgreSQL de ScanTrue **después de aplicar, en orden, las migraciones 001 a 005** de `backend/db/migrations/`. Describe las tablas propias de la aplicación en `public` y su vínculo con `auth.users`, administrada por Supabase Auth. No representa estados intermedios de las migraciones ni propone cambios al esquema.
 
-El detalle de cada campo en el formato solicitado está en el [diccionario de datos](./DICCIONARIO_DATOS_SCANTRUE.md).
+El detalle de cada campo en el formato solicitado está en el [diccionario de datos](DICCIONARIO_DATOS_SCANTRUE.md).
 
 ## Diagrama entidad–relación
 

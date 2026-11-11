@@ -1,12 +1,12 @@
 # Feature implementada: contrato de integración con el frontend
 
-> **Nota (11 nov 2026):** los modelos, los límites de lectura y los pesos del resultado unificado cambiaron. Lo vigente está en [CAMBIO_MODELOS_CALIBRADOS.md](CAMBIO_MODELOS_CALIBRADOS.md); este documento se conserva como registro.
+> **Nota (11 nov 2026):** los modelos, los límites de lectura y los pesos del resultado unificado cambiaron. Lo vigente está en [CAMBIO_MODELOS_CALIBRADOS.md](../CAMBIO_MODELOS_CALIBRADOS.md); este documento se conserva como registro.
 
 > Este documento registra la entrega anterior. La integración posterior de
 > mBERT cambió los límites de lectura y el texto guardado; el contrato vigente
 > y la nota para frontend están en [CAMBIO_CONTRATO_MBERT.md](CAMBIO_CONTRATO_MBERT.md).
 
-**Estado: contrato y transferencia a cuenta comprobados; envío de confirmación por correo pendiente de prueba.** El contrato que recibirá la extensión está en [`../FRONTEND_CONTEXT.md`](../../frontend/docs/FRONTEND_CONTEXT.md). Los recorridos reales con Supabase y Anvil confirmaron el flujo de invitados y la incorporación a una cuenta temporal confirmada por Auth Admin.
+**Estado: contrato y transferencia a cuenta comprobados; envío de confirmación por correo pendiente de prueba.** El contrato que recibirá la extensión está en [`../FRONTEND_CONTEXT.md`](../../../frontend/docs/FRONTEND_CONTEXT.md). Los recorridos reales con Supabase y Anvil confirmaron el flujo de invitados y la incorporación a una cuenta temporal confirmada por Auth Admin.
 
 ## Objetivo y orden
 
@@ -34,7 +34,7 @@ La entrega permite que la extensión muestre el texto analizado, tres espacios d
 ## Entrega y sincronización
 
 1. La migración `004_frontend_contract.sql` se aplicó al proyecto Supabase conectado el 10 de octubre de 2026 (versión `20261010224814`). Se verificaron las columnas nuevas, la función reservada a `service_role`, las políticas RLS y la ausencia de advertencias de seguridad. PostgREST expone la RPC y rechaza con HTTP 400 una solicitud inválida sin crear registros. La tabla tenía cero filas; la reconstrucción de registros antiguos no pudo comprobarse con datos reales.
-2. Actualizar OpenAPI, la documentación de operación y el estado interno al terminar. El documento [`../FRONTEND_CONTEXT.md`](../../frontend/docs/FRONTEND_CONTEXT.md) ya fue entregado y no se modifica; mantener el contrato del backend compatible con sus nombres de campos y su ejemplo de un solo modelo.
+2. Actualizar OpenAPI, la documentación de operación y el estado interno al terminar. El documento [`../FRONTEND_CONTEXT.md`](../../../frontend/docs/FRONTEND_CONTEXT.md) ya fue entregado y no se modifica; mantener el contrato del backend compatible con sus nombres de campos y su ejemplo de un solo modelo.
 3. El 10 de octubre de 2026, `backend/verificar_flujo.py` pasó con dos invitados reales: análisis BiLSTM, resultado unificado, texto y vista previa persistidos, RLS de acceso ajeno, renovación, cierre de sesión, blockchain, respuestas de degradación y eliminación del análisis de prueba. Una segunda comprobación inició sesión en una cuenta temporal confirmada por Auth Admin, transfirió un análisis y verificó que el invitado perdió acceso. Los datos temporales se eliminaron. El registro por correo con un buzón real quedó sin completar porque Auth respondió `429 over_email_send_rate_limit`; el backend ahora devuelve 429 en ese caso. El cálculo local con uno y dos modelos y fallo de un modelo se revisó previamente; mBERT real sigue pendiente. También quedan sin comprobar casos históricos anteriores a 004, que no existían en este proyecto.
 
 ## Feature posterior: mBERT

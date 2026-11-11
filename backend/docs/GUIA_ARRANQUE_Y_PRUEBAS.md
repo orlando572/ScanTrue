@@ -165,7 +165,7 @@ de la extensión. React puede usarse para su interfaz. El flujo mínimo es:
 
 El contrato **vigente** para límites, mBERT real, `texto_recortado`, texto del
 historial y métricas mBERT está en
-[CAMBIO_CONTRATO_MBERT.md](CAMBIO_CONTRATO_MBERT.md). Esa nota actualiza la guía
+[CAMBIO_CONTRATO_MBERT.md](historial/CAMBIO_CONTRATO_MBERT.md). Esa nota actualiza la guía
 de frontend ya entregada, que conserva ejemplos anteriores a la integración
 real de mBERT; los modelos y límites actuales están en
 [CAMBIO_MODELOS_CALIBRADOS.md](CAMBIO_MODELOS_CALIBRADOS.md). BiLSTM lee como

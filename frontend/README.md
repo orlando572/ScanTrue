@@ -40,15 +40,16 @@ Se omiten las carpetas generadas `dist/` y `node_modules/`.
 
 ```text
 frontend/
-├── README.md
-├── SISTEMA_DISENO.md
-├── package.json
-├── package-lock.json
-├── popup.html
-├── vite.config.js
+├── docs/
+│   ├── FRONTEND_CONTEXT.md
+│   └── SISTEMA_DISENO.md
 ├── public/
+│   ├── icons/
+│   │   └── icon-16/32/48/128.png
 │   ├── manifest.json
 │   └── popup-fallback.css
+├── referencias/
+│   └── pNN-concepto.png (imágenes de referencia de las pantallas)
 ├── scripts/
 │   └── build-extension.mjs
 ├── src/
@@ -61,10 +62,14 @@ frontend/
 │   │   └── service-worker.js
 │   ├── popup/
 │   │   ├── assets/
+│   │   │   ├── scantrue-mark-small.svg
 │   │   │   └── scantrue-mark.svg
 │   │   ├── components/
+│   │   │   ├── HudDecor.jsx
+│   │   │   ├── ModelIcon.jsx
 │   │   │   ├── PasswordVisibilityButton.jsx
-│   │   │   └── ResultGaugePanel.jsx
+│   │   │   ├── ResultGaugePanel.jsx
+│   │   │   └── ScreenHeader.jsx
 │   │   ├── screens/
 │   │   │   ├── AccountScreen.jsx
 │   │   │   ├── BreakdownScreen.jsx
@@ -80,19 +85,29 @@ frontend/
 │   │   ├── main.jsx
 │   │   ├── metrics-presentation.js
 │   │   ├── result-presentation.js
+│   │   ├── selection-presentation.js
+│   │   ├── service-presentation.js
 │   │   └── styles.css
 │   └── shared/
-│       └── api.js
-├── referencias/
-│   └── imágenes de referencia de las pantallas
-└── tests/
-    ├── account.test.js
-    ├── analysis.test.js
-    ├── breakdown-presentation.test.js
-    ├── extension-message.test.js
-    ├── history-api.test.js
-    ├── history-presentation.test.js
-    ├── metrics.test.js
-    ├── result-presentation.test.js
-    └── selection.test.js
+│       ├── api.js
+│       └── selection.js
+├── tests/
+│   ├── account.test.js
+│   ├── analysis.test.js
+│   ├── breakdown-presentation.test.js
+│   ├── extension-message.test.js
+│   ├── history-api.test.js
+│   ├── history-presentation.test.js
+│   ├── metrics.test.js
+│   ├── result-presentation.test.js
+│   ├── selection-presentation.test.js
+│   ├── selection.test.js
+│   └── service-presentation.test.js
+├── .gitignore
+├── package-lock.json
+├── package.json
+├── popup.html
+├── README.md
+├── sidepanel.html
+└── vite.config.js
 ```
