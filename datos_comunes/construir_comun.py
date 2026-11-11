@@ -22,13 +22,13 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "bilstm"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from depurar_y_particionar import UnionFind, related_keys  # noqa: E402
-from entrenar_baseline import TOKEN_PATTERN, tokenize  # noqa: E402
+from grupos import UnionFind, related_keys  # noqa: E402
+from modelo import TOKEN_PATTERN, tokenize  # noqa: E402
 from limpieza import PATRONES, PATRONES_PREVIOS, idioma_probable, limpiar, normalizar  # noqa: E402
 
 VERSION = "comun_v1.1"
 SEMILLA = 42
-ENTRADA = ROOT / "datasets/unificado_total/todos_los_textos_unicos.csv"
+ENTRADA = ROOT / "datasets/unificado/todos_los_textos_unicos.csv"
 SALIDA = ROOT / "datasets/comun_v1"
 MIN_TOKENS = 100
 MAX_FRAGMENTOS = 4
@@ -435,7 +435,7 @@ def construir_manifiesto(entrada, salida, tope, archivos, conteo_patrones, exclu
         "parametros": {"semilla": SEMILLA, "min_tokens": MIN_TOKENS, "tope_tokens": tope,
                        "max_fragmentos_por_articulo": MAX_FRAGMENTOS,
                        "fraccion_congelada": FRACCION_CONGELADA,
-                       "tokenizador": "bilstm/entrenar_baseline.py:tokenize",
+                       "tokenizador": "bilstm/modelo.py:tokenize",
                        "factor_peso_polyglot": factor, "max_parejas_politica": MAX_PAREJAS_POLITICA},
         "etiqueta": {"columna": "etiqueta_falsa", "real": 0, "falsa": 1},
         "pliegues": {p: {"valida": f, "entrena": [x for x in FUENTES_PRINCIPALES if x != f]}

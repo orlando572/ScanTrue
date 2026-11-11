@@ -1,6 +1,6 @@
 """Pruebas del conjunto común: limpieza, fragmentos, grupos y carga por pliegue.
 
-Uso: bilstm/.venv/bin/python -m unittest discover -s datos_comunes
+Uso: bilstm/.venv/bin/python -m unittest discover -s datos_comunes/tests
 """
 
 import sys
@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from comun import particiones, separar_interna  # noqa: E402
 from construir_comun import (  # noqa: E402
     agrupar, dominio, elegir_congelada, fragmentar, separar_titulo, tokenize,

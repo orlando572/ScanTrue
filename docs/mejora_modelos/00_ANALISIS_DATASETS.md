@@ -1,5 +1,7 @@
 # Análisis de los datasets disponibles
 
+> **Nota (10 nov 2026):** las rutas de este documento son las de antes de reorganizar `datasets/`. El mapa actual está en [`datasets/README.md`](../../datasets/README.md): las fuentes están en `datasets/fuentes/usadas/` y `datasets/fuentes/no_usadas/`, y `MIS DATASETS/`, `DATASETS/` y `servir_directamente/` / `no_directamente/` se fusionaron allí.
+
 **Fecha:** 7 de noviembre de 2026
 **Alcance:** todos los datasets descargados en `DATASETS/`, `datasets/MIS DATASETS/`, `datasets/servir_directamente/`, `datasets/no_directamente/` y `datasets/pruebas_externas/`, más los conjuntos derivados que ya usaron los modelos. Las cifras se calcularon sobre los archivos locales con `bilstm/.venv`. No se modificó ningún archivo de datos.
 

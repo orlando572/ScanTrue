@@ -1,5 +1,7 @@
 # Teoría básica del entrenamiento de un BiLSTM
 
+> **Nota (10 nov 2026):** este documento explica la teoría del entrenamiento del BiLSTM de producción. Los scripts que menciona (`preentrenados/entrenar.py`, `entrenar_baseline.py`…) se retiraron y están en el historial de Git (commit `d4ece74`); la arquitectura y el tokenizador siguen en `bilstm/modelo.py`, y el modelo está en `datasets/bilstm_produccion/`. El entrenamiento actual es `bilstm/entrenar.py`.
+
 ## ¿Qué significa entrenar?
 
 Entrenar un modelo consiste en mostrarle ejemplos de texto con sus etiquetas correctas —en este proyecto, falsa o real— para que ajuste sus parámetros y aprenda patrones asociados con cada clase. El objetivo es que pueda clasificar textos nuevos, no solo memorizar los ejemplos vistos.

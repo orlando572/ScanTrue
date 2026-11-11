@@ -1,6 +1,6 @@
-"""Pruebas de entrenar_comun.py con un conjunto sintético diminuto en CPU.
+"""Pruebas de bilstm/entrenar.py y bilstm/modelo.py con un conjunto sintético diminuto en CPU.
 
-Uso: bilstm/.venv/bin/python -m unittest bilstm/test_entrenar_comun.py
+Uso: bilstm/.venv/bin/python -m unittest discover -s bilstm/tests
 """
 
 import gzip
@@ -15,10 +15,11 @@ import numpy as np
 import pandas as pd
 import torch
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from entrenar_comun import (  # noqa: E402
-    BiLSTMComun, entrenar, parse_args, perdida_ponderada, pesos_de_clase,
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from entrenar import (  # noqa: E402
+    aplicar, argumentos, corrida, decidir, parse_args, perdida_ponderada, pesos_de_clase,
 )
+from modelo import BiLSTM, construir_vocabulario, tokenize  # noqa: E402
 
 COLUMNAS = ["id_fragmento", "id_articulo", "grupo", "fuente", "dominio", "texto",
             "etiqueta_falsa", "peso", "tokens_bilstm", "pliegue"]
@@ -61,7 +62,7 @@ class ModeloTests(unittest.TestCase):
     def test_pooling_ignora_relleno(self):
         torch.manual_seed(0)
         for pooling in ("final", "maxmedia", "atencion"):
-            modelo = BiLSTMComun(20, 8, 4, 0.0, pooling).eval()
+            modelo = BiLSTM(20, 8, 4, 0.0, pooling).eval()
             ids = torch.tensor([[3, 4, 5, 0, 0]])
             solo = modelo(ids[:, :3], torch.tensor([3]))
             con_relleno = modelo(ids, torch.tensor([3]))
@@ -79,6 +80,37 @@ class ModeloTests(unittest.TestCase):
         self.assertAlmostEqual(float(a), float(b), places=6)
 
 
+class ModeloBasicoTests(unittest.TestCase):
+    def test_tokenizador_y_vocabulario(self):
+        self.assertEqual(tokenize("¡Hola, Señor! 2026"), ["hola", "señor", "2026"])
+        vocab = construir_vocabulario(["b a a", "c b a"], max_size=4)
+        self.assertEqual(vocab, {"<pad>": 0, "<unk>": 1, "a": 2, "b": 3})
+
+    def test_carga_checkpoint_de_produccion(self):
+        ruta = Path(__file__).resolve().parents[2] / "datasets/bilstm_produccion/modelo/mejor_modelo.pt"
+        if not ruta.exists():
+            self.skipTest("checkpoint de producción no disponible")
+        ck = torch.load(ruta, map_location="cpu", weights_only=True)
+        c = ck["config"]
+        modelo = BiLSTM(len(ck["vocab"]), c["embedding_dim"], c["hidden_dim"], c["dropout"])
+        modelo.load_state_dict(ck["state_dict"])
+
+
+class PlanTests(unittest.TestCase):
+    def test_regla_de_decision(self):
+        ref = {"f1": 0.50, "fa": 0.20, "pliegues": {"F1": 0.5, "F2": 0.5, "F3": 0.5}}
+        sube = {"f1": 0.53, "fa": 0.21, "pliegues": {"F1": 0.6, "F2": 0.6, "F3": 0.4}}
+        self.assertTrue(decidir(sube, ref, brazo=True)["adopta"])
+        alarmas = dict(sube, fa=0.25)
+        self.assertFalse(decidir(alarmas, ref, brazo=False)["adopta"])
+        un_pliegue = dict(sube, pliegues={"F1": 0.7, "F2": 0.4, "F3": 0.4})
+        self.assertFalse(decidir(un_pliegue, ref, brazo=True)["adopta"])
+
+    def test_configuracion_a_argumentos(self):
+        config = aplicar({"brazo": []}, {"brazo+": "usmsc", "max-tokens": "320"})
+        self.assertEqual(argumentos(config), ["--brazo", "usmsc", "--max-tokens", "320"])
+
+
 class EntrenamientoTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -89,11 +121,11 @@ class EntrenamientoTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def correr(self, *extra, pliegue="F1", nombre="r"):
-        args = parse_args(["--pliegue", pliegue, "--configuracion", "T", "--salida", str(self.dir / nombre),
+        args = parse_args(["corrida", "--pliegue", pliegue, "--configuracion", "T", "--salida", str(self.dir / nombre),
                            "--conjunto", str(self.conjunto), "--dispositivo", "cpu",
                            "--vectores", str(self.dir / "vec.gz"), "--cache", str(self.dir / "cache.npz"),
                            "--epocas", "3", "--paciencia", "2", *extra])
-        return entrenar(args)
+        return corrida(args)
 
     def test_predicciones_formato_comun_y_etiqueta(self):
         self.correr("--brazo", "satira", "--pooling", "maxmedia", "--congelar-embeddings", "1",
@@ -121,6 +153,11 @@ class EntrenamientoTests(unittest.TestCase):
         self.assertEqual(resultado["mejor_epoca"], 2)
         self.assertFalse((self.dir / "t/predicciones.csv").exists())
         self.assertTrue((self.dir / "t/modelo.pt").exists())
+
+    def test_sin_checkpoint(self):
+        self.correr("--no-guardar-modelo", nombre="s")
+        self.assertTrue((self.dir / "s/predicciones.csv").exists())
+        self.assertFalse((self.dir / "s/modelo.pt").exists())
 
     def test_no_sobrescribe(self):
         self.correr()

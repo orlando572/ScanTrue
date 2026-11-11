@@ -64,7 +64,7 @@ Aplicada **igual para los dos modelos**, antes de fragmentar:
 La extensión envía la selección del usuario, con un mínimo de 100 tokens. El conjunto se arma con eso:
 
 - **Unidad de trabajo:** el fragmento, no el artículo.
-- **Tamaño variable entre 100 y 400 tokens** del tokenizador del BiLSTM (`bilstm/entrenar_baseline.py:tokenize`), cortado en límite de oración. Para cada fragmento se sortea un tamaño objetivo **sin mirar la clase**; si el artículo es más corto, se toma completo. Se usa ese tokenizador para que el mínimo coincida con el del backend.
+- **Tamaño variable entre 100 y 400 tokens** del tokenizador del BiLSTM (`bilstm/modelo.py:tokenize`), cortado en límite de oración. Para cada fragmento se sortea un tamaño objetivo **sin mirar la clase**; si el artículo es más corto, se toma completo. Se usa ese tokenizador para que el mínimo coincida con el del backend.
   - Variable porque la extensión envía lo que el usuario seleccione: a veces un párrafo, a veces casi todo el artículo.
   - Hasta 400 porque así cada modelo puede probar si le sirve leer más (BiLSTM 192 frente a 320; mBERT 256 frente a 512) con los mismos datos. Ver [02_PLAN_BILSTM.md](02_PLAN_BILSTM.md) y [03_PLAN_MBERT.md](03_PLAN_MBERT.md).
   - **Si el uso real ya está registrado,** sustituir el sorteo uniforme por la distribución real de longitudes: el historial de análisis guarda `tokens_leidos` por modelo, aunque ese valor ya viene recortado (192 en el BiLSTM y 512 en mBERT).

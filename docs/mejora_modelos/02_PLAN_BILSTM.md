@@ -8,10 +8,10 @@
 
 | Dato | Valor actual |
 | --- | --- |
-| Checkpoint en producción | `datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/mejor_modelo.pt` |
-| Script | [`bilstm/preentrenados/entrenar.py`](../../bilstm/preentrenados/entrenar.py) |
+| Checkpoint en producción | `datasets/bilstm_produccion/modelo/mejor_modelo.pt` |
+| Script | `bilstm/preentrenados/entrenar.py` (retirado; en el historial de Git, commit `d4ece74`) |
 | Arquitectura | Embedding fastText CC 300 d (ajustable) → BiLSTM 1 capa, 64 por dirección → estado final de ambas direcciones → lineal |
-| Entrada | Hasta 192 tokens de `\b\w+\b` en minúsculas ([`entrenar_baseline.py:29`](../../bilstm/entrenar_baseline.py:29)) |
+| Entrada | Hasta 192 tokens de `\b\w+\b` en minúsculas ([`bilstm/modelo.py`](../../bilstm/modelo.py)) |
 | Entrenamiento | AdamW lr 1e-3, decaimiento 0,01, lote 32, dropout 0,3, pérdida ponderada por clase, ReduceLROnPlateau, parada temprana con paciencia 5 por F1 macro de validación |
 | Etiqueta | `0=falsa`, `1=real` |
 | Datos | 3.066 filas: 1.683 USMSC/Edds truncados, 769 v1 (con 233 de sátira), 614 Polyglot |
@@ -27,10 +27,10 @@ Problemas propios del BiLSTM, además de los comunes:
 
 ## 2. Cambios de código necesarios (antes de experimentar)
 
-Hacer en un script nuevo, `bilstm/entrenar_comun.py`, para no romper la reproducción de los modelos anteriores:
+Hecho en `bilstm/entrenar.py` (subcomando `corrida`; hasta el 10 nov 2026 se llamaba `entrenar_comun.py`):
 
 1. **Lectura del conjunto común:** leer `datasets/comun_v1/fragmentos_desarrollo.csv`, verificar el SHA-256 contra `manifest.json` y filtrar por pliegue (`--pliegue F1|F2|F3`).
-2. **Convención de etiquetas:** usar `etiqueta_falsa` (1 = falsa). Dentro del modelo, la neurona 1 pasa a ser «falsa». Cambiar en consecuencia [`probar_externo.py`](../../bilstm/probar_externo.py) y el backend (paso 5).
+2. **Convención de etiquetas:** usar `etiqueta_falsa` (1 = falsa). Dentro del modelo, la neurona 1 pasa a ser «falsa». Cambiar en consecuencia el backend (paso 5).
 3. **Pesos por muestra:** usar la columna `peso` en la pérdida (`CrossEntropyLoss(reduction="none")` × `peso`), además o en lugar del peso por clase. Probar ambas opciones solo si la primera no equilibra la tasa de falsas alarmas.
 4. **Parada temprana interna:** separar el 10 % de los grupos del entrenamiento del pliegue como validación interna. La fuente que quedó fuera no se usa para elegir la época.
 5. **Guardar predicciones** en el formato común de [01_PLAN_COMUN.md §7](01_PLAN_COMUN.md#7-formato-común-de-predicciones), con logits, para la fuente que quedó fuera.
@@ -57,7 +57,7 @@ Notas:
 
 - **B1 y B2 compiten entre sí:** se prueba B2 solo si B1 se adopta, y gana el mejor de los dos.
 - **Máximo de tokens:** se parte de 192, el valor actual del backend. Los fragmentos van de 100 a 400 tokens, así que los más largos se recortan, igual que en producción. B8 mide si leer más ayuda.
-- **Opcional, no prioritario:** dar vector a las palabras fuera del vocabulario con los subword de fastText. Requiere descargar `cc.es.300.bin` (unos 7 GB) porque en `datasets/embeddings_preentrenados/` solo está el `.vec`. Probarlo solo si el análisis de errores muestra muchas palabras desconocidas.
+- **Opcional, no prioritario:** dar vector a las palabras fuera del vocabulario con los subword de fastText. Requiere descargar `cc.es.300.bin` (unos 7 GB) porque en `datasets/embeddings/` solo está el `.vec`. Probarlo solo si el análisis de errores muestra muchas palabras desconocidas.
 - **Sin hiperparámetros nuevos fuera de esta lista.** Si B0–B7 no mejoran, el BiLSTM se queda con la receta B0 y la mejora viene de la calibración.
 
 ## 4. Comparación con la referencia TF-IDF
@@ -95,7 +95,7 @@ Con el evaluador común, comparar la configuración ganadora contra **TF-IDF de 
 ## 6. Lista de comprobación
 
 - [ ] `comun_v1` construido y con manifiesto revisado.
-- [ ] `entrenar_comun.py` con los cambios de la sección 2 y sus tests.
+- [x] `entrenar.py` con los cambios de la sección 2 y sus tests.
 - [ ] B0 ejecutado y comparado con las referencias de longitud y TF-IDF.
 - [ ] B1–B7 ejecutados en orden, con la decisión anotada en una tabla de registro.
 - [ ] Modelo final, temperatura y contrato guardados.

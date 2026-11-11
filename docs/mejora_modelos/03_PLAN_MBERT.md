@@ -102,11 +102,11 @@ Columnas que **no** entran al modelo: `dominio`, `tokens_bilstm`, `pliegue`. Son
 
 ## 5. Cambios en el script de entrenamiento
 
-Crea un script nuevo, `mBERT/train_comun.py`, a partir de [`mBERT/train_bilstm_step4.py`](../../mBERT/train_bilstm_step4.py). **No modifiques el antiguo:** tiene que seguir reproduciendo los resultados de octubre. Mantén todo lo que ya hace bien: hashes, una carpeta por corrida con `exist_ok=False`, recarga explícita del mejor checkpoint y comprobación de la métrica.
+Crea **un solo script de entrenamiento**, `mBERT/entrenar.py`, a partir de [`mBERT/train_bilstm_step4.py`](../../mBERT/train_bilstm_step4.py). Antes de empezar, guarda los scripts antiguos en un commit para que los resultados de octubre sigan siendo reproducibles desde el historial de Git; después se retiran (sección 13). Mantén todo lo que ya hace bien: hashes, una carpeta por corrida con `exist_ok=False`, recarga explícita del mejor checkpoint y comprobación de la métrica.
 
 ### 5.1. Lista de cambios
 
-| # | Antes (`train_bilstm_step4.py`) | Después (`train_comun.py`) |
+| # | Antes (`train_bilstm_step4.py`) | Después (`entrenar.py`) |
 | --- | --- | --- |
 | 1 | `DATA = datasets/processed/mbert_bilstm_step3_20261008_v1`, JSONL | `datasets/comun_v1/fragmentos_desarrollo.csv`; verificar SHA-256 y conteos contra `manifest.json` |
 | 2 | `--arm main\|no_usmsc` | `--pliegue F1\|F2\|F3\|todo` y `--ablacion ninguna\|satira\|usmsc\|politica` |
@@ -173,7 +173,7 @@ pd.DataFrame({
 
 ### 5.5. Ejecutor de la matriz
 
-Adapta [`mBERT/run_bilstm_step4_matrix.py`](../../mBERT/run_bilstm_step4_matrix.py) a `run_comun_matrix.py`. Recibe una configuración y lanza los 3 pliegues × 3 semillas, en serie, con un registro de estado como `PASO_4_MATRIX_STATUS.json`. Si una corrida falla, el ejecutor se detiene y no la repite en silencio.
+Lleva lo que hace [`mBERT/run_bilstm_step4_matrix.py`](../../mBERT/run_bilstm_step4_matrix.py) a un subcomando `experimento` de `entrenar.py`. Recibe una configuración y lanza los 3 pliegues × 3 semillas, en serie, con un registro de estado como `PASO_4_MATRIX_STATUS.json`. Si una corrida falla, el ejecutor se detiene y no la repite en silencio.
 
 ---
 
@@ -253,7 +253,7 @@ Solo cuando Orlando lo indique, con el modelo final ya fijado:
 
 | Entregable | Contenido |
 | --- | --- |
-| `mBERT/train_comun.py` y `mBERT/run_comun_matrix.py` | Scripts nuevos, con los cambios de la sección 5 |
+| `mBERT/entrenar.py`, `mBERT/modelo.py`, `mBERT/tests/` y `mBERT/README.md` | Script único de entrenamiento con los cambios de la sección 5, y la carpeta ordenada según la sección 13 |
 | `mBERT/runs_comun/<corrida>/` por cada corrida | `config.json`, `metricas_internas.json`, `predicciones.csv`, `train_log.jsonl`. Para las corridas de pliegue, el `best_model` se puede borrar una vez entregadas las predicciones |
 | `mBERT/runs_comun/FINAL_<modelo>_s<semilla>/best_model` | Pesos finales y tokenizador (Git LFS) |
 | `mBERT/selection/comun_v1/contrato_inferencia.json` | Contrato nuevo (sección 10) |
@@ -295,7 +295,8 @@ El backend ([`backend/models/mbert.py`](../../backend/models/mbert.py)) lee hoy 
 
 - [ ] `comun_v1` recibido y verificado contra su `manifest.json`.
 - [ ] Modelos base descargados, con revisión y SHA-256 registrados.
-- [ ] `train_comun.py` con los 11 cambios de la sección 5.1.
+- [ ] Scripts antiguos guardados en un commit.
+- [ ] `entrenar.py` con los 11 cambios de la sección 5.1.
 - [ ] Prueba corta (1 época, un pliegue) que genera `predicciones.csv` válido y muestra pesos por clase equilibrados.
 - [ ] M0 y comprobación M0-len.
 - [ ] Paso 1 (M1a–M1c) y decisión anotada.
@@ -306,6 +307,7 @@ El backend ([`backend/models/mbert.py`](../../backend/models/mbert.py)) lee hoy 
 - [ ] Contrato de inferencia con hashes; `temperatura` recibida de Orlando.
 - [ ] Predicciones de la prueba congelada entregadas sin mirar métricas.
 - [ ] `PLAN_COMUN_RESULTADOS.md` completo.
+- [ ] Carpeta `mBERT/` ordenada y limpia (sección 13).
 
 ## 12. Preguntas frecuentes
 
@@ -329,3 +331,47 @@ No para decidir nada. Ya se consultó muchas veces y premia la longitud del art�
 
 **¿Qué pasa con el pliegue F3 (Polyglot)?**
 Ahí las reales son todas de El Mundo y las falsas de medios de propaganda, así que es fácil acertar por el medio. Se informa, pero no decide solo: la regla usa la media de los tres pliegues y, para los brazos de ablación, exige mejora en al menos dos.
+
+## 13. Orden y limpieza de la carpeta `mBERT/`
+
+Orlando ya lo hizo con el BiLSTM (ver [`bilstm/README.md`](../../bilstm/README.md)). La idea es la misma: **un solo script de entrenamiento por modelo**, la carpeta organizada en subcarpetas y nada que ya no se use.
+
+### 13.1. Estructura objetivo
+
+```
+mBERT/
+├── entrenar.py          Único script de entrenamiento, con subcomandos:
+│                          corrida      un pliegue y una semilla (antes train_bilstm_step4.py)
+│                          experimento  3 pliegues × 3 semillas (antes run_bilstm_step4_matrix.py)
+│                          decidir      regla de decisión entre dos configuraciones
+│                          final        modelo final, contrato de inferencia
+├── modelo.py            Lista de modelos base (mbert, beto, roberta_bne, xlmr) con ruta, revisión
+│                        y SHA-256; carga del modelo y del tokenizador. Lo usa también el backend
+├── requirements.txt
+├── tests/               Pruebas cortas en CPU con un conjunto sintético
+├── docs/                Resultados del modelo actual y del nuevo (PLAN_COMUN_RESULTADOS.md)
+└── README.md            Qué hay, cómo se instala y cómo se entrena, paso a paso
+```
+
+- **Lo común no se copia:** la lectura del conjunto, los pliegues y la evaluación están en [`datos_comunes/`](../../datos_comunes/README.md). Úsalos en lugar de reescribirlos, para que las métricas de los dos modelos sean comparables.
+- **Un subcomando por paso, no un archivo por paso.** Los `step1_…` a `step7_…`, sus variantes `v3`/`v4` y los `download_phase_…` dejan de existir como archivos sueltos. Lo que siga siendo necesario (por ejemplo, descargar el modelo base) pasa a ser un subcomando o una función de `modelo.py`.
+
+### 13.2. Qué conservar y qué retirar
+
+| Conservar (ordenado) | Retirar (queda en el historial de Git) |
+| --- | --- |
+| El checkpoint que usa hoy la app y su contrato (`mBERT/selection/…`), en una carpeta clara como `mBERT/produccion/` o en `datasets/mbert_produccion/` | Scripts `step1_…` a `step7_…`, `run_bilstm_step4_matrix.py`, `summarize_bilstm_step4.py`, `select_bilstm_step5.py` una vez llevados a `entrenar.py` |
+| Los datos con que se entrenó ese checkpoint, en su propia carpeta | Versiones antiguas de las políticas (`step2_freeze_policy*.py`) que ya no se usan |
+| El modelo final nuevo y sus predicciones | Checkpoints de corridas de experimentos (basta con sus `predicciones.csv` y métricas) |
+| Informe técnico y resultados en `docs/` | Documentos de pasos ya superados, resumidos en un único documento de resultados |
+
+### 13.3. Orden recomendado
+
+1. Commit de todo lo actual, sin borrar nada.
+2. Crear `entrenar.py` y `modelo.py` y comprobar que una corrida da los mismos resultados que el script antiguo con la misma semilla y los mismos datos.
+3. Mover a subcarpetas, retirar lo de la tabla 13.2 y actualizar las rutas del backend (`backend/models/mbert.py`) si cambia la del checkpoint.
+4. Pasar las pruebas de `mBERT/tests/` y las del backend, y comprobar que la app sigue cargando mBERT.
+5. Escribir `mBERT/README.md`.
+
+Antes de borrar checkpoints o datos, confirma con Orlando que no los necesita la app ni la calibración conjunta.
+

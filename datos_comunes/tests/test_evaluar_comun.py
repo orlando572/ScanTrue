@@ -1,6 +1,6 @@
 """Pruebas del evaluador común.
 
-Uso: bilstm/.venv/bin/python -m unittest datos_comunes/test_evaluar_comun.py
+Uso: bilstm/.venv/bin/python -m unittest discover -s datos_comunes/tests
 """
 
 import sys
@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from evaluar_comun import (  # noqa: E402
     ajustar_temperatura, bootstrap_pareado, ece, evaluar_configuracion, metricas, softmax_falsa,
     tabla_niveles,

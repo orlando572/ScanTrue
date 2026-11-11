@@ -6,7 +6,7 @@
 
 ## 0. Actualización: conjunto `comun_v1.1` (7 nov 2026)
 
-`comun_v1.1` quita 8 artículos falsos de Polyglot que no estaban en español (inglés, francés o italiano). El resto del conjunto queda idéntico, fragmento por fragmento. Se repitió todo el plan (B0–B8, referencias y etapa final) con el mismo código. La versión 1.0 y sus corridas quedan en `datasets/respaldo_comun_v1.0/`.
+`comun_v1.1` quita 8 artículos falsos de Polyglot que no estaban en español (inglés, francés o italiano). El resto del conjunto queda idéntico, fragmento por fragmento. Se repitió todo el plan (B0–B8, referencias y etapa final) con el mismo código. Las métricas de la versión 1.0 quedan en `datasets/comun_v1_corridas/respaldo_v1.0/` (sin checkpoints).
 
 | | v1.0: F1 | v1.0: FA | v1.1: F1 | v1.1: FA |
 | --- | ---: | ---: | ---: | ---: |
@@ -20,7 +20,7 @@
 - **B6 frente a TF-IDF en v1.1:** +0,029, IC 95 % [−0,002; 0,058], P(B6 mejor) = 0,97, pero con 9 puntos más de falsas alarmas.
 - **Lectura:** las diferencias de B0 entre versiones son del mismo tamaño que el umbral de 0,02, así que la regla aplicada contra un B0 inestable no es fiable.
 - **Decisión (7 nov 2026): se elige B6 a mano**, apartándose de la regla. Motivo: es estable entre versiones y tiene el mejor F1; las falsas alarmas se miden con el umbral fijo de 0,5, que se ajustará en la calibración conjunta con mBERT. La elección y su motivo quedan en `final/contrato.json` (`eleccion`). El modelo final que daba la regla (B0) se conserva en `final_B0_por_regla/`.
-- **Modelo final v1.1:** B6, semilla 42, 4 épocas (mediana de los pliegues), `final_comun.py --ganador B6`. Temperatura provisional **T = 8,45**. Fuera de pliegue, por artículo y calibrado: F1 0,596, falsas alarmas 23,7 %, AUC 0,593, Brier 0,233. Por fragmento, los niveles calibrados quedan así: 0–20 % tiene 5 fragmentos; 20–40 % tiene 1.014 (29 % falsas, dentro del objetivo); 40–60 % tiene 1.621 (30 % falsas); 60–80 % tiene 238 (52 % falsas); 80–100 % ninguno.
+- **Modelo final v1.1:** B6, semilla 42, 4 épocas (mediana de los pliegues), `entrenar.py final --ganador B6`. Temperatura provisional **T = 8,45**. Fuera de pliegue, por artículo y calibrado: F1 0,596, falsas alarmas 23,7 %, AUC 0,593, Brier 0,233. Por fragmento, los niveles calibrados quedan así: 0–20 % tiene 5 fragmentos; 20–40 % tiene 1.014 (29 % falsas, dentro del objetivo); 40–60 % tiene 1.621 (30 % falsas); 60–80 % tiene 238 (52 % falsas); 80–100 % ninguno.
 
 El resto de este documento describe la versión 1.0.
 
@@ -63,7 +63,7 @@ Desarrollo por pliegue: F1 (v1) 544 artículos / 778 fragmentos; F2 (FakeDeS) 44
 - **Se adopta un cambio** si esa media sube **≥ 0,02** respecto al ganador vigente y la tasa de falsas alarmas de artículo no sube más de **2 puntos**.
 - **Brazos (B5–B7):** además deben mejorar F1 en **al menos dos de los tres pliegues**.
 - **B2** solo se prueba si B1 se adopta.
-- La regla se aplicó de forma automática con [`plan_comun.py`](plan_comun.py) y [`decidir_comun.py`](decidir_comun.py).
+- La regla se aplicó de forma automática con `bilstm/entrenar.py plan` (antes `plan_comun.py` y `decidir_comun.py`).
 
 **Receta B0:** fastText CC 300 d ajustable → BiLSTM 1 capa, 64 por dirección → estado final → lineal; 192 tokens; AdamW lr 1e-3, decaimiento 0,01; lote 32; dropout 0,3; ReduceLROnPlateau (0,5, paciencia 2); máximo 20 épocas, paciencia 5 con la validación interna (10 % de los grupos de entrenamiento, F1 macro de artículo). Pérdida por muestra × `peso` × peso de clase. Neurona 1 = falsa.
 
@@ -90,7 +90,7 @@ Notas:
 - **B5:** en F1 la sátira no entra (es de v1), así que solo puede influir en F2 y F3; mejora F2 y empeora F3.
 - **B6, comprobación de fuga:** 33 de las 1.684 filas de USMSC se parecen a artículos del desarrollo (27 contienen una ventana de 60 letras de un artículo de FakeDeS o v1). Las 33 comparten grupo con ese artículo, así que el cargador las quita cuando su fuente queda fuera. La mejora no viene de copias.
 - **Sobreajuste:** la pérdida de entrenamiento llega a ~0 en 5–8 épocas y la validación interna (0,75–0,88 en F1/F2) no predice la fuente externa (~0,55). Las épocas elegidas en B6 fueron 2–11 (mediana 5).
-- B0 y B1 se corrieron con la versión de `entrenar_comun.py` anterior a admitir varios brazos (`--brazo` con `nargs`). El comportamiento sin brazos es idéntico; el hash del script queda registrado en cada `config.json`.
+- B0 y B1 de v1.0 se corrieron con la versión de `entrenar_comun.py` (hoy `entrenar.py corrida`) anterior a admitir varios brazos (`--brazo` con `nargs`). El comportamiento sin brazos es idéntico; el hash del script queda registrado en cada `config.json`.
 
 ## 5. Ganador B6 por pliegue y fuente
 
@@ -182,26 +182,27 @@ Por fuente, con T (fragmentos y % de falsas en 20–40 / 40–60 / 60–80): v1 
 | --- | --- |
 | `datasets/comun_v1/` | Conjunto común, `manifest.json`, `REPORTE.md`, `pliegues.json` |
 | `datasets/comun_v1_corridas/referencias/` | Predicciones y métricas de las dos referencias |
-| `datasets/comun_v1_corridas/bilstm/B*/` | 9 corridas por experimento (`config.json`, `resultados.json`, `predicciones.csv`, `modelo.pt`) y `evaluacion/metricas.json` |
+| `datasets/comun_v1_corridas/bilstm/B*/` | 9 corridas por experimento (`config.json`, `resultados.json`, `predicciones.csv`; los `modelo.pt` se borraron en la limpieza del 10 nov 2026) y `evaluacion/metricas.json` |
 | `datasets/comun_v1_corridas/bilstm/decisiones.json` | Registro de decisiones |
 | `datasets/comun_v1_corridas/bilstm/final/` | Checkpoint final, `contrato.json`, `resumen_final.json`, `predicciones_fuera_de_pliegue.csv` (B6, 3 semillas) y su media de semillas |
 
-Código nuevo (los scripts antiguos no se modificaron): [`datos_comunes/`](../datos_comunes/) (`limpieza.py`, `construir_comun.py`, `comun.py`, `evaluar_comun.py`, `referencias.py` y tests), [`entrenar_comun.py`](entrenar_comun.py), [`serie_comun.py`](serie_comun.py), [`decidir_comun.py`](decidir_comun.py), [`plan_comun.py`](plan_comun.py), [`final_comun.py`](final_comun.py) y [`test_entrenar_comun.py`](test_entrenar_comun.py).
+Código: [`datos_comunes/`](../../datos_comunes/) (conjunto común, evaluación y referencias), [`bilstm/entrenar.py`](../entrenar.py) (único script de entrenamiento), [`bilstm/modelo.py`](../modelo.py) y [`bilstm/tests/`](../tests/). El 10 nov 2026 los scripts `entrenar_comun.py`, `serie_comun.py`, `plan_comun.py`, `decidir_comun.py` y `final_comun.py` se unieron en `entrenar.py` sin cambiar resultados (una corrida repetida da logits idénticos); los originales están en el historial de Git (commit `d4ece74`).
 
 ## 9. Pendiente
 
 - Decidir BiLSTM o TF-IDF (sección 6).
 - Calibrar y combinar con mBERT (paso 4 del plan común); recalcular T y la tabla de niveles con la combinación.
-- Cambiar `probar_externo.py` y el backend a la convención `etiqueta_falsa` y al contrato (paso 5). No se tocaron en esta fase.
+- Cambiar el backend a la convención `etiqueta_falsa` y al contrato (paso 5). No se tocaron en esta fase.
 - Prueba congelada, una sola vez, con todo ya fijado.
 
 ## 10. Cómo reproducir
 
 ```bash
-bilstm/.venv/bin/python -m unittest datos_comunes/test_construir_comun.py datos_comunes/test_evaluar_comun.py bilstm/test_entrenar_comun.py
+bilstm/.venv/bin/python -m unittest discover -s datos_comunes/tests
+bilstm/.venv/bin/python -m unittest discover -s bilstm/tests
 bilstm/.venv/bin/python datos_comunes/construir_comun.py
 bilstm/.venv/bin/python datos_comunes/referencias.py --salida datasets/comun_v1_corridas/referencias
 bilstm/.venv/bin/python datos_comunes/evaluar_comun.py --predicciones datasets/comun_v1_corridas/referencias/*/predicciones.csv --salida datasets/comun_v1_corridas/referencias/evaluacion
-bilstm/.venv/bin/python bilstm/plan_comun.py
-bilstm/.venv/bin/python bilstm/final_comun.py
+bilstm/.venv/bin/python bilstm/entrenar.py plan
+bilstm/.venv/bin/python bilstm/entrenar.py final --ganador B6 --motivo "…"
 ```
