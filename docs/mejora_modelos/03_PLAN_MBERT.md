@@ -17,6 +17,8 @@
 | G | [10](#10-entrega-y-unión-con-develop) | Entregar a Orlando y unir con `develop` | PR `mbert` → `develop` |
 | H | [11](#11-prueba-congelada) | Prueba congelada, cuando Orlando lo indique | `predicciones_congelada.csv` |
 
+Si trabajas con un asistente de IA (Claude Code, Codex, Cursor…), dale la instrucción de la [sección 14](#14-instrucción-para-tu-asistente-de-ia) para que siga este plan fase por fase.
+
 ---
 
 ## 1. Resumen en una página
@@ -39,6 +41,18 @@
 - No se abre la prueba congelada: sus predicciones se generan solo al final y se entregan sin mirarlas.
 - No se cambia la convención de etiquetas: **1 = falsa, 0 = real**, igual que tu `label` actual y que el BiLSTM B6.
 - No se toca la rama `main`.
+
+**Lo que es común no limita tu modelo.** Con el BiLSTM se comparte solo **cómo se mide y cómo se entrega**, no cómo se construye el modelo. El objetivo es que tu modelo **supere al BiLSTM B6** (F1 0,585):
+
+| Común con el BiLSTM (no se cambia) | Libre para ti (para mejorar) |
+| --- | --- |
+| Datos `comun_v1.1`, pliegues y validación interna | Modelo base: mBERT, BETO, MarIA o XLM-R |
+| Métricas, evaluador común y regla de decisión | Longitud: 256 o 512 tokens (no estás atado a los 192 del BiLSTM) |
+| Etiquetas: 1 = falsa, 0 = real | Learning rate, épocas, lote, calentamiento |
+| Formato de `predicciones.csv` y del contrato | Brazos de ablación (USMSC, sátira, política) |
+| Estructura de carpetas | Cabeza adversarial de fuente (M4) y otras ideas que acuerdes con Orlando |
+
+Lo común existe para que los dos modelos se puedan comparar con la misma vara y combinarse en la app. Nada de lo que decidió el BiLSTM te obliga: que USMSC le ayudara es una pista, no una regla. Se espera que un modelo preentrenado en español generalice mejor que el BiLSTM a fuentes que no vio; si con estos datos no lo supera, también es un resultado válido.
 
 ---
 
@@ -493,3 +507,57 @@ Ahí las reales son todas de El Mundo y las falsas de medios de propaganda (prob
 
 **¿Mis cifras van a ser mucho más bajas que 0,939?**
 Sí, y es lo esperado: ahora cada fuente se evalúa con un modelo que nunca la vio y sin atajos de longitud. El BiLSTM B6 saca 0,585. Lo que importa es comparar contra M0, las referencias y el BiLSTM con el mismo protocolo.
+
+---
+
+## 14. Instrucción para tu asistente de IA
+
+Si usas un asistente de programación, abre la raíz del repositorio en tu rama `mbert` (después de la fase A) y pégale este texto:
+
+```text
+Vas a ayudarme a ejecutar el plan de mejora de mBERT de este repositorio (ScanTrue,
+detector de noticias falsas en español). El plan completo está en
+docs/mejora_modelos/03_PLAN_MBERT.md: léelo entero antes de hacer nada, junto con
+docs/mejora_modelos/01_PLAN_COMUN.md, datasets/README.md, datos_comunes/README.md,
+bilstm/README.md y bilstm/entrenar.py (es el modelo de referencia: mi script debe
+tener la misma forma).
+
+Contexto:
+- Trabajo en la rama `mbert`, que ya tiene traída `develop`. Nunca hagas commit,
+  merge ni push en `main`. No hagas push sin preguntarme.
+- Mi equipo: RTX 5060 de 8 GB, BF16, Python 3.14 y las versiones del plan (sección 3.2).
+- El conjunto común está en datasets/comun_v1/ (versión comun_v1.1). No lo modifiques.
+- Etiquetas: 1 = falsa, 0 = real (columna etiqueta_falsa). La salida 1 del modelo es «falsa».
+- Lo común con el BiLSTM (datos, pliegues, validación interna, evaluador, formato de
+  predicciones y contrato) se usa desde datos_comunes/; no lo reescribas ni lo copies.
+- No modifiques bilstm/, datos_comunes/ ni frontend/. En backend/ solo puedes cambiar
+  las rutas de backend/models/mbert.py, en un commit aparte.
+- Nunca abras ni evalúes fragmentos_prueba_congelada.csv hasta que yo lo diga.
+- No uses la externa de 569, la prueba de 146 ni la validación de 132 para decidir nada.
+
+Cómo trabajar:
+1. Sigue las fases del plan en orden (B, C, D, E, F, G). Al terminar cada fase,
+   detente, resúmeme qué hiciste y qué comprobaste, y espera mi confirmación.
+2. Fase C (orden y limpieza): antes de mover o borrar nada, haz un commit de todo lo
+   actual y enséñame la lista exacta de lo que vas a mover, a dónde, y lo que vas a
+   retirar. No borres nada sin mi confirmación. Después comprueba que el backend sigue
+   cargando mBERT y que pasan backend/tests/.
+3. Fase D: crea mBERT/entrenar.py (subcomandos corrida, experimento, plan, decidir,
+   final) y mBERT/modelo.py, con los 11 cambios de la sección 6.1, y tests en
+   mBERT/tests/ con un conjunto sintético en CPU. Haz una corrida corta (1 época, un
+   pliegue) y comprueba que datos_comunes/evaluar_comun.py acepta su predicciones.csv.
+4. Fase E: ejecuta los experimentos en el orden de la sección 7, empezando por M0 y la
+   prueba rápida 1R. Lanza los entrenamientos largos en segundo plano y guarda todo en
+   datasets/comun_v1_corridas/mbert/. Aplica la regla de decisión tal cual; nunca
+   decidas con una sola semilla. Si propones elegir algo en contra de la regla,
+   pregúntame y anota el motivo. No añadas experimentos fuera de la lista.
+5. Borra el best_model de cada corrida de experimento en cuanto tenga su
+   predicciones.csv, para no llenar el disco.
+6. Registra cada decisión en decisiones.json y en mBERT/docs/RESULTADOS_MODELO_NUEVO.md.
+7. Si algo del plan no cuadra con lo que encuentras en mis archivos, para y pregúntame
+   en vez de suponer.
+
+Empieza por la fase B: verifica datasets/comun_v1/ (versión y SHA-256 de
+fragmentos_desarrollo.csv, sección 4.1) y dime qué encuentras.
+```
+
