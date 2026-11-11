@@ -10,6 +10,7 @@ datos_comunes/
 ├── comun.py             Lee el conjunto y arma pliegues y validación interna
 ├── evaluar_comun.py     Métricas por artículo, bootstrap, temperatura y niveles de la extensión
 ├── referencias.py       Referencias: solo longitud y TF-IDF de caracteres
+├── calibrar_conjunto.py Calibración conjunta: temperaturas, combinación BiLSTM + mBERT y niveles
 └── tests/               Pruebas
 ```
 
@@ -25,7 +26,12 @@ bilstm/.venv/bin/python datos_comunes/referencias.py --salida datasets/comun_v1_
 bilstm/.venv/bin/python datos_comunes/evaluar_comun.py --predicciones RUTA/predicciones.csv --salida RUTA/evaluacion
 ```
 ```bash
+bilstm/.venv/bin/python datos_comunes/calibrar_conjunto.py --sobrescribir
+```
+```bash
 bilstm/.venv/bin/python -m unittest discover -s datos_comunes/tests
 ```
+
+`calibrar_conjunto.py` lee las predicciones fuera de pliegue de los dos modelos finales y escribe `datasets/comun_v1_corridas/calibracion/`. Decisiones y cifras en [docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md](../docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md).
 
 `construir_comun.py` usa el tokenizador de `bilstm/modelo.py`, para que el mínimo de 100 tokens coincida con el del backend.

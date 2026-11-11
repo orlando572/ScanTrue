@@ -8,6 +8,7 @@ Plan para mejorar el BiLSTM y mBERT con los datasets que ya existen. No incluye 
 | [01_PLAN_COMUN.md](01_PLAN_COMUN.md) | Ambos | Conjunto común, validación por fuente, calibración, combinación y reglas de decisión |
 | [02_PLAN_BILSTM.md](02_PLAN_BILSTM.md) | Orlando | Cambios de código, experimentos y entrega del BiLSTM |
 | [03_PLAN_MBERT.md](03_PLAN_MBERT.md) | Responsable de mBERT | Plan detallado y autocontenido para mBERT |
+| [04_CALIBRACION_CONJUNTA.md](04_CALIBRACION_CONJUNTA.md) | Ambos | Temperaturas, combinación 80/20 de BETO y BiLSTM y niveles de la extensión |
 
 ## Hallazgos clave
 
@@ -19,7 +20,7 @@ Plan para mejorar el BiLSTM y mBERT con los datasets que ya existen. No incluye 
 ## Orden de trabajo
 
 1. ✅ Orlando construye `datasets/comun_v1/` (versión 1.1) y el evaluador común (`datos_comunes/`).
-2. Cada responsable ejecuta los experimentos de su modelo, en paralelo. ✅ BiLSTM: ganador B6 ([resultados](../../bilstm/docs/RESULTADOS_MODELO_NUEVO.md)). Pendiente: mBERT, en su rama `mbert` partiendo de `develop` ([03_PLAN_MBERT.md](03_PLAN_MBERT.md)).
-3. Orlando calibra, combina y comprueba los niveles de la extensión.
+2. ✅ Cada responsable ejecuta los experimentos de su modelo, en paralelo. BiLSTM: ganador B6, F1 0,585 ([resultados](../../bilstm/docs/RESULTADOS_MODELO_NUEVO.md)). mBERT: ganador BETO + brazo `usmsc` (M3b), F1 0,721 ([resultados](../../mBERT/docs/RESULTADOS_MODELO_NUEVO.md)); unido en `develop` el 11 nov 2026.
+3. ✅ Orlando calibra, combina y comprueba los niveles de la extensión ([04_CALIBRACION_CONJUNTA.md](04_CALIBRACION_CONJUNTA.md)): 80 % BETO + 20 % BiLSTM sobre logits calibrados.
 4. Prueba congelada, una sola vez.
 5. Se actualizan los contratos de inferencia y el backend.

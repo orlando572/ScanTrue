@@ -181,6 +181,7 @@ Toda configuración debe compararse con estas dos referencias, evaluadas con el 
 ### 5.2. Umbral y combinación
 
 - **Combinación:** regresión logística sobre los logits calibrados de los dos modelos, ajustada con las predicciones fuera de pliegue. Reemplaza los pesos fijos 70/30 de `backend/core/config.py`. Si un modelo no aporta, su coeficiente sale cercano a 0 y eso también es un resultado.
+  - **Decisión del 11 nov 2026:** la regresión dio al BiLSTM un coeficiente negativo (0 con pesos ≥ 0). Para que los dos modelos cuenten, se fijó por diseño una media ponderada de logits calibrados, 80 % BETO + 20 % BiLSTM. Detalle en [04_CALIBRACION_CONJUNTA.md](04_CALIBRACION_CONJUNTA.md).
 - **Umbral de clase:** se mantiene en 0,5 sobre la probabilidad calibrada, salvo que Orlando fije un costo distinto para falsas alarmas y falsas omisiones.
 - **Regla de discrepancia:** si un modelo da más de 0,5 y el otro menos, y la diferencia supera 0,4, el backend devuelve un valor dentro de la franja «incierto». El umbral de 0,4 se revisa con las predicciones fuera de pliegue.
 

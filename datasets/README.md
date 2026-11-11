@@ -23,6 +23,8 @@ datasets/
 └── comun_v1_corridas/       Resultados con el conjunto común
     ├── referencias/         Referencias: solo longitud y TF-IDF
     ├── bilstm/              Experimentos B0–B8, decisiones.json y modelo final B6 (final/)
+    ├── mbert/               Experimentos M0–M3c, decisiones.json y modelo final BETO M3b (final/, 3 semillas)
+    ├── calibracion/         Calibración conjunta: combinacion.json, RESUMEN.md y probabilidades combinadas
     └── respaldo_v1.0/       Solo métricas de la versión 1.0 del conjunto
 ```
 
