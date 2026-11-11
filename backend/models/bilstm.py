@@ -6,13 +6,13 @@ from pathlib import Path
 
 import torch
 
-from bilstm.entrenar_baseline import BiLSTM, tokenize
+from bilstm.modelo import BiLSTM, tokenize
 
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CHECKPOINT = (
     ROOT
-    / "datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/mejor_modelo.pt"
+    / "datasets/bilstm_produccion/modelo/mejor_modelo.pt"
 )
 
 

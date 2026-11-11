@@ -12,7 +12,7 @@
       "recall_falsa": 0.7777777777777778,
       "f1_falsa": 0.7590361445783133,
       "f1_macro": 0.7645755435535244,
-      "fuente": "datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/resultados.json#validation_best"
+      "fuente": "datasets/bilstm_produccion/modelo/resultados.json#validation_best"
     },
     {
       "conjunto": "prueba_interna_no_politica",
@@ -23,7 +23,7 @@
       "recall_falsa": 0.7681159420289855,
       "f1_falsa": 0.7310344827586207,
       "f1_macro": 0.7739679456046624,
-      "fuente": "datasets/experimentos_balanceados/comparacion.json#pruebas.prueba_interna_no_politica.modelos.pequeno_mejorado_fasttext_cc300_s42.metricas"
+      "fuente": "datasets/bilstm_produccion/conjunto/comparacion.json#pruebas.prueba_interna_no_politica.modelos.pequeno_mejorado_fasttext_cc300_s42.metricas"
     },
     {
       "conjunto": "fuentes_reservadas",
@@ -34,7 +34,7 @@
       "recall_falsa": 0.7591973244147158,
       "f1_falsa": 0.6579710144927536,
       "f1_macro": 0.6029318673996336,
-      "fuente": "datasets/experimentos_balanceados/comparacion.json#pruebas.fuentes_reservadas.modelos.pequeno_mejorado_fasttext_cc300_s42.metricas"
+      "fuente": "datasets/bilstm_produccion/conjunto/comparacion.json#pruebas.fuentes_reservadas.modelos.pequeno_mejorado_fasttext_cc300_s42.metricas"
     }
   ],
   "limitaciones": [

@@ -12,7 +12,7 @@ Extensión para Chrome y Chromium que analiza texto seleccionado en páginas web
 | Modelos | BiLSTM y mBERT |
 | Registro blockchain (opcional) | Solidity, Foundry y Anvil |
 
-El checkpoint BiLSTM está en `datasets/modelos_balanceados/`. Los pesos de mBERT se descargan con Git LFS.
+El checkpoint BiLSTM está en `datasets/bilstm_produccion/modelo/`. Los pesos de mBERT se descargan con Git LFS.
 
 ## Requisitos
 

@@ -6,7 +6,7 @@ from itertools import islice
 from math import isfinite
 from typing import Protocol
 
-from bilstm.entrenar_baseline import TOKEN_PATTERN
+from bilstm.modelo import TOKEN_PATTERN
 from backend.models.bilstm import BilstmPredictor
 from backend.models.mbert import MbertTokenizer
 from backend.services.text_cleaning import clean_news_text

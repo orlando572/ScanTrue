@@ -83,7 +83,7 @@ Las filas de la matriz son etiquetas reales y las columnas son predicciones;
 ambos ejes usan el orden `falsa`, `real`. La prueba de fuentes reservadas es
 exploratoria porque se consultó repetidamente durante los experimentos. El
 catálogo versionado está en `backend/metrics/evaluaciones.json` y sus fuentes
-originales se describen en `bilstm/RESULTADOS_MEJOR_MODELO.md`.
+originales se describen en `bilstm/docs/RESULTADOS_PRODUCCION.md`.
 `GET /metricas?modelo=mbert` conserva la forma de respuesta y publica validación,
 prueba y evaluación externa del checkpoint `mBERT_BiLSTM_main_len512_seed43`,
 con sus fuentes y limitaciones. La evaluación externa es retrospectiva: F1 macro
