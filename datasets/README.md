@@ -14,6 +14,11 @@ datasets/
 │   ├── conjunto/            Particiones con que se entrenó y evaluó
 │   ├── modelo/              Checkpoint, config, historial y resultados
 │   └── evaluaciones/        Predicciones de la prueba externa y estudio de longitud mínima
+├── mbert_produccion/        mBERT que usa hoy la app (ver mBERT/docs/RESULTADOS_PRODUCCION.md)
+│   ├── conjunto/            Datos con que se entrenó y evaluó
+│   ├── modelo/              Checkpoint (LFS), tokenizador, selection.json y config
+│   └── evaluaciones/        Predicciones y métricas de validación, prueba y externa
+├── modelos_base/            Modelos base de Hugging Face para mBERT (mbert/, beto/, …)
 ├── comun_v1/                Conjunto común (versión 1.1), el mismo para BiLSTM y mBERT
 └── comun_v1_corridas/       Resultados con el conjunto común
     ├── referencias/         Referencias: solo longitud y TF-IDF
