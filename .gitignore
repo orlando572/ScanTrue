@@ -17,12 +17,13 @@ __pycache__/
 # Datasets are kept local by default; keep the directory placeholder in Git.
 datasets/**
 !datasets/.gitkeep
+!datasets/README.md
 
-# Checkpoint seleccionado para usar el BiLSTM desde un clon limpio.
-!datasets/modelos_balanceados/
-datasets/modelos_balanceados/**
-!datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/
-datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/**
-!datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/mejor_modelo.pt
-!datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/config.json
-!datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/resultados.json
+# Checkpoint del BiLSTM de producción, para usarlo desde un clon limpio.
+!datasets/bilstm_produccion/
+datasets/bilstm_produccion/**
+!datasets/bilstm_produccion/modelo/
+datasets/bilstm_produccion/modelo/**
+!datasets/bilstm_produccion/modelo/mejor_modelo.pt
+!datasets/bilstm_produccion/modelo/config.json
+!datasets/bilstm_produccion/modelo/resultados.json

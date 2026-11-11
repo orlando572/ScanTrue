@@ -1,10 +1,12 @@
 # Resultados y pruebas del BiLSTM seleccionado
 
-El checkpoint incluido en este repositorio es `datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/mejor_modelo.pt`. Se entrenó con [`preentrenados/entrenar.py`](preentrenados/entrenar.py), fastText CC español de 300 dimensiones, semilla 42, máximo 192 tokens y CUDA. [`config.json`](../datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/config.json) conserva los parámetros; [`resultados.json`](../datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/resultados.json), el resultado de validación.
+Es el modelo que usa hoy la app. El checkpoint está en `datasets/bilstm_produccion/modelo/mejor_modelo.pt` (antes `datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/`). Se entrenó con `bilstm/preentrenados/entrenar.py`, fastText CC español de 300 dimensiones, semilla 42, máximo 192 tokens y CUDA. `config.json` (en la misma carpeta) conserva los parámetros con las rutas de entonces; `resultados.json`, el resultado de validación.
+
+> Los scripts que crearon y evaluaron este modelo (`preentrenados/entrenar.py`, `entrenar_baseline.py`, `preparar_balanceados.py`, `probar_externo.py`…) se retiraron en la limpieza del 10 nov 2026 y están en el historial de Git (commit `d4ece74`). La arquitectura y el tokenizador siguen en [`bilstm/modelo.py`](../modelo.py), que es lo que usa el backend.
 
 ## Datos utilizados
 
-La entrada fue `datasets/experimentos_balanceados/pequeno_mejorado/`. Sus CSV son artefactos locales **excluidos de Git**. El modelo recibió únicamente la columna `texto`, que incluye el titular al inicio cuando existía; `titulo` no fue una segunda entrada. La etiqueta es **`0=falsa`, `1=real`**.
+La entrada fue `datasets/experimentos_balanceados/pequeno_mejorado/`, hoy `datasets/bilstm_produccion/conjunto/`. Sus CSV son artefactos locales **excluidos de Git**. El modelo recibió únicamente la columna `texto`, que incluye el titular al inicio cuando existía; `titulo` no fue una segunda entrada. La etiqueta es **`0=falsa`, `1=real`**.
 
 | Partición | Total | Falsas | Reales | Función |
 | --- | ---: | ---: | ---: | --- |
@@ -33,6 +35,6 @@ En las fuentes reservadas detectó 227 de 299 noticias falsas y produjo 164 fals
 
 ## Cómo se obtuvieron y comprobaron las predicciones
 
-[`probar_externo.py`](probar_externo.py) carga el checkpoint y devuelve la clase, `prob_falsa` y los tokens leídos. Para evaluar los 606 textos locales se utilizó `externa.csv` de la misma carpeta de datos; ninguna fila fue excluida por duplicado o solapamiento. Las predicciones por fila se conservaron **solo localmente** en `datasets/evaluaciones_externas/pequeno_mejorado_s42_externa_predicciones.csv`, excluido de Git porque contiene textos de los datasets. Las métricas anteriores se reprodujeron con ese archivo.
+`probar_externo.py` cargaba el checkpoint y devuelve la clase, `prob_falsa` y los tokens leídos. Para evaluar los 606 textos locales se utilizó `externa.csv` de la misma carpeta de datos; ninguna fila fue excluida por duplicado o solapamiento. Las predicciones por fila se conservaron **solo localmente** en `datasets/bilstm_produccion/evaluaciones/pequeno_mejorado_s42_externa_predicciones.csv`, excluido de Git porque contiene textos de los datasets. Las métricas anteriores se reprodujeron con ese archivo.
 
-Las pruebas de código relevantes son [`test_probar_externo.py`](test_probar_externo.py), [`test_entrenar.py`](test_entrenar.py) y [`preentrenados/test_entrenar.py`](preentrenados/test_entrenar.py). Comprueban la evaluación externa, el manejo de referencias ausentes, la lectura de particiones y la carga de vectores. Para instalar y usar el checkpoint, consulta el [README de BiLSTM](README.md).
+Hoy, [`bilstm/tests/test_entrenar.py`](../tests/test_entrenar.py) comprueba que este checkpoint sigue cargando con `bilstm/modelo.py`. Para instalar y usar el BiLSTM, consulta el [README de BiLSTM](../README.md).

@@ -1,27 +1,60 @@
 # BiLSTM de ScanTrue
 
-Este directorio contiene el código, la configuración y el checkpoint seleccionado para clasificar **textos de noticias en español** de forma experimental. El modelo disponible en el repositorio es el *pequeño mejorado* con fastText CC español, semilla 42 y máximo 192 tokens BiLSTM.
+Clasificador de **noticias en español**: recibe el titular y el texto y devuelve la probabilidad de que la noticia sea falsa. Es orientativo: no verifica hechos con evidencia.
+
+## Carpetas y archivos
+
+```
+bilstm/
+├── entrenar.py          Único script de entrenamiento (subcomandos más abajo)
+├── modelo.py            Arquitectura del BiLSTM y tokenizador; también los usa el backend
+├── requirements.txt     Dependencias
+├── tests/
+│   └── test_entrenar.py Pruebas del modelo, del entrenamiento y de la regla de decisión
+└── docs/
+    ├── RESULTADOS_PRODUCCION.md   Modelo que usa hoy la app (datos, métricas y límites)
+    ├── RESULTADOS_MODELO_NUEVO.md Experimentos B0–B8 con el conjunto común y modelo B6
+    └── INSTALACION_WINDOWS.md     Instalación con GPU en Windows 11
+```
+
+Código compartido con mBERT en [`datos_comunes/`](../datos_comunes/README.md): construye el conjunto común, lee los pliegues y evalúa. Datos y modelos en [`datasets/`](../datasets/README.md) (fuera de Git).
+
+## Los dos modelos
+
+| | Modelo de producción (lo usa la app) | Modelo nuevo B6 (aún no conectado) |
+| --- | --- | --- |
+| Checkpoint | `datasets/bilstm_produccion/modelo/mejor_modelo.pt` | `datasets/comun_v1_corridas/bilstm/final/todo_s42/modelo.pt` |
+| Datos | `datasets/bilstm_produccion/conjunto/` | `datasets/comun_v1/` + brazo USMSC |
+| Etiquetas | salida 0 = falsa, 1 = real | salida 0 = real, 1 = falsa |
+| Calibración | ninguna | temperatura provisional en `contrato.json` |
+| Resultados | [RESULTADOS_PRODUCCION.md](docs/RESULTADOS_PRODUCCION.md) | [RESULTADOS_MODELO_NUEVO.md](docs/RESULTADOS_MODELO_NUEVO.md) |
+
+Los dos usan la misma arquitectura (`modelo.py`: fastText CC 300 d → BiLSTM de 64 por dirección → estado final → lineal) y leen como máximo 192 tokens. Para conectar el modelo nuevo a la app hay que adaptar `backend/models/bilstm.py` al contrato (orden de etiquetas y temperatura).
 
 ## Preparar el entorno
 
-Usa Python 3.14.4 y un entorno virtual en `bilstm/.venv`. Instala las dependencias fijadas en [`requirements.txt`](requirements.txt) y la compilación de PyTorch apropiada para tu sistema desde el [selector oficial](https://pytorch.org/get-started/locally/). Para Windows 11 con GPU, sigue [`INSTALACION_WINDOWS.md`](INSTALACION_WINDOWS.md). El entorno virtual no se guarda en Git.
+Python 3.14.4 en `bilstm/.venv`, con [`requirements.txt`](requirements.txt) y la versión de PyTorch adecuada para tu GPU ([selector oficial](https://pytorch.org/get-started/locally/)). En Windows, sigue [INSTALACION_WINDOWS.md](docs/INSTALACION_WINDOWS.md). El entrenamiento necesita `datasets/embeddings/cc.es.300.vec.gz` y `datasets/comun_v1/`.
 
-## Usar el checkpoint incluido
+## Entrenar
 
-Desde la raíz del repositorio, en Ubuntu:
+Todo se hace con `bilstm/entrenar.py`, desde la raíz del repositorio. Los resultados se guardan en `datasets/comun_v1_corridas/` (se cambia con `--corridas`).
+
+| Paso | Comando | Qué hace |
+| --- | --- | --- |
+| 1 | `bilstm/.venv/bin/python bilstm/entrenar.py corrida --pliegue F1 --semilla 42 --configuracion prueba --salida datasets/comun_v1_corridas/prueba` | Entrena un pliegue con una semilla. Útil para probar algo rápido |
+| 2 | `bilstm/.venv/bin/python bilstm/entrenar.py experimento B6 --brazo usmsc` | 3 pliegues × 3 semillas de una configuración y su evaluación |
+| 3 | `bilstm/.venv/bin/python bilstm/entrenar.py plan` | Ejecuta B0–B8 en orden y aplica la regla de decisión; escribe `bilstm/decisiones.json` |
+| 4 | `bilstm/.venv/bin/python bilstm/entrenar.py decidir B6 B0 --brazo` | Compara dos configuraciones ya evaluadas |
+| 5 | `bilstm/.venv/bin/python bilstm/entrenar.py final --ganador B6 --motivo "…"` | Modelo final con todo el desarrollo, temperatura y `contrato.json`. Sin `--ganador` usa el de la regla |
+
+Las referencias (solo longitud y TF-IDF) se calculan con `datos_comunes/referencias.py`. Opciones del modelo: `bilstm/.venv/bin/python bilstm/entrenar.py corrida --help`.
+
+## Pruebas
 
 ```bash
-bilstm/.venv/bin/python bilstm/probar_externo.py \
-  --modelo datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/mejor_modelo.pt \
-  --texto 'Titular. Texto de la noticia...' --device auto
+bilstm/.venv/bin/python -m unittest discover -s bilstm/tests
 ```
 
-El checkpoint incluye pesos y vocabulario; [`config.json`](../datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/config.json) registra el entrenamiento. `--device auto` usa CUDA si está disponible y CPU en caso contrario. El script recibe **un solo texto**: título seguido del cuerpo, sin repetir el título. Lee como máximo los primeros **192 tokens** según [`tokenize()`](entrenar_baseline.py), no 192 caracteres. Para entradas muy breves falta contexto; no existe una longitud óptima validada.
+## Historia
 
-También acepta `--archivo noticia.txt` o `--csv noticias.csv` con columna `texto`. Para guardar predicciones por fila de un CSV, añade `--salida predicciones.csv`. Si se dispone de los tres CSV locales de entrenamiento, validación y prueba, `--referencia datasets/experimentos_balanceados/pequeno_mejorado` permite detectar coincidencias con ellos. Si faltan, la predicción funciona y `referencia_disponible=false` indica que **no se pudo comprobar el solapamiento**.
-
-## Qué se puede concluir
-
-En una prueba exploratoria de 606 noticias de fuentes reservadas, el modelo obtuvo **F1 macro 0,603**, detectó 227 de 299 noticias falsas y marcó falsas 164 de 307 noticias reales. `prob_falsa` es una puntuación del clasificador, **no una verificación de hechos**. [Resultados y pruebas del modelo](RESULTADOS_MEJOR_MODELO.md) explica los datos, métricas y límites.
-
-Los datasets originales, las particiones de entrenamiento, los embeddings fastText descargados y otros checkpoints **no se incluyen** en Git. El script de entrenamiento requiere esas entradas para repetir el experimento; el checkpoint incluido permite usar el modelo ya entrenado.
+Los scripts de los experimentos de octubre de 2026 (unificación de datasets, depuración, series de política, longitud, titulares, prueba externa…) y sus informes se retiraron el 10 de noviembre de 2026. Están en el historial de Git, commit `d4ece74`.
