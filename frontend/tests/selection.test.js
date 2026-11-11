@@ -34,7 +34,7 @@ function createWorker(tab = { id: 3, url: 'https://ejemplo.test/noticia' }) {
       async remove(key) { delete values[key]; },
     }, local: { async setAccessLevel() {} } },
   };
-  runInNewContext(workerCode, { chrome, crypto: globalThis.crypto });
+  runInNewContext(workerCode, { chrome, crypto: globalThis.crypto, URL });
   const send = (message, sender = {}) => new Promise((resolve) => listener(message, sender, resolve));
   return { send, values, toTabs, tabEvents, get injected() { return injected; } };
 }
@@ -107,6 +107,32 @@ test('conserva la fuente solo si los fragmentos vienen de la misma página', asy
   await worker.send({ type: 'START_SELECTION' });
   await worker.send({ type: 'SELECTION_CAPTURED', text: 'Tres' }, { tab: { id: 3, url: 'https://otra.test' } });
   assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, null);
+});
+
+test('la fuente ignora el ancla y los parámetros de la misma página', async () => {
+  const worker = createWorker();
+  await worker.send({ type: 'START_SELECTION' });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Dos' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia?utm=x#comentarios' } });
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, 'https://ejemplo.test/noticia');
+});
+
+test('tras vaciar la selección, el siguiente fragmento vuelve a tener fuente', async () => {
+  const worker = createWorker();
+  await worker.send({ type: 'START_SELECTION' });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno' }, { tab: { id: 3, url: 'https://otra.test/a' } });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Dos' }, { tab: { id: 3, url: 'https://ejemplo.test/b' } });
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, null);
+  await worker.send({ type: 'CLEAR_FRAGMENTS' });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Tres' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } });
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, 'https://ejemplo.test/noticia');
+});
+
+test('sin permiso sobre la pestaña usa la URL de la ventana que envió el fragmento', async () => {
+  const worker = createWorker();
+  await worker.send({ type: 'START_SELECTION' });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno' }, { tab: { id: 3 }, frameId: 0, url: 'https://ejemplo.test/noticia' });
+  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, 'https://ejemplo.test/noticia');
 });
 
 test('acumula fragmentos en modo continuo y los quita por separado', async () => {

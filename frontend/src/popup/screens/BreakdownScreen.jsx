@@ -24,7 +24,7 @@ function ModelCard({ model }) {
 export default function BreakdownScreen({ result, onBack }) {
   const { models, noneAvailable } = presentBreakdown(result);
 
-  return <section>
+  return <section className="screen-boot">
     <ScreenHeader title="Desglose por modelo" backLabel="Volver al resultado" onBack={onBack} />
 
     <div className="breakdown-sheet mt-5">

@@ -1,19 +1,23 @@
 import { presentResult } from '../result-presentation.js';
 import ResultGaugePanel from '../components/ResultGaugePanel.jsx';
+import ResultInsights from '../components/ResultInsights.jsx';
 import ScreenHeader, { ChevronIcon } from '../components/ScreenHeader.jsx';
 
-export default function ResultScreen({ result, onBack, onBreakdown, onStartOver, clearing, error }) {
+export default function ResultScreen({ result, url, text, onBack, onBreakdown, onStartOver, clearing, error }) {
   const { percentage, level, hasBreakdown } = presentResult(result);
 
   return <section className="flex flex-1 flex-col">
     <ScreenHeader title="Resultado del análisis" backLabel="Volver al texto" onBack={onBack} />
 
-    <ResultGaugePanel level={level} percentage={percentage} className="mt-5" />
+    <div className="result-stack mt-5">
+      <ResultGaugePanel level={level} percentage={percentage} />
+      <ResultInsights result={result} level={level} url={url} text={text} />
 
-    {hasBreakdown && <button type="button" className="result-detail mt-4" onClick={onBreakdown}>
-      <span>Ver desglose por modelo</span>
-      <ChevronIcon />
-    </button>}
+      {hasBreakdown && <button type="button" className="result-detail" onClick={onBreakdown}>
+        <span>Ver desglose por modelo</span>
+        <ChevronIcon />
+      </button>}
+    </div>
 
     <div className="mt-auto pt-8">
       {error && <p className="hud-alert mb-3 text-[12px] leading-[18px]" role="alert">{error}</p>}

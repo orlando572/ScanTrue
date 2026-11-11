@@ -293,7 +293,8 @@ export default function App() {
   };
   const back = () => setStack((items) => items.length > 1 ? items.slice(0, -1) : items);
   const editSelection = (text) => {
-    const draft = { ...selectionRef.current, text, fragments: text.trim() ? [{ id: 'manual', text }] : [], url: null, capturedAt: Date.now(), updatedBy: 'popup' };
+    // Editar el texto capturado no cambia la página de origen; vaciarlo, sí.
+    const draft = { ...selectionRef.current, text, fragments: text.trim() ? [{ id: 'manual', text }] : [], url: text.trim() ? selectionRef.current?.url ?? null : null, capturedAt: Date.now(), updatedBy: 'popup' };
     selectionRef.current = draft;
     setSelection(draft);
     setSelectionError('');
@@ -438,7 +439,9 @@ export default function App() {
       </div>
       <LedStrip health={health} code={serviceCodes[health]} label={serviceLabels[health]} services={presentServices(healthData, health)} latency={latency} />
     </header>
-    <main className={`flex flex-1 flex-col px-5 ${current === 'P01' ? 'pb-5 pt-2' : 'pb-6 pt-6'}`}>
+    {/* Inicio y selección encienden sus bloques en cascada; las demás vistas lo hacen en su raíz.
+        El análisis (P04) y el resultado (P05) tienen animaciones propias. */}
+    <main className={`flex flex-1 flex-col px-5 ${current === 'P01' ? 'pb-5 pt-2' : 'pb-6 pt-6'}${current === 'P01' || current === 'P02' ? ' screen-boot' : ''}`}>
       {current === 'P01' ? <>
         <div className="home-radar"><div className="radar-frame"><Radar /></div></div>
         <div className="hud-panel">
@@ -456,7 +459,7 @@ export default function App() {
         {stack.includes('P08') && selectedAnalysisId && <div hidden={current !== 'P08'}><HistoryDetailScreen key={selectedAnalysisId} id={selectedAnalysisId} onBack={back} onLoaded={setHistoryDetail} onDeletingChange={setDetailDeleting} onBreakdown={(item) => { setHistoryDetail(item); open('P06'); }} onDeleted={(id) => { setDeletedAnalysis({ id }); setHistoryDetail(null); setSelectedAnalysisId(null); back(); }} /></div>}
         {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} onAnalyze={analyze} onAddText={startSelection} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
           : current === 'P04' ? <AnalysisScreen operation={operation} onHistory={() => open('P07')} onBack={() => setStack(['P01', 'P02'])} onRetry={analyze} />
-          : current === 'P05' ? <ResultScreen result={operation?.result} onBack={back} onBreakdown={() => open('P06')} onStartOver={startOver} clearing={clearing} error={resultError} />
+          : current === 'P05' ? <ResultScreen result={operation?.result} url={selection?.url} text={selection?.text} onBack={back} onBreakdown={() => open('P06')} onStartOver={startOver} clearing={clearing} error={resultError} />
           : current === 'P06' ? <BreakdownScreen result={stack.at(-2) === 'P08' ? historyDetail : operation?.result} onBack={back} />
           : current === 'P07' ? null
           : current === 'P08' ? null

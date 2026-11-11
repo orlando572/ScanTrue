@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { sendExtensionMessage } from '../extension-message.js';
 import ScreenHeader from '../components/ScreenHeader.jsx';
+import HudLoader from '../components/HudLoader.jsx';
 
 function AccountIcon() {
   return <div className="account-art" aria-hidden="true"><svg viewBox="0 0 112 112" fill="none" stroke="currentColor" strokeLinecap="square">
@@ -66,7 +67,7 @@ export default function AccountScreen({ notice, noticeMs = 6000, onBack, onLogin
     }
   };
 
-  return <section className="flex flex-1 flex-col">
+  return <section className="screen-boot flex flex-1 flex-col">
     <ScreenHeader title="Cuenta" onBack={onBack} disabled={signingOut} />
 
     {notice?.text && <div key={notice.text} className={`hud-panel hud-panel--amber mt-5${notice.autoHide ? ' notice-timed' : ''}`} style={{ '--notice-ms': `${noticeMs}ms` }} role="status">
@@ -75,7 +76,7 @@ export default function AccountScreen({ notice, noticeMs = 6000, onBack, onLogin
       {notice.autoHide && <span className="notice-timer" aria-hidden="true" />}
     </div>}
 
-    {status === 'loading' && <p className="hud-readout mt-6" role="status">Cargando cuenta…</p>}
+    {status === 'loading' && <HudLoader label="Cargando cuenta" code="Verificando sesión" shape="account" />}
     {status === 'error' && <div className="mt-6" role="alert"><p className="text-sm text-muted">No pudimos consultar tu cuenta.</p><button type="button" className="secondary-button mt-5" onClick={load}>Intentar de nuevo</button></div>}
 
     {status === 'ready' && <>

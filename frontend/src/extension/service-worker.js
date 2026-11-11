@@ -141,7 +141,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message?.type === 'SELECTION_CAPTURED' && sender.tab?.id) {
-    saveSelection(message.text, sender.tab, message.id)
+    saveSelection(message.text, sender.tab, message.id, pageUrl(sender))
       .then((saved) => sendResponse({ ok: saved }))
       .catch(() => sendResponse({ ok: false }));
     return true;
@@ -205,20 +205,38 @@ async function writeFragments(fragments, url, updatedBy) {
   return selection;
 }
 
-async function addFragment(text, tab, id) {
+// URL de la página que envió el fragmento. `tab.url` solo existe con permiso sobre la pestaña
+// (activeTab se pierde al navegar dentro de ella); `sender.url` de la ventana principal, siempre.
+function pageUrl(sender) {
+  const candidate = sender?.tab?.url ?? (sender?.frameId === 0 ? sender.url : undefined);
+  return typeof candidate === 'string' && /^https?:\/\//.test(candidate) && candidate.length <= 2048 ? candidate : null;
+}
+
+// Misma página aunque cambien el ancla o los parámetros (p. ej. #comentarios, ?utm=…).
+function samePage(a, b) {
+  try {
+    const first = new URL(a);
+    const second = new URL(b);
+    return first.origin === second.origin && first.pathname === second.pathname;
+  } catch { return false; }
+}
+
+async function addFragment(text, tab, id, url) {
   const previous = await readSelection();
-  const url = /^https?:\/\//.test(tab.url ?? '') && tab.url.length <= 2048 ? tab.url : null;
   const fragmentId = typeof id === 'string' && /^[\w-]{1,64}$/.test(id) ? id : crypto.randomUUID();
-  const fragments = [...normalizeFragments(previous), { id: fragmentId, text, tabId: tab.id }];
-  const keepUrl = previous ? (previous.url && previous.url === url ? url : null) : url;
+  const kept = normalizeFragments(previous);
+  const fragments = [...kept, { id: fragmentId, text, tabId: tab.id }];
+  // Sin fragmentos previos (selección nueva o vaciada), la fuente es esta página. Con fragmentos,
+  // se conserva solo si vienen de la misma página; texto pegado o de otra página no tiene fuente única.
+  const keepUrl = kept.length === 0 ? url : previous?.url && url && samePage(previous.url, url) ? previous.url : null;
   return writeFragments(fragments, keepUrl, 'page');
 }
 
-async function saveSelection(text, tab, id) {
+async function saveSelection(text, tab, id, url = null) {
   if (typeof text !== 'string' || !text.trim()) return false;
   const items = await chrome.storage.session.get(SELECTION_TARGET);
   if (items[SELECTION_TARGET] !== tab.id) return false;
-  await addFragment(text, tab, id);
+  await addFragment(text, tab, id, url);
   await syncTab(tab.id);
   return true;
 }

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { sendExtensionMessage } from '../extension-message.js';
 import { presentHistoryDetail } from '../history-presentation.js';
 import ResultGaugePanel from '../components/ResultGaugePanel.jsx';
+import ResultInsights from '../components/ResultInsights.jsx';
+import HudLoader from '../components/HudLoader.jsx';
 import ScreenHeader, { ChevronIcon } from '../components/ScreenHeader.jsx';
 
 export default function HistoryDetailScreen({ id, onBack, onBreakdown, onLoaded, onDeleted, onDeletingChange }) {
@@ -72,23 +74,26 @@ export default function HistoryDetailScreen({ id, onBack, onBreakdown, onLoaded,
 
   const shown = status === 'ready' ? presentHistoryDetail(item) : null;
 
-  return <section>
+  return <section className="screen-boot">
     <ScreenHeader title="Análisis anterior" backLabel="Volver al historial" onBack={onBack} disabled={deleting}>
-      {shown && <p className="hud-readout mt-2 break-words">{shown.date}{shown.domain ? ` · ${shown.domain}` : ''}</p>}
+      {shown && <p className="hud-readout mt-2 break-words">{shown.date}{shown.domain && <> · <span className="history-domain history-domain--inline">{shown.domain}</span></>}</p>}
     </ScreenHeader>
 
-    {status === 'loading' && <p className="hud-readout mt-6" role="status">Cargando análisis…</p>}
+    {status === 'loading' && <HudLoader label="Cargando análisis" code="Abriendo archivo" count={2} />}
     {status === 'not_found' && <div className="mt-6"><p className="text-sm leading-5 text-muted">Este análisis ya no está disponible</p><button type="button" className="secondary-button mt-5" onClick={onBack}>Volver al historial</button></div>}
     {status === 'error' && <div className="mt-6" role="alert"><p className="text-sm leading-5 text-muted">No pudimos abrir este análisis.</p><button type="button" className="secondary-button mt-5" onClick={load}>Intentar de nuevo</button></div>}
 
     {shown && <>
       <span className="hud-code hud-code--cyan mt-5 mb-1.5" aria-hidden="true">Texto archivado</span>
       <div className="selection-preview max-h-[220px] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-5" tabIndex="0" aria-label="Texto analizado">{shown.text ?? 'Texto no disponible'}</div>
-      <ResultGaugePanel level={shown.level} percentage={shown.percentage} className="mt-4" />
-      {shown.hasBreakdown && <button type="button" className="result-detail mt-4" onClick={() => onBreakdown(item)} disabled={deleting}>
-        <span>Ver desglose por modelo</span>
-        <ChevronIcon />
-      </button>}
+      <div className="result-stack mt-4">
+        <ResultGaugePanel level={shown.level} percentage={shown.percentage} />
+        <ResultInsights result={item} level={shown.level} text={shown.text} url={item.url} showText={false} />
+        {shown.hasBreakdown && <button type="button" className="result-detail" onClick={() => onBreakdown(item)} disabled={deleting}>
+          <span>Ver desglose por modelo</span>
+          <ChevronIcon />
+        </button>}
+      </div>
 
       {!confirming ? <button ref={deleteButton} type="button" className="secondary-button delete-button mt-7" onClick={() => setConfirming(true)}>Eliminar análisis</button>
         : <div className="delete-confirmation hud-panel mt-7" role="dialog" aria-labelledby="delete-title" onKeyDown={(event) => { if (event.key === 'Escape') cancelDelete(); }}>
