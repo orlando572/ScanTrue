@@ -1,5 +1,4 @@
-assets/model_mbert_cased/
-runs/*
-!runs/BILSTM_ES_main_len512_seed43_20261008-175737_516f4097/
-runs/BILSTM_ES_main_len512_seed43_20261008-175737_516f4097/checkpoints/
+# Los modelos base y los resultados de las corridas viven en datasets/ (fuera de Git).
+runs/
+assets/
 __pycache__/
