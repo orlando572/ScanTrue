@@ -1,0 +1,43 @@
+{
+  "modelo": "mbert",
+  "version": "comun_v1.1_M3b_20261111",
+  "eleccion": {
+    "ganador_regla": "M3b",
+    "manual": false
+  },
+  "modelo_base": {
+    "clave": "beto",
+    "hub_id": "dccuchile/bert-base-spanish-wwm-cased",
+    "revision": "c4d86612f51b4f46759c8390d1798c2febe71b93",
+    "sha256": "9902e40a3c6c15e6de812cfb64062daff9ae019968aa74e16f27a8915e3aed12"
+  },
+  "etiquetas": {
+    "real": 0,
+    "falsa": 1
+  },
+  "max_tokens": 256,
+  "entrada": "texto_unico",
+  "temperatura": 2.1347,
+  "temperatura_provisional": false,
+  "umbral_falsa": 0.5,
+  "semillas": [
+    42
+  ],
+  "promediar_logits_semillas": false,
+  "epocas": 3,
+  "checkpoints": {
+    "s42": {
+      "ruta": "datasets/mbert_produccion/modelo/best_model",
+      "sha256": "35863455be8c0a9e352c49f89f79549688c5ec34cc4fde0d24ee30d5562d75aa"
+    }
+  },
+  "tokenizador": {
+    "ruta": "datasets/mbert_produccion/modelo/best_model",
+    "sha256_tokenizer_json": "b8bbcf34543923c217e5e22ce6f54e2090424191142a9d469f53214a1b3ef3b8"
+  },
+  "sha256_conjunto": "c13a9721648a864177d8a1e85de6f5e7e0823430596c3dd75e5d43da0e14aff9",
+  "nota_temperatura": "Calibración conjunta comun_v1.1_conjunta_20261111 (datos_comunes/calibrar_conjunto.py) con las predicciones fuera de pliegue; ver datasets/comun_v1_corridas/calibracion/.",
+  "calibracion": "datasets/combinacion_produccion/combinacion.json",
+  "nota_semillas": "Promediar las 3 semillas sube el F1 -0.0006 (< +0,01, plan de mBERT §8.3): se usa una sola semilla. Los checkpoints s43 y s44 se conservan.",
+  "origen": "datasets/comun_v1_corridas/mbert/final/contrato.json"
+}

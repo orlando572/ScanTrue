@@ -97,21 +97,21 @@ def run(email: str | None, password: str | None, timeout: int) -> None:
             if created["resultados"]["mbert"]["estado"] != "ok":
                 raise RuntimeError("mBERT no devolvió una predicción")
             unified = created["resultado_unificado"]
-            mbert_weight = app.state.analysis_service.mbert_weight
-            expected_probability = (
-                (1 - mbert_weight) * created["resultados"]["bilstm"]["probabilidad_falsa"]
-                + mbert_weight * created["resultados"]["mbert"]["probabilidad_falsa"]
-            )
+            combination = app.state.analysis_service.combination
+            expected_probability, expected_weights = combination.combine({
+                name: created["resultados"][name]["probabilidad_falsa"] for name in ("bilstm", "mbert")
+            })
             if (
                 unified["modelos_utilizados"] != ["bilstm", "mbert"]
-                or abs(unified["pesos_aplicados"]["bilstm"] - (1 - mbert_weight)) > 1e-9
-                or abs(unified["pesos_aplicados"]["mbert"] - mbert_weight) > 1e-9
+                or abs(unified["pesos_aplicados"]["bilstm"] - expected_weights["bilstm"]) > 1e-9
+                or abs(unified["pesos_aplicados"]["mbert"] - expected_weights["mbert"]) > 1e-9
                 or abs(unified["probabilidad_falsa"] - expected_probability) > 1e-9
+                or unified["version_combinacion"] != combination.version
             ):
                 raise RuntimeError("El resultado unificado de dos modelos no coincide")
             if not 100 <= created["resultados"]["bilstm"]["tokens_leidos"] <= 192:
                 raise RuntimeError("El recuento de tokens está fuera del rango esperado")
-            if not 100 <= created["resultados"]["mbert"]["tokens_leidos"] <= 512:
+            if not 100 <= created["resultados"]["mbert"]["tokens_leidos"] <= 256:
                 raise RuntimeError("El recuento mBERT está fuera del rango esperado")
             if created["texto_recortado"]:
                 raise RuntimeError("El texto de prueba se recortó inesperadamente")

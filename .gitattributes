@@ -1,1 +1,1 @@
-datasets/mbert_produccion/modelo/best_model/model.safetensors filter=lfs diff=lfs merge=lfs -text
+datasets/mbert_produccion/**/*.safetensors filter=lfs diff=lfs merge=lfs -text

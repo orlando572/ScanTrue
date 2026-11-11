@@ -102,7 +102,8 @@ La respuesta acordada tendrá esta forma; los valores son ilustrativos:
     "probabilidad_falsa": 0.73,
     "modelos_utilizados": ["bilstm"],
     "pesos_aplicados": {"bilstm": 1.0, "mbert": 0.0},
-    "version_regla": "media_ponderada_v1"
+    "version_regla": "media_ponderada_v1",
+    "version_combinacion": "comun_v1.1_conjunta_20261111"
   },
   "comparacion": "no_disponible",
   "nota": "Las probabilidades son salidas experimentales de clasificadores; no verifican hechos.",
@@ -112,7 +113,7 @@ La respuesta acordada tendrá esta forma; los valores son ilustrativos:
 
 Mostrar tres espacios: **BiLSTM**, **mBERT** y **unificado**. Cada `probabilidad_falsa` va de 0 a 1; multiplicar por 100 para mostrar el porcentaje. La escala significa 0 % = el modelo favorece “real” y 100 % = favorece “falsa”. Son **salidas de clasificación, no certeza factual**: etiquetar los valores como “salida para falsa” y evitar “certeza” o “veracidad comprobada”. Para un modelo con `estado` distinto de `ok`, mostrar “No disponible” en lugar de 0 %. No calcular el unificado en el frontend: usar `resultado_unificado` del backend y mostrar si participó uno o dos modelos.
 
-El backend calculará una media ponderada: mBERT 70 % y BiLSTM 30 % cuando ambos respondan; los pesos podrán cambiar en la configuración del backend. Si solo uno responde, su peso aplicado será 100 %. `comparacion` será `coinciden` o `discrepan` únicamente con dos predicciones reales; de lo contrario será `no_disponible`. No clasificar porcentajes en niveles adicionales. Aunque haya discrepancia, mostrarla junto al unificado.
+Desde el 11 nov 2026 el segundo modelo es **BETO** (la clave en la API sigue siendo `mbert`; la extensión lo muestra como «BETO»). Cada `probabilidad_falsa` ya está calibrada. Con los dos modelos, el backend combina sus logits calibrados con BETO 80 % y BiLSTM 20 % ([04_CALIBRACION_CONJUNTA.md](../../docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md)); `version_combinacion` identifica la combinación. Si solo uno responde, su peso aplicado será 100 %. `comparacion` será `coinciden` o `discrepan` únicamente con dos predicciones reales; de lo contrario será `no_disponible`. No clasificar porcentajes en niveles adicionales. Aunque haya discrepancia, mostrarla junto al unificado.
 
 El backend cuenta tokens con el tokenizador del BiLSTM **sobre el texto final enviado al modelo**. El frontend puede dar una orientación aproximada, pero debe tomar el `422` de la API como decisión definitiva. El mínimo de 100 tokens es una regla operativa y no una garantía de mayor precisión.
 

@@ -23,17 +23,31 @@ datasets/**
 !datasets/.gitkeep
 !datasets/README.md
 
-# Checkpoint del BiLSTM de producción, para usarlo desde un clon limpio.
+# BiLSTM de producción (B6) y el de octubre archivado, para usarlos desde un clon limpio.
 !datasets/bilstm_produccion/
 datasets/bilstm_produccion/**
 !datasets/bilstm_produccion/modelo/
 datasets/bilstm_produccion/modelo/**
-!datasets/bilstm_produccion/modelo/mejor_modelo.pt
+!datasets/bilstm_produccion/modelo/modelo.pt
 !datasets/bilstm_produccion/modelo/config.json
 !datasets/bilstm_produccion/modelo/resultados.json
+!datasets/bilstm_produccion/modelo/contrato.json
+!datasets/bilstm_produccion/archivo_octubre/
+!datasets/bilstm_produccion/archivo_octubre/modelo/
+datasets/bilstm_produccion/archivo_octubre/modelo/**
+!datasets/bilstm_produccion/archivo_octubre/modelo/mejor_modelo.pt
+!datasets/bilstm_produccion/archivo_octubre/modelo/config.json
+!datasets/bilstm_produccion/archivo_octubre/modelo/resultados.json
 
-# mBERT de producción (pesos con Git LFS), para usarlo desde un clon limpio.
+# Modelo transformer de producción (BETO, pesos con Git LFS) y el mBERT de octubre archivado.
 !datasets/mbert_produccion/
 datasets/mbert_produccion/**
 !datasets/mbert_produccion/modelo/
 !datasets/mbert_produccion/modelo/**
+!datasets/mbert_produccion/archivo_octubre/
+!datasets/mbert_produccion/archivo_octubre/modelo/
+!datasets/mbert_produccion/archivo_octubre/modelo/**
+
+# Combinación calibrada de los dos modelos que lee el backend.
+!datasets/combinacion_produccion/
+!datasets/combinacion_produccion/combinacion.json

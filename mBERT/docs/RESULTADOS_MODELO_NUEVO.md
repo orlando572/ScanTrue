@@ -98,7 +98,7 @@ Se generó el 11 nov 2026 con `mBERT/entrenar.py final`, en `datasets/comun_v1_c
   - `promediar_logits_semillas` queda en `null` porque lo decide Orlando con las predicciones fuera de pliegue (§8.3);
   - la temperatura queda en `temperatura = 1.0` con `temperatura_provisional = true` hasta que Orlando la calibre (§8.4).
 - El tokenizador guardado da los mismos IDs que el de BETO base en los 2.878 fragmentos del desarrollo.
-- El backend no se ha tocado. Sigue usando el modelo de producción de octubre.
+- **Actualización (11 nov 2026):** temperatura calibrada (T = 2,1347), una sola semilla (42) y en producción en `datasets/mbert_produccion/modelo/`. Ver [04_CALIBRACION_CONJUNTA.md](../../docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md).
 
 ## Límites
 

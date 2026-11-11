@@ -2,27 +2,33 @@
 
 from dataclasses import dataclass
 import json
-from math import isfinite
+import logging
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 
+logger = logging.getLogger(__name__)
 ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
 @dataclass(frozen=True)
 class AnalysisSettings:
-    mbert_weight: float
+    """Los pesos y temperaturas salen de datasets/combinacion_produccion/combinacion.json."""
+
+    combination_file: Path
 
     @classmethod
     def from_environment(cls) -> "AnalysisSettings":
         load_dotenv(ENV_FILE, override=False)
-        weight = float(os.getenv("ANALYSIS_MBERT_WEIGHT", "0.70"))
-        if not isfinite(weight) or not 0 <= weight <= 1:
-            raise ValueError("ANALYSIS_MBERT_WEIGHT debe estar entre 0 y 1.")
-        return cls(mbert_weight=weight)
+        if os.getenv("ANALYSIS_MBERT_WEIGHT"):
+            logger.warning(
+                "ANALYSIS_MBERT_WEIGHT ya no se usa: los pesos vienen de la calibración conjunta."
+            )
+        from backend.models.contrato import COMBINATION_FILE
+
+        return cls(combination_file=COMBINATION_FILE)
 
 
 @dataclass(frozen=True)

@@ -86,14 +86,17 @@ class ModeloBasicoTests(unittest.TestCase):
         vocab = construir_vocabulario(["b a a", "c b a"], max_size=4)
         self.assertEqual(vocab, {"<pad>": 0, "<unk>": 1, "a": 2, "b": 3})
 
-    def test_carga_checkpoint_de_produccion(self):
-        ruta = Path(__file__).resolve().parents[2] / "datasets/bilstm_produccion/modelo/mejor_modelo.pt"
-        if not ruta.exists():
-            self.skipTest("checkpoint de producción no disponible")
-        ck = torch.load(ruta, map_location="cpu", weights_only=True)
-        c = ck["config"]
-        modelo = BiLSTM(len(ck["vocab"]), c["embedding_dim"], c["hidden_dim"], c["dropout"])
-        modelo.load_state_dict(ck["state_dict"])
+    def test_carga_checkpoints_de_produccion_y_archivo(self):
+        raiz = Path(__file__).resolve().parents[2] / "datasets/bilstm_produccion"
+        rutas = [raiz / "modelo/modelo.pt", raiz / "archivo_octubre/modelo/mejor_modelo.pt"]
+        if not all(ruta.exists() for ruta in rutas):
+            self.skipTest("checkpoints de producción no disponibles")
+        for ruta in rutas:
+            ck = torch.load(ruta, map_location="cpu", weights_only=True)
+            c = ck["config"]
+            modelo = BiLSTM(len(ck["vocab"]), c["embedding_dim"], c["hidden_dim"], c["dropout"],
+                            c.get("pooling", "final"))
+            modelo.load_state_dict(ck["state_dict"])
 
 
 class PlanTests(unittest.TestCase):

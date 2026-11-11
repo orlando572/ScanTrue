@@ -1,60 +1,50 @@
-"""Tokenización e inferencia del checkpoint mBERT seleccionado."""
+"""Tokenización e inferencia del modelo transformer de producción (BETO M3b) según su contrato.
+
+La clave interna sigue siendo «mbert» (API, contratos y extensión); el modelo base lo indica
+`modelo_base` en el contrato.
+"""
 
 from __future__ import annotations
 
 from contextlib import nullcontext
-from hashlib import sha256
 import json
 from pathlib import Path
 
 import torch
 
-
-ROOT = Path(__file__).resolve().parents[2]
-MBERT_ROOT = ROOT / "datasets/mbert_produccion/modelo"
-SELECTION = MBERT_ROOT / "selection.json"
-
-
-def file_sha256(path: Path) -> str:
-    digest = sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+from backend.models.contrato import (
+    MBERT_CONTRACT, ModelContract, calibrated_probability, file_sha256, resolve,
+)
 
 
 class MbertTokenizer:
-    """Aplica el contrato congelado sin descargar artefactos remotos."""
+    """Aplica el contrato de inferencia sin descargar artefactos remotos."""
 
-    def __init__(self) -> None:
+    def __init__(self, contract_path: Path = MBERT_CONTRACT) -> None:
         from transformers import AutoTokenizer
 
-        decision = json.loads(SELECTION.read_text(encoding="utf-8"))
-        if decision["status"] != "frozen_for_step6":
-            raise ValueError("La selección mBERT no está congelada")
-        contract = decision["inference_contract"]
-        if contract["label2id"] != {"REAL": 0, "FALSA": 1} or contract["max_length"] != 512:
-            raise ValueError("El contrato mBERT no coincide con el esperado")
-        self.model_dir = MBERT_ROOT / "best_model"
-        self.tokenizer_dir = MBERT_ROOT / "tokenizer_mbert_cased"
+        self.contract = ModelContract.load(contract_path, "mbert")
+        if self.contract.data.get("entrada") != "texto_unico":
+            raise ValueError("El contrato mBERT espera otra forma de entrada")
+        self.model_dir = self.contract.checkpoint
         self.checkpoint = self.model_dir / "model.safetensors"
-        self.expected_model_sha256 = decision["selected_run"]["model_sha256"]
-        tokenizer_file = self.tokenizer_dir / "tokenizer.json"
-        if file_sha256(tokenizer_file) != contract["tokenizer_json_sha256"]:
-            raise ValueError("El tokenizador mBERT no coincide con la selección")
+        tokenizer = self.contract.data["tokenizador"]
+        self.tokenizer_dir = resolve(tokenizer["ruta"])
+        if file_sha256(self.tokenizer_dir / "tokenizer.json") != tokenizer["sha256_tokenizer_json"]:
+            raise ValueError("El tokenizador mBERT no coincide con su contrato")
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.tokenizer_dir,
             local_files_only=True,
             use_fast=True,
-            # Es un tokenizador BERT; aplicar el arreglo Mistral cambiaría sus IDs.
+            # Es un tokenizador BERT (WordPiece); el arreglo Mistral cambiaría sus IDs.
             fix_mistral_regex=False,
         )
         if not self.tokenizer.is_fast:
             raise ValueError("Se necesita el tokenizador rápido para conservar el texto original")
-        run = decision["selected_run"]
-        self.version = f"mBERT_BiLSTM_{run['arm']}_len{run['length']}_seed{run['seed']}"
-        self.max_len = contract["max_length"]
-        self.fake_threshold = contract["fake_probability_threshold"]
+        self.version = self.contract.version
+        self.base_model = self.contract.data.get("modelo_base", {}).get("clave", "mbert")
+        self.max_len = self.contract.max_tokens
+        self.fake_threshold = self.contract.threshold
 
     def prepare(self, text: str) -> tuple[str, bool, int]:
         """Recorta por offsets originales; el límite incluye [CLS] y [SEP]."""
@@ -79,17 +69,18 @@ class MbertTokenizer:
 
 
 class MbertPredictor:
-    """Carga el modelo una vez y devuelve P(FALSA), que ocupa la clase 1."""
+    """Carga el modelo una vez y devuelve P(falsa) calibrada; «falsa» es la salida 1."""
 
     def __init__(self, text_policy: MbertTokenizer) -> None:
         from transformers import AutoModelForSequenceClassification
 
-        if file_sha256(text_policy.checkpoint) != text_policy.expected_model_sha256:
-            raise ValueError("El checkpoint mBERT no coincide con la selección")
+        contract = text_policy.contract
+        contract.verify(text_policy.checkpoint)
         config = json.loads((text_policy.model_dir / "config.json").read_text(encoding="utf-8"))
-        if config["id2label"] != {"0": "REAL", "1": "FALSA"} or config["label2id"] != {"REAL": 0, "FALSA": 1}:
+        if config["id2label"] != {"0": "real", "1": "falsa"} or config["label2id"] != {"real": 0, "falsa": 1}:
             raise ValueError("El orden de clases del checkpoint mBERT no es válido")
         self.text_policy = text_policy
+        self.contract = contract
         self.version = text_policy.version
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = AutoModelForSequenceClassification.from_pretrained(
@@ -110,8 +101,9 @@ class MbertPredictor:
                 else nullcontext()
             )
             with autocast:
-                logits = self.model(**encoded).logits
-            probability_fake = float(logits.float().softmax(dim=-1)[0, 1].item())
+                logits = self.model(**encoded).logits.float()[0]
+        margin = float((logits[1] - logits[0]).item())
+        probability_fake = calibrated_probability(margin, self.contract.temperature)
         return {
             "modelo": "mbert",
             "version": self.version,

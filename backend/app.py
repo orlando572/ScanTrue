@@ -16,6 +16,7 @@ from backend.blockchain.client import RegistryClient
 from backend.blockchain.worker import BlockchainWorker
 from backend.core.config import AnalysisSettings, BlockchainSettings, SupabaseSettings
 from backend.models.bilstm import BilstmPredictor
+from backend.models.contrato import Combination
 from backend.models.mbert import MbertPredictor, MbertTokenizer
 from backend.repositories.supabase import SupabaseDataError, SupabaseRepository
 from backend.services.analysis import AnalysisService
@@ -52,9 +53,12 @@ async def lifespan(app: FastAPI):
     # Cada modelo se carga una vez y puede degradarse de forma independiente.
     try:
         analysis_settings = AnalysisSettings.from_environment()
+        combination = Combination.load(analysis_settings.combination_file)
         bilstm_predictor = BilstmPredictor()
+        combination.check(bilstm_predictor.contract)
         try:
             mbert_text_policy = MbertTokenizer()
+            combination.check(mbert_text_policy.contract)
         except Exception:
             logger.exception("No se pudo cargar el tokenizador mBERT")
             mbert_text_policy = None
@@ -69,7 +73,7 @@ async def lifespan(app: FastAPI):
             bilstm_predictor,
             mbert_predictor=mbert_predictor,
             mbert_text_policy=mbert_text_policy,
-            mbert_weight=analysis_settings.mbert_weight,
+            combination=combination,
         )
     except Exception:
         logger.exception("No se pudo iniciar el servicio de análisis")

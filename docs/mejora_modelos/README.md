@@ -22,5 +22,5 @@ Plan para mejorar el BiLSTM y mBERT con los datasets que ya existen. No incluye 
 1. ✅ Orlando construye `datasets/comun_v1/` (versión 1.1) y el evaluador común (`datos_comunes/`).
 2. ✅ Cada responsable ejecuta los experimentos de su modelo, en paralelo. BiLSTM: ganador B6, F1 0,585 ([resultados](../../bilstm/docs/RESULTADOS_MODELO_NUEVO.md)). mBERT: ganador BETO + brazo `usmsc` (M3b), F1 0,721 ([resultados](../../mBERT/docs/RESULTADOS_MODELO_NUEVO.md)); unido en `develop` el 11 nov 2026.
 3. ✅ Orlando calibra, combina y comprueba los niveles de la extensión ([04_CALIBRACION_CONJUNTA.md](04_CALIBRACION_CONJUNTA.md)): 80 % BETO + 20 % BiLSTM sobre logits calibrados.
-4. Prueba congelada, una sola vez.
-5. Se actualizan los contratos de inferencia y el backend.
+4. Prueba congelada, una sola vez. Pendiente: se hace después del paso 5 para evaluarla con el mismo código y los mismos parámetros que usa la app.
+5. ✅ Se actualizan los contratos de inferencia y el backend (11 nov 2026): B6 y BETO en producción, combinación 80/20 calibrada y métricas publicadas ([04_CALIBRACION_CONJUNTA.md §8](04_CALIBRACION_CONJUNTA.md#8-paso-a-producción)).

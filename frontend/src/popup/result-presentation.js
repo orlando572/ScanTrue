@@ -40,7 +40,7 @@ export function presentBreakdown(result) {
   const outputs = result?.resultados;
   const models = [
     { key: 'bilstm', name: 'BiLSTM' },
-    { key: 'mbert', name: 'mBERT' },
+    { key: 'mbert', name: 'BETO' },
   ].map(({ key, name }) => {
     const output = outputs && typeof outputs === 'object' && !Array.isArray(outputs) ? outputs[key] : null;
     const level = output?.estado === 'ok' ? presentResultLevel(output.probabilidad_falsa) : null;

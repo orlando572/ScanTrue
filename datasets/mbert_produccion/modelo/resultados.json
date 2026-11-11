@@ -1,0 +1,24 @@
+{
+  "historial": [
+    {
+      "epoca": 1,
+      "perdida": 0.5436224809789386,
+      "lr_final": 1.4818652849740933e-05
+    },
+    {
+      "epoca": 2,
+      "perdida": 0.2674843541684151,
+      "lr_final": 7.409326424870467e-06
+    },
+    {
+      "epoca": 3,
+      "perdida": 0.11372648282467557,
+      "lr_final": 0.0
+    }
+  ],
+  "mejor_epoca": 3,
+  "sha256_modelo": "35863455be8c0a9e352c49f89f79549688c5ec34cc4fde0d24ee30d5562d75aa",
+  "sha256_tokenizer_json": "b8bbcf34543923c217e5e22ce6f54e2090424191142a9d469f53214a1b3ef3b8",
+  "segundos": 154.4,
+  "pico_cuda_gb": 2.332
+}

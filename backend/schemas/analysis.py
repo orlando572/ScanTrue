@@ -31,7 +31,11 @@ class UnifiedResult(BaseModel):
     probabilidad_falsa: float = Field(ge=0, le=1)
     modelos_utilizados: list[Literal["bilstm", "mbert"]]
     pesos_aplicados: AppliedWeights
+    # Se mantiene «media_ponderada_v1» porque la base de datos solo acepta ese valor
+    # (migraciones 004 y 005). Desde la calibración conjunta, la media es de logits
+    # calibrados; la combinación exacta la identifica `version_combinacion`.
     version_regla: Literal["media_ponderada_v1"] = "media_ponderada_v1"
+    version_combinacion: str | None = None
 
 
 class AnalysisResponse(BaseModel):

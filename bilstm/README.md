@@ -12,7 +12,7 @@ bilstm/
 ├── tests/
 │   └── test_entrenar.py Pruebas del modelo, del entrenamiento y de la regla de decisión
 └── docs/
-    ├── RESULTADOS_PRODUCCION.md   Modelo que usa hoy la app (datos, métricas y límites)
+    ├── RESULTADOS_PRODUCCION.md   Modelo de octubre, archivado (datos, métricas y límites)
     ├── RESULTADOS_MODELO_NUEVO.md Experimentos B0–B8 con el conjunto común y modelo B6
     └── INSTALACION_WINDOWS.md     Instalación con GPU en Windows 11
 ```
@@ -21,15 +21,15 @@ Código compartido con mBERT en [`datos_comunes/`](../datos_comunes/README.md): 
 
 ## Los dos modelos
 
-| | Modelo de producción (lo usa la app) | Modelo nuevo B6 (aún no conectado) |
+| | B6, en producción desde el 11 nov 2026 | Modelo de octubre (archivado, sin uso) |
 | --- | --- | --- |
-| Checkpoint | `datasets/bilstm_produccion/modelo/mejor_modelo.pt` | `datasets/comun_v1_corridas/bilstm/final/todo_s42/modelo.pt` |
-| Datos | `datasets/bilstm_produccion/conjunto/` | `datasets/comun_v1/` + brazo USMSC |
-| Etiquetas | salida 0 = falsa, 1 = real | salida 0 = real, 1 = falsa |
-| Calibración | ninguna | temperatura provisional en `contrato.json` |
-| Resultados | [RESULTADOS_PRODUCCION.md](docs/RESULTADOS_PRODUCCION.md) | [RESULTADOS_MODELO_NUEVO.md](docs/RESULTADOS_MODELO_NUEVO.md) |
+| Checkpoint | `datasets/bilstm_produccion/modelo/modelo.pt` (copia de `datasets/comun_v1_corridas/bilstm/final/todo_s42/`) | `datasets/bilstm_produccion/archivo_octubre/modelo/mejor_modelo.pt` |
+| Datos | `datasets/comun_v1/` + brazo USMSC | `datasets/bilstm_produccion/archivo_octubre/conjunto/` |
+| Etiquetas | salida 0 = real, 1 = falsa | salida 0 = falsa, 1 = real |
+| Calibración | temperatura T = 8,4468 en `contrato.json` (calibración conjunta) | ninguna |
+| Resultados | [RESULTADOS_MODELO_NUEVO.md](docs/RESULTADOS_MODELO_NUEVO.md) | [RESULTADOS_PRODUCCION.md](docs/RESULTADOS_PRODUCCION.md) |
 
-Los dos usan la misma arquitectura (`modelo.py`: fastText CC 300 d → BiLSTM de 64 por dirección → estado final → lineal) y leen como máximo 192 tokens. Para conectar el modelo nuevo a la app hay que adaptar `backend/models/bilstm.py` al contrato (orden de etiquetas y temperatura).
+Los dos usan la misma arquitectura (`modelo.py`: fastText CC 300 d → BiLSTM de 64 por dirección → estado final → lineal) y leen como máximo 192 tokens. El backend carga B6 a través de su `contrato.json` y lo combina con BETO (20 % BiLSTM, 80 % BETO, [04_CALIBRACION_CONJUNTA.md](../docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md)).
 
 ## Preparar el entorno
 

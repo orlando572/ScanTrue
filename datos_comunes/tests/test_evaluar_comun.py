@@ -38,6 +38,11 @@ class MetricasTests(unittest.TestCase):
         self.assertAlmostEqual(t, 3.0, delta=0.15)
         self.assertTrue(np.allclose(softmax_falsa([0.0], [2.0], 2.0), 1 / (1 + np.exp(-1))))
 
+    def test_niveles_igual_que_la_extension(self):
+        # Math.round: 0,204 → 20 % «Muy probablemente verdadero»; 0,205 → 21 % «Probablemente verdadero».
+        filas = tabla_niveles([0.204, 0.205, 0.4049, 0.405, 0.8, 0.805, 1.0], [0, 0, 0, 0, 1, 1, 1])
+        self.assertEqual([f["fragmentos"] for f in filas], [1, 2, 1, 1, 2])
+
     def test_niveles(self):
         filas = tabla_niveles([0.1, 0.1, 0.9, 0.9, 0.5], [0, 1, 1, 1, 0])
         self.assertEqual([f["fragmentos"] for f in filas], [2, 0, 1, 0, 2])

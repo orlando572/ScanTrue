@@ -1,41 +1,48 @@
 {
-  "input": "/home/orlando/Documentos/ScanTrue/datasets/experimentos_balanceados/pequeno_mejorado",
-  "input_sha256": {
-    "entrenamiento": "5cf23eeb9160c6e35cb6b3d58502be0fc7d3efa20edbf0f5c1a7c44277321b55",
-    "validacion": "77427ceee309e26e8adcc539302b5ee92055742ebaffe4ab940b86461a25a32e"
-  },
-  "embeddings": "/home/orlando/Documentos/ScanTrue/datasets/embeddings_preentrenados/cc.es.300.vec.gz",
-  "embedding_source": "fasttext_cc",
-  "embedding_file_size": 1285580896,
-  "coverage": {
-    "vocabulario": 29998,
-    "vectores_encontrados": 27716,
-    "cobertura": 0.9239282618841256,
-    "lineas_invalidas_relevantes": 0,
-    "sin_vector": 2282
-  },
-  "output": "/home/orlando/Documentos/ScanTrue/datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42",
-  "device": "cuda",
-  "torch": "2.14.1+cu130",
-  "cuda_runtime": "13.0",
-  "seed": 42,
-  "epochs_max": 20,
-  "patience": 4,
-  "batch_size": 32,
-  "max_len": 192,
-  "vocab_size": 30000,
-  "embedding_dim": 300,
+  "modelo": "bilstm",
+  "configuracion": "B6",
+  "pliegue": "todo",
+  "semilla": 42,
+  "brazo": [
+    "usmsc"
+  ],
+  "pooling": "final",
+  "congelar_embeddings_epocas": 0,
+  "lr_embeddings_factor": 1.0,
+  "max_tokens": 192,
   "hidden_dim": 64,
+  "embedding_dim": 300,
   "dropout": 0.3,
   "lr": 0.001,
   "weight_decay": 0.01,
-  "labels": {
-    "0": "falsa",
-    "1": "real"
+  "lote": 32,
+  "epocas_max": 20,
+  "paciencia": 5,
+  "epocas_fijas": 4,
+  "vocab_size": 30000,
+  "cobertura_vectores": {
+    "vocabulario": 29998,
+    "vectores_encontrados": 28037,
+    "cobertura": 0.9346289752650176
   },
-  "validation_only": true,
-  "rows": {
-    "entrenamiento": 3066,
-    "validacion": 170
+  "etiquetas": {
+    "real": 0,
+    "falsa": 1
+  },
+  "conjunto": "/home/orlando/Documentos/ScanTrue/datasets/comun_v1",
+  "sha256_conjunto": "c13a9721648a864177d8a1e85de6f5e7e0823430596c3dd75e5d43da0e14aff9",
+  "sha256_script": "e9dc7443d046e76b174979d28f5f6c76e5679012ccc4691beb7f540752b025d7",
+  "torch": "2.14.1+cu130",
+  "cuda": "13.0",
+  "dispositivo": "cuda",
+  "filas": {
+    "entrenamiento": 4562,
+    "validacion_interna": 0,
+    "validacion": 0
+  },
+  "articulos": {
+    "entrenamiento": 3252,
+    "validacion_interna": 0,
+    "validacion": 0
   }
 }

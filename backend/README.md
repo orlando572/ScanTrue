@@ -41,17 +41,20 @@ incorporar historial entre identidades.
 
 ## Tareas de implementación
 
-1. **Inferencia BiLSTM — lista:** reutiliza el checkpoint
-   `pequeno_mejorado_fasttext_cc300_s42`, conserva la tokenización del
-   entrenamiento y lo carga una vez por proceso.
-2. **API de análisis — lista:** exige 100 tokens a cada modelo disponible,
-   recorta la entrada a 512 tokens mBERT y BiLSTM lee hasta 192 tokens propios;
+1. **Inferencia — lista (actualizada el 11 nov 2026):** carga el BiLSTM **B6** y
+   **BETO M3b** (clave interna `mbert`) según sus contratos
+   (`datasets/{bilstm,mbert}_produccion/modelo/contrato.json`), verifica sus SHA-256,
+   calibra cada probabilidad con su temperatura y combina los dos modelos según
+   `datasets/combinacion_produccion/combinacion.json` (80 % BETO + 20 % BiLSTM).
+   Detalle en [docs/CAMBIO_MODELOS_CALIBRADOS.md](docs/CAMBIO_MODELOS_CALIBRADOS.md).
+2. **API de análisis — lista:** exige 100 tokens a cada modelo disponible;
+   BETO lee hasta 256 subpalabras y BiLSTM hasta 192 palabras;
    distingue errores de entrada e inferencia y comunica la disponibilidad.
 3. **Identidad e historial — código implementado:** Auth anónimo y por correo,
    tablas con RLS, historial propio e incorporación de registros del invitado.
    El texto y la vista previa cuentan con la migración 004 aplicada.
 4. **Métricas — implementadas:** `GET /metricas` expone BiLSTM y
-   `GET /metricas?modelo=mbert` expone el checkpoint mBERT seleccionado.
+   `GET /metricas?modelo=mbert` expone BETO, con la validación por fuente.
 5. **Blockchain — comprobada localmente:** contrato, cola durable, reintentos,
    estado de transacción y endpoint de verificación. El recorrido con invitado
    confirmó un análisis real en Anvil.
@@ -64,30 +67,23 @@ incorporar historial entre identidades.
    transferencia a una cuenta temporal confirmada por Auth Admin. El envío del
    correo de confirmación espera que se restablezca el límite de Supabase.
 
-La integración mBERT usa los artefactos locales de `mBERT/`, incluido el
-checkpoint Git LFS real de 711 MB. Si no carga, la API informa `no_disponible`
-y BiLSTM continúa funcionando.
-En una instalación nueva, colocar `mBERT/` al mismo nivel que `backend/` y
-`bilstm/` desde la rama `mbert` de ScanTrue, commit
-`35b011deea3a4813d88df3ef6ec0b411cf3fe7de`, y descargar el objeto Git
-LFS de `model.safetensors`; el puntero de 134 bytes no sirve para inferencia.
+Los pesos de BETO (`datasets/mbert_produccion/modelo/best_model/model.safetensors`,
+440 MB) van con Git LFS: tras clonar, `git lfs pull`. Si no cargan, la API informa
+`no_disponible` y el BiLSTM continúa funcionando. Los modelos de octubre se conservan,
+sin uso, en `datasets/{bilstm,mbert}_produccion/archivo_octubre/`.
 
 ## Métricas de evaluación
 
 `GET /metricas` es público y funciona sin sesión, Supabase ni inferencia. Devuelve
-una copia fija de las evaluaciones de validación (170 noticias), prueba interna
-(179) y fuentes reservadas (606) del checkpoint
-`pequeno_mejorado_fasttext_cc300_s42`. Cada registro incluye su fuente, matriz
-de confusión, exactitud, precisión, recall y F1 para la clase falsa y F1 macro.
-Las filas de la matriz son etiquetas reales y las columnas son predicciones;
-ambos ejes usan el orden `falsa`, `real`. La prueba de fuentes reservadas es
-exploratoria porque se consultó repetidamente durante los experimentos. El
-catálogo versionado está en `backend/metrics/evaluaciones.json` y sus fuentes
-originales se describen en `bilstm/docs/RESULTADOS_PRODUCCION.md`.
-`GET /metricas?modelo=mbert` conserva la forma de respuesta y publica validación,
-prueba y evaluación externa del checkpoint `mBERT_BiLSTM_main_len512_seed43`,
-con sus fuentes y limitaciones. La evaluación externa es retrospectiva: F1 macro
-0,6001 y 150 noticias reales clasificadas como falsas de 307.
+las métricas por artículo del BiLSTM B6 con validación dejando una fuente fuera:
+global (1.568 artículos) y para cada fuente no vista (v1, FakeDeS, Polyglot).
+`GET /metricas?modelo=mbert` publica lo mismo para BETO. Cada registro incluye su
+fuente, matriz de confusión, exactitud, precisión, recall y F1 para la clase falsa
+y F1 macro. Las filas de la matriz son etiquetas reales y las columnas son
+predicciones; ambos ejes usan el orden `falsa`, `real`. Los catálogos
+(`backend/metrics/evaluaciones.json` y `mbert_evaluaciones.json`) se generan con
+`datos_comunes/publicar_metricas.py`; los de octubre quedan en
+`backend/metrics/archivo_octubre/`. La prueba congelada se añadirá cuando se evalúe.
 
 ## Registro verificable local
 
@@ -197,27 +193,28 @@ formato (con valores de ejemplo):
     "bilstm": {
       "modelo": "bilstm",
       "estado": "ok",
-      "version": "pequeno_mejorado_fasttext_cc300_s42",
+      "version": "comun_v1.1_B6_20261107",
       "clase": "falsa",
-      "probabilidad_falsa": 0.73,
+      "probabilidad_falsa": 0.62,
       "tokens_leidos": 120,
       "error": null
     },
     "mbert": {
       "modelo": "mbert",
       "estado": "ok",
-      "version": "mBERT_BiLSTM_main_len512_seed43",
+      "version": "comun_v1.1_M3b_20261111",
       "clase": "falsa",
-      "probabilidad_falsa": 0.60,
+      "probabilidad_falsa": 0.70,
       "tokens_leidos": 180,
       "error": null
     }
   },
   "resultado_unificado": {
-    "probabilidad_falsa": 0.639,
+    "probabilidad_falsa": 0.684,
     "modelos_utilizados": ["bilstm", "mbert"],
-    "pesos_aplicados": {"bilstm": 0.3, "mbert": 0.7},
-    "version_regla": "media_ponderada_v1"
+    "pesos_aplicados": {"bilstm": 0.2, "mbert": 0.8},
+    "version_regla": "media_ponderada_v1",
+    "version_combinacion": "comun_v1.1_conjunta_20261111"
   },
   "comparacion": "coinciden",
   "nota": "Las probabilidades son salidas experimentales de clasificadores; no verifican hechos.",
@@ -227,14 +224,18 @@ formato (con valores de ejemplo):
 }
 ```
 
-`probabilidad_falsa` es la salida del clasificador para la clase falsa, no una
-medida de certeza factual. Cuando dos modelos produzcan predicciones,
+`probabilidad_falsa` es la probabilidad calibrada (temperatura del contrato) de
+la clase falsa, no una medida de certeza factual. Cuando dos modelos produzcan predicciones,
 `comparacion` será `coinciden` o `discrepan`. Si uno falla, se conserva el
 resultado válido y el otro indica `fallo`. Si ninguno responde, la API devuelve
 503. El resultado unificado usa los modelos reales disponibles: con uno solo,
-su peso aplicado es 1; con ambos, mBERT pesa 0,70 y BiLSTM 0,30 por defecto.
-`ANALYSIS_MBERT_WEIGHT` cambia el peso de mBERT para análisis futuros y el de
-BiLSTM es su complemento. Cada respuesta válida guarda en Supabase el
+su peso aplicado es 1; con ambos, se combinan sus logits calibrados con BETO 0,80
+y BiLSTM 0,20: `sigmoide(0,2 · logit(p_bilstm) + 0,8 · logit(p_beto))`. Los pesos
+y temperaturas salen de la calibración conjunta
+([docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md](../docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md));
+`ANALYSIS_MBERT_WEIGHT` ya no se usa. `version_regla` sigue siendo
+`media_ponderada_v1` porque la base de datos solo acepta ese valor;
+`version_combinacion` identifica la combinación aplicada. Cada respuesta válida guarda en Supabase el
 propietario, fragmento analizado, SHA-256 de ese mismo fragmento,
 referencia opcional, predicciones y resultado unificado con pesos aplicados.
 
@@ -265,12 +266,12 @@ envío y clic del correo no pudo comprobarse porque Supabase devolvió
 `over_email_send_rate_limit`.
 
 El mínimo operativo de 100 tokens se exige a cada modelo disponible con su
-propio tokenizador. mBERT recibe hasta 512 tokens, incluidos sus tokens
-especiales; si el texto excede ese límite, la API conserva solo el prefijo
-analizado y responde `texto_recortado: true`. BiLSTM lee hasta sus primeros 192
-tokens. El historial y `hash_texto` guardan ese mismo prefijo. Si falta el
-tokenizador mBERT, la degradación usa solo BiLSTM y guarda sus primeros 192
-tokens. El mínimo es una decisión operativa, no una mejora de precisión
+propio tokenizador. BETO lee hasta 256 subpalabras, incluidos sus tokens
+especiales, y BiLSTM hasta 192 palabras. La API conserva el prefijo más largo de
+los dos (cada modelo recorta dentro de él lo suyo) y responde
+`texto_recortado: true` si el texto lo excede. El historial y `hash_texto` guardan
+ese mismo prefijo. Si falta el tokenizador de BETO, la degradación usa solo BiLSTM
+y guarda sus primeras 192 palabras. El mínimo es una decisión operativa, no una mejora de precisión
 demostrada.
 
 ## Verificación operativa

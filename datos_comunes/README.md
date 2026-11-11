@@ -11,6 +11,7 @@ datos_comunes/
 ├── evaluar_comun.py     Métricas por artículo, bootstrap, temperatura y niveles de la extensión
 ├── referencias.py       Referencias: solo longitud y TF-IDF de caracteres
 ├── calibrar_conjunto.py Calibración conjunta: temperaturas, combinación BiLSTM + mBERT y niveles
+├── publicar_metricas.py Métricas de producción que muestra la extensión (backend/metrics/)
 └── tests/               Pruebas
 ```
 

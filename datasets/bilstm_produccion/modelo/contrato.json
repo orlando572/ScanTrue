@@ -1,0 +1,35 @@
+{
+  "modelo": "bilstm",
+  "version": "comun_v1.1_B6_20261107",
+  "eleccion": {
+    "ganador_regla": "B0",
+    "manual": true,
+    "ganador_elegido": "B6",
+    "motivo": "Elección manual (7 nov 2026): B6 es estable entre comun_v1.0 y v1.1 (0,582 → 0,585) y tiene el mejor F1; la regla lo rechaza solo por falsas alarmas frente a un B0 inestable (0,524 → 0,497). Las falsas alarmas se revisan con el umbral en la calibración conjunta con mBERT."
+  },
+  "etiquetas": {
+    "real": 0,
+    "falsa": 1
+  },
+  "max_tokens": 192,
+  "pooling": "final",
+  "hidden_dim": 64,
+  "temperatura": 8.4468,
+  "temperatura_provisional": false,
+  "nota_temperatura": "Calibración conjunta comun_v1.1_conjunta_20261111 (datos_comunes/calibrar_conjunto.py) con las predicciones fuera de pliegue; ver datasets/comun_v1_corridas/calibracion/.",
+  "umbral_falsa": 0.5,
+  "semillas": [
+    42
+  ],
+  "promediar_logits_semillas": false,
+  "epocas": 4,
+  "checkpoints": {
+    "s42": {
+      "ruta": "datasets/bilstm_produccion/modelo/modelo.pt",
+      "sha256": "9392da59c8c26aa7d921d9efc73f987c9a49d5140eeec1b6c45c49eb62810d68"
+    }
+  },
+  "sha256_conjunto": "c13a9721648a864177d8a1e85de6f5e7e0823430596c3dd75e5d43da0e14aff9",
+  "calibracion": "datasets/combinacion_produccion/combinacion.json",
+  "origen": "datasets/comun_v1_corridas/bilstm/final/contrato.json"
+}

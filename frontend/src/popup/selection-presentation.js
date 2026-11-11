@@ -9,7 +9,7 @@ const messages = {
   full: () => 'Longitud completa: lo que siga no se analiza',
 };
 
-// Medidor de P02: la barra va de 0 a ~350 palabras (lo que lee mBERT) con una marca en el mínimo (100).
+// Medidor de P02: la barra va de 0 a ~200 palabras (lo que leen los modelos) con una marca en el mínimo (100).
 export function meterState(words) {
   const count = Number.isInteger(words) && words > 0 ? words : 0;
   const level = lengthLevel(count);

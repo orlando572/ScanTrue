@@ -3,11 +3,11 @@
 import logging
 from dataclasses import dataclass
 from itertools import islice
-from math import isfinite
 from typing import Protocol
 
 from bilstm.modelo import TOKEN_PATTERN
 from backend.models.bilstm import BilstmPredictor
+from backend.models.contrato import Combination
 from backend.models.mbert import MbertTokenizer
 from backend.services.text_cleaning import clean_news_text
 from backend.schemas.analysis import (
@@ -50,16 +50,15 @@ class AnalysisService:
         predictor: BilstmPredictor,
         mbert_predictor: Predictor | None = None,
         mbert_text_policy: MbertTokenizer | None = None,
-        mbert_weight: float = 0.7,
+        combination: Combination | None = None,
     ) -> None:
-        if not isfinite(mbert_weight) or not 0 <= mbert_weight <= 1:
-            raise ValueError("ANALYSIS_MBERT_WEIGHT debe estar entre 0 y 1.")
         if mbert_predictor is not None and mbert_text_policy is None:
             raise ValueError("mBERT requiere su tokenizador para validar la entrada")
         self.predictor = predictor
         self.mbert_predictor = mbert_predictor
         self.mbert_text_policy = mbert_text_policy
-        self.mbert_weight = mbert_weight
+        # Por defecto, la combinación versionada en datasets/combinacion_produccion/.
+        self.combination = combination or Combination.load()
 
     def _bilstm_prefix(self, text: str) -> tuple[str, bool]:
         matches = list(islice(TOKEN_PATTERN.finditer(text), self.predictor.max_len + 1))
@@ -77,23 +76,26 @@ class AnalysisService:
                 "Envía el cuerpo de la noticia en el campo 'texto'.",
             )
 
-        model_input = text
+        # Cada modelo lee hasta su propio límite (BiLSTM 192 palabras, mBERT 256 subpalabras).
+        # Los dos recortes son prefijos del mismo texto: se guarda y se envía el más largo y
+        # cada predictor recorta dentro de él lo que le corresponde.
+        model_input, truncated = self._bilstm_prefix(text)
         mbert_predictor = self.mbert_predictor
         mbert_prepare_failed = False
+        mbert_token_count = None
         if self.mbert_text_policy is not None:
             try:
-                model_input, truncated, mbert_token_count = self.mbert_text_policy.prepare(
-                    model_input
+                mbert_input, mbert_truncated, mbert_token_count = self.mbert_text_policy.prepare(
+                    text
                 )
+                if len(mbert_input) > len(model_input):
+                    model_input = mbert_input
+                truncated = truncated and mbert_truncated
             except Exception:
                 logger.exception("Falló la tokenización mBERT")
-                model_input, truncated = self._bilstm_prefix(model_input)
                 mbert_token_count = None
                 mbert_predictor = None
                 mbert_prepare_failed = True
-        else:
-            model_input, truncated = self._bilstm_prefix(model_input)
-            mbert_token_count = None
         token_count = len(self.predictor.tokenize(model_input))
         if token_count == 0:
             raise InvalidAnalysisInput(
@@ -169,19 +171,14 @@ class AnalysisService:
                 if successful[0].clase == successful[1].clase
                 else "discrepan"
             )
-        if len(successful) == 1:
-            weights = AppliedWeights(
-                bilstm=1.0 if successful[0].modelo == "bilstm" else 0.0,
-                mbert=1.0 if successful[0].modelo == "mbert" else 0.0,
-            )
-        else:
-            weights = AppliedWeights(
-                bilstm=1.0 - self.mbert_weight,
-                mbert=self.mbert_weight,
-            )
-        probability = sum(
-            result.probabilidad_falsa * getattr(weights, result.modelo)
-            for result in successful
+        # Cada modelo ya devuelve su probabilidad calibrada; se combinan sus logits
+        # (docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md).
+        probability, used_weights = self.combination.combine(
+            {result.modelo: result.probabilidad_falsa for result in successful}
+        )
+        weights = AppliedWeights(
+            bilstm=used_weights.get("bilstm", 0.0),
+            mbert=used_weights.get("mbert", 0.0),
         )
         probability = min(1.0, max(0.0, probability))
         response = AnalysisResponse(
@@ -190,6 +187,7 @@ class AnalysisService:
                 probabilidad_falsa=probability,
                 modelos_utilizados=[result.modelo for result in successful],
                 pesos_aplicados=weights,
+                version_combinacion=self.combination.version,
             ),
             comparacion=comparison,
             nota="Las probabilidades son salidas experimentales de clasificadores; no verifican hechos.",

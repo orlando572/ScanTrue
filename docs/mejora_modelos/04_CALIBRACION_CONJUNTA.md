@@ -14,7 +14,7 @@
 | Umbral | 0,5 sobre la probabilidad combinada |
 | Semillas de BETO | Una sola (42): promediar las tres no mejora el F1 (−0,0006, hacía falta +0,01) |
 | Regla de discrepancia (§5.2) | Evaluada; **no se aplica** por ahora (ver sección 5) |
-| Niveles de la extensión | Los cinco quedan dentro de su objetivo. Hoy, «Muy probablemente falso» acierta solo el 75 % |
+| Niveles de la extensión | Los cinco quedan dentro de su objetivo. Con el 70/30 anterior, «Muy probablemente falso» acertaba solo el 75 % |
 
 Fórmula que usará el backend, con `z = logit_falsa − logit_real` de cada modelo:
 
@@ -74,13 +74,15 @@ Combinación elegida, validación por fuente, por fragmento:
 
 | Nivel en la extensión | Fragmentos | % realmente falsas | Objetivo | Dentro |
 | --- | ---: | ---: | --- | :---: |
-| 0–20 «Muy probablemente verdadero» | 1.094 | 10 % | ≤ 20 % | ✅ |
-| 20–40 «Probablemente verdadero» | 899 | 26 % | 20–40 % | ✅ |
-| 40–60 «Resultado incierto» | 435 | 50 % | 40–60 % | ✅ |
-| 60–80 «Probablemente falso» | 325 | 68 % | 60–80 % | ✅ |
-| 80–100 «Muy probablemente falso» | 125 | 90 % | ≥ 80 % | ✅ |
+| 0–20 «Muy probablemente verdadero» | 1.138 | 10 % | ≤ 20 % | ✅ |
+| 21–40 «Probablemente verdadero» | 870 | 27 % | 20–40 % | ✅ |
+| 41–60 «Resultado incierto» | 427 | 51 % | 40–60 % | ✅ |
+| 61–80 «Probablemente falso» | 323 | 69 % | 60–80 % | ✅ |
+| 81–100 «Muy probablemente falso» | 120 | 90 % | ≥ 80 % | ✅ |
 
-Con la media 70/30 actual, el último nivel tiene 249 fragmentos y solo el 75 % son falsos (fuera de objetivo). La combinación calibrada lo usa menos (125), pero cuando lo usa acierta el 90 %.
+Los niveles se asignan con la misma regla que la extensión: el porcentaje se redondea a entero y cae en el primer nivel cuyo tope no supera (20, 40, 60, 80, 100). Desde el 11 nov 2026 `tabla_niveles()` de `datos_comunes/evaluar_comun.py` usa esa regla; antes usaba `p < 0,2`, `p < 0,4`…, que solo cambiaba los casos en el borde.
+
+Con la media 70/30 anterior, el último nivel tenía 245 fragmentos y solo el 75 % eran falsos (fuera de objetivo). La combinación calibrada lo usa menos (120), pero cuando lo usa acierta el 90 %.
 
 ## 5. Regla de discrepancia (§5.2)
 
@@ -118,5 +120,31 @@ bilstm/.venv/bin/python datos_comunes/calibrar_conjunto.py --sobrescribir
 
 - **Semilla 42 en los dos modelos.** Es la semilla del checkpoint final de cada uno. Las temperaturas se ajustan con los modelos de cada pliegue, que no son exactamente el modelo final entrenado con todo el desarrollo. La prueba congelada dirá si se mantienen.
 - **Prueba congelada:** se evalúa una sola vez, con estos parámetros ya fijados (§6 del plan común), sin volver a ajustarlos después.
-- **Backend:** todavía usa los modelos de octubre y la media 70/30. Falta adaptarlo para que lea los dos contratos y `combinacion.json`, y aplique la fórmula de la sección 1.
-- **Cortes de la extensión:** `frontend/src/popup/result-presentation.js` redondea a un porcentaje entero y usa `≤ 20`, `≤ 40`…, mientras que el evaluador usa `p < 0,2`, `p < 0,4`… Un 20,3 % cae en «Muy probablemente verdadero» en la extensión y en «Probablemente verdadero» en la tabla. Cambia muy pocos fragmentos, pero conviene igualarlo al adaptar el backend.
+- ✅ **Backend:** desde el 11 nov 2026 lee los dos contratos y `datasets/combinacion_produccion/combinacion.json` y aplica la fórmula de la sección 1 (sección 8).
+- ✅ **Cortes de la extensión:** igualados el 11 nov 2026 (ver sección 4).
+
+## 8. Paso a producción
+
+Hecho el 11 de noviembre de 2026, con el mismo código que se evaluará en la prueba congelada.
+
+| Qué | Dónde |
+| --- | --- |
+| BiLSTM B6 (semilla 42) | `datasets/bilstm_produccion/modelo/`: `modelo.pt`, `config.json`, `resultados.json` y `contrato.json` |
+| BETO M3b (semilla 42) | `datasets/mbert_produccion/modelo/`: `best_model/` (pesos con Git LFS y tokenizador), `config.json`, `resultados.json` y `contrato.json` |
+| Combinación | `datasets/combinacion_produccion/combinacion.json` (copia de `datasets/comun_v1_corridas/calibracion/combinacion.json`) |
+| Modelos de octubre | Sin borrar ni usar, en `datasets/bilstm_produccion/archivo_octubre/` y `datasets/mbert_produccion/archivo_octubre/` |
+| Métricas de la extensión | `backend/metrics/*.json`, generadas con `datos_comunes/publicar_metricas.py`. Las de octubre, en `backend/metrics/archivo_octubre/` |
+
+Los contratos de producción son los de `datasets/comun_v1_corridas/{bilstm,mbert}/final/` con las rutas cambiadas a las carpetas de producción y el campo `origen`.
+
+**Backend** (detalle en [backend/docs/CAMBIO_MODELOS_CALIBRADOS.md](../../backend/docs/CAMBIO_MODELOS_CALIBRADOS.md)):
+
+- `backend/models/contrato.py` lee los contratos y la combinación, verifica los SHA-256 y comprueba que la versión y la temperatura de cada contrato coinciden con las de la combinación. Si no coinciden, el backend no arranca el análisis: hay que recalibrar.
+- `backend/models/bilstm.py` y `backend/models/mbert.py` devuelven la probabilidad **calibrada** de cada modelo, con el orden de clases del contrato (0 = real, 1 = falsa).
+- `backend/services/analysis.py` combina con `sigmoide(0,2 · logit(p_bilstm) + 0,8 · logit(p_beto))`. Si solo responde un modelo, usa su probabilidad. `ANALYSIS_MBERT_WEIGHT` ya no se usa.
+- Cada modelo lee hasta su propio límite: BETO 256 subpalabras y BiLSTM 192 palabras. Antes, el BiLSTM recibía el recorte de BETO, y en un 32 % de los fragmentos largos eso le dejaba menos de 192 palabras.
+- La respuesta mantiene `version_regla = "media_ponderada_v1"`, porque la base de datos solo acepta ese valor, y añade `version_combinacion`.
+- Se comprobó que el backend reproduce los logits del entrenamiento: BiLSTM exacto; BETO con diferencias de hasta 0,024 en el logit, por BF16 en GPU.
+
+**Extensión:** el segundo modelo se muestra como «BETO»; el medidor de longitud llega a ~200 palabras (lo que leen los dos modelos); los conjuntos de métricas nuevos tienen nombre propio.
+

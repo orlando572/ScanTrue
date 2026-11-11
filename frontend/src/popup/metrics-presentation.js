@@ -19,6 +19,11 @@ const evaluationNames = {
   fuentes_reservadas: 'Fuentes reservadas',
   prueba_bilstm_filtrada: 'Prueba',
   externa_bilstm_filtrada: 'Prueba externa',
+  validacion_por_fuente_articulos: 'Fuentes no vistas',
+  fuente_no_vista_v1: 'Fuente no vista: v1',
+  fuente_no_vista_fakedes: 'Fuente no vista: FakeDeS',
+  fuente_no_vista_polyglot: 'Fuente no vista: Polyglot',
+  prueba_congelada: 'Prueba congelada',
 };
 
 export function presentMetrics(data) {
@@ -29,7 +34,7 @@ export function presentMetrics(data) {
       ? data.limitaciones.map(readableText).filter(Boolean)
       : [];
   return {
-    model: model === 'bilstm' ? 'BiLSTM' : model === 'mbert' ? 'mBERT' : model,
+    model: model === 'bilstm' ? 'BiLSTM' : model === 'mbert' ? 'BETO' : model,
     limitations,
     evaluations: (data?.evaluaciones ?? []).map((evaluation, index) => {
       const source = readableText(evaluation.fuente);

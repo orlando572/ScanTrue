@@ -1,45 +1,95 @@
 {
   "modelo": "bilstm",
-  "version": "pequeno_mejorado_fasttext_cc300_s42",
-  "orden_clases": ["falsa", "real"],
+  "version": "comun_v1.1_B6_20261107",
+  "orden_clases": [
+    "falsa",
+    "real"
+  ],
   "evaluaciones": [
     {
-      "conjunto": "validacion",
-      "n": 170,
-      "matriz_confusion": [[63, 18], [22, 67]],
-      "exactitud": 0.7647058823529411,
-      "precision_falsa": 0.7411764705882353,
-      "recall_falsa": 0.7777777777777778,
-      "f1_falsa": 0.7590361445783133,
-      "f1_macro": 0.7645755435535244,
-      "fuente": "datasets/bilstm_produccion/modelo/resultados.json#validation_best"
+      "conjunto": "validacion_por_fuente_articulos",
+      "n": 1568,
+      "matriz_confusion": [
+        [
+          237,
+          320
+        ],
+        [
+          240,
+          771
+        ]
+      ],
+      "exactitud": 0.6428571428571429,
+      "precision_falsa": 0.4968553459119497,
+      "recall_falsa": 0.4254937163375224,
+      "f1_falsa": 0.4584139264990329,
+      "f1_macro": 0.5960004932209721,
+      "fuente": "datasets/comun_v1_corridas/calibracion/predicciones_combinadas_fuera_de_pliegue.csv#p_bilstm"
     },
     {
-      "conjunto": "prueba_interna_no_politica",
-      "n": 179,
-      "matriz_confusion": [[53, 16], [23, 87]],
-      "exactitud": 0.7821229050279329,
-      "precision_falsa": 0.6973684210526315,
-      "recall_falsa": 0.7681159420289855,
-      "f1_falsa": 0.7310344827586207,
-      "f1_macro": 0.7739679456046624,
-      "fuente": "datasets/bilstm_produccion/conjunto/comparacion.json#pruebas.prueba_interna_no_politica.modelos.pequeno_mejorado_fasttext_cc300_s42.metricas"
+      "conjunto": "fuente_no_vista_v1",
+      "n": 544,
+      "matriz_confusion": [
+        [
+          65,
+          66
+        ],
+        [
+          122,
+          291
+        ]
+      ],
+      "exactitud": 0.6544117647058824,
+      "precision_falsa": 0.34759358288770054,
+      "recall_falsa": 0.4961832061068702,
+      "f1_falsa": 0.4088050314465409,
+      "f1_macro": 0.5823245936453484,
+      "fuente": "datasets/comun_v1_corridas/calibracion/predicciones_combinadas_fuera_de_pliegue.csv#p_bilstm&pliegue=F1"
     },
     {
-      "conjunto": "fuentes_reservadas",
-      "n": 606,
-      "matriz_confusion": [[227, 72], [164, 143]],
-      "exactitud": 0.6105610561056105,
-      "precision_falsa": 0.5805626598465473,
-      "recall_falsa": 0.7591973244147158,
-      "f1_falsa": 0.6579710144927536,
-      "f1_macro": 0.6029318673996336,
-      "fuente": "datasets/bilstm_produccion/conjunto/comparacion.json#pruebas.fuentes_reservadas.modelos.pequeno_mejorado_fasttext_cc300_s42.metricas"
+      "conjunto": "fuente_no_vista_fakedes",
+      "n": 444,
+      "matriz_confusion": [
+        [
+          129,
+          74
+        ],
+        [
+          94,
+          147
+        ]
+      ],
+      "exactitud": 0.6216216216216216,
+      "precision_falsa": 0.57847533632287,
+      "recall_falsa": 0.6354679802955665,
+      "f1_falsa": 0.6056338028169014,
+      "f1_macro": 0.6209987195902689,
+      "fuente": "datasets/comun_v1_corridas/calibracion/predicciones_combinadas_fuera_de_pliegue.csv#p_bilstm&pliegue=F2"
+    },
+    {
+      "conjunto": "fuente_no_vista_polyglot",
+      "n": 580,
+      "matriz_confusion": [
+        [
+          43,
+          180
+        ],
+        [
+          24,
+          333
+        ]
+      ],
+      "exactitud": 0.6482758620689655,
+      "precision_falsa": 0.6417910447761194,
+      "recall_falsa": 0.19282511210762332,
+      "f1_falsa": 0.296551724137931,
+      "f1_macro": 0.5310344827586206,
+      "fuente": "datasets/comun_v1_corridas/calibracion/predicciones_combinadas_fuera_de_pliegue.csv#p_bilstm&pliegue=F3"
     }
   ],
   "limitaciones": [
-    "Las métricas corresponden a conjuntos de evaluación específicos y no verifican hechos.",
-    "La prueba de fuentes reservadas se consultó repetidamente durante los experimentos; sus resultados son exploratorios y no estiman el rendimiento en producción.",
-    "La salida de probabilidad_falsa del clasificador no está calibrada como probabilidad de falsedad factual."
+    "BiLSTM B6. Validación dejando una fuente fuera (v1, FakeDeS, Polyglot): cada fuente la predice un modelo entrenado sin ella (semilla 42). El modelo de producción se entrenó después con todo el desarrollo, así que estas cifras lo aproximan, no lo miden.",
+    "Métricas por artículo (media de las probabilidades de sus fragmentos) con umbral 0,5. La prueba congelada, nunca abierta, se evaluará una sola vez y se añadirá aquí.",
+    "La probabilidad está calibrada con temperatura T = 8.4468 y el resultado unificado combina BETO (80 %) y BiLSTM (20 %) (comun_v1.1_conjunta_20261111). Mide la confianza del clasificador según el estilo del texto; no verifica hechos."
   ]
 }

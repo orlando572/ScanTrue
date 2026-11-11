@@ -10,10 +10,10 @@ test('todo funcionando: cada servicio con su propio color', () => {
   assert.deepEqual(states(shown), ['ok', 'ok', 'ok', 'ok']);
   assert.equal(new Set(shown.map((service) => service.color)).size, 4);
   assert.ok(shown.every((service) => !['#FF4A3D', '#FFB21E'].includes(service.color)));
-  assert.equal(shown[1].label, 'Modelo mBERT: funcionando');
+  assert.equal(shown[1].label, 'Modelo BETO: funcionando');
 });
 
-test('mBERT caído se pinta en rojo y el resto sigue con su color', () => {
+test('BETO (clave mbert) caído se pinta en rojo y el resto sigue con su color', () => {
   const shown = presentServices({ ...healthy, estado: 'degradado', modelos: { bilstm: true, mbert: false } }, 'degraded');
   assert.deepEqual(states(shown), ['ok', 'down', 'ok', 'ok']);
   assert.equal(shown[1].color, '#FF4A3D');

@@ -22,15 +22,14 @@ El envío y clic del correo de confirmación sigue pendiente: Supabase devolvió
 | --- | --- |
 | Intérprete usado en este equipo | `bilstm/.venv/bin/python` (Python 3.14.4, PyTorch 2.14.1). Debe poder importar `torch`, `numpy`, `pandas` y `sklearn` porque el código BiLSTM los usa. |
 | Dependencias de API fijadas | `backend/requirements.lock`, instaladas en `backend/.deps`; `backend/requirements.txt` declara las dependencias directas. |
-| Checkpoint BiLSTM | `datasets/bilstm_produccion/modelo/mejor_modelo.pt`. |
-| mBERT | `mBERT/selection/bilstm_step5_20261008_v1/selection.json`, `mBERT/assets/tokenizer_mbert_cased/` y el `best_model/model.safetensors` de la ejecución seleccionada. El archivo de pesos real ocupa aproximadamente 711 MB; un puntero Git LFS no sirve. |
+| BiLSTM (B6) | `datasets/bilstm_produccion/modelo/` con `contrato.json` y `modelo.pt` (36 MB). |
+| BETO (clave `mbert`) | `datasets/mbert_produccion/modelo/` con `contrato.json` y `best_model/` (pesos de unos 440 MB con Git LFS; un puntero de 3 líneas no sirve: `git lfs pull`). |
+| Combinación | `datasets/combinacion_produccion/combinacion.json` (temperaturas y pesos 0,2/0,8). |
 | Supabase | `backend/.env` con URL, clave publicable y clave secreta; migraciones `backend/db/migrations/001_*.sql` a `005_*.sql` aplicadas en orden. Auth anónimo y correo/contraseña habilitados. |
 | Cadena local | `backend/.tools/anvil`, `backend/.tools/forge`, `backend/.tools/solc-static-linux`, `backend/.local/anvil-state.json` y `backend/.local/contract.json`. |
 
-En otra máquina, coloca `mBERT/` al mismo nivel que `backend/` y `bilstm/`,
-usando la rama `mbert` de ScanTrue, commit
-`35b011deea3a4813d88df3ef6ec0b411cf3fe7de`, y descarga el objeto Git LFS
-de `model.safetensors`. Para instalar Foundry y Solidity con las versiones y
+En otra máquina basta con clonar el repositorio y ejecutar `git lfs pull` para
+descargar los pesos de BETO. Para instalar Foundry y Solidity con las versiones y
 sumas verificadas de este proyecto, sigue la sección «Registro verificable
 local» de [README.md](../README.md). Conserva los archivos locales de estado y
 despliegue existentes para no perder el vínculo con verificaciones anteriores.
@@ -68,7 +67,7 @@ Si `backend/.env` no existe, crea una copia de `backend/.env.example` dentro de
 | `BLOCKCHAIN_RPC_URL` | `http://127.0.0.1:8545` para Anvil local. |
 | `BLOCKCHAIN_CHAIN_ID` | `31337` para el estado local documentado. |
 | `BLOCKCHAIN_PRIVATE_KEY` | Clave de una cuenta **local de Anvil**; nunca una clave de red pública. |
-| `ANALYSIS_MBERT_WEIGHT` | Opcional; predeterminado `0.70`. El peso BiLSTM es su complemento cuando ambos modelos responden. |
+| `ANALYSIS_MBERT_WEIGHT` | **Ya no se usa** (se ignora con un aviso). Los pesos salen de `datasets/combinacion_produccion/combinacion.json`. |
 
 El proyecto Supabase usado aquí ya tiene aplicadas las migraciones 001–005.
 Para otro proyecto, aplícalas en orden y habilita **Anonymous sign-ins** y el
@@ -168,8 +167,9 @@ El contrato **vigente** para límites, mBERT real, `texto_recortado`, texto del
 historial y métricas mBERT está en
 [CAMBIO_CONTRATO_MBERT.md](CAMBIO_CONTRATO_MBERT.md). Esa nota actualiza la guía
 de frontend ya entregada, que conserva ejemplos anteriores a la integración
-real de mBERT. BiLSTM lee como máximo 192 tokens propios; mBERT, 512 tokens
-incluidos los especiales. El frontend usa el resultado unificado del backend y
+real de mBERT; los modelos y límites actuales están en
+[CAMBIO_MODELOS_CALIBRADOS.md](CAMBIO_MODELOS_CALIBRADOS.md). BiLSTM lee como
+máximo 192 palabras; BETO, 256 subpalabras incluidas las especiales. El frontend usa el resultado unificado del backend y
 no lo recalcula.
 
 La prueba conjunta queda completada cuando la extensión obtiene una sesión,

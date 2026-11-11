@@ -1,6 +1,8 @@
 # Resultados y pruebas del BiLSTM seleccionado
 
-Es el modelo que usa hoy la app. El checkpoint está en `datasets/bilstm_produccion/modelo/mejor_modelo.pt` (antes `datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/`). Se entrenó con `bilstm/preentrenados/entrenar.py`, fastText CC español de 300 dimensiones, semilla 42, máximo 192 tokens y CUDA. `config.json` (en la misma carpeta) conserva los parámetros con las rutas de entonces; `resultados.json`, el resultado de validación.
+> **Archivado el 11 nov 2026:** la app usa ahora B6 ([RESULTADOS_MODELO_NUEVO.md](RESULTADOS_MODELO_NUEVO.md)); este modelo se conserva sin uso.
+
+Fue el modelo de la app hasta el 11 nov 2026. El checkpoint está en `datasets/bilstm_produccion/archivo_octubre/modelo/mejor_modelo.pt` (antes `datasets/modelos_balanceados/pequeno_mejorado_fasttext_cc300_s42/`). Se entrenó con `bilstm/preentrenados/entrenar.py`, fastText CC español de 300 dimensiones, semilla 42, máximo 192 tokens y CUDA. `config.json` (en la misma carpeta) conserva los parámetros con las rutas de entonces; `resultados.json`, el resultado de validación.
 
 > Los scripts que crearon y evaluaron este modelo (`preentrenados/entrenar.py`, `entrenar_baseline.py`, `preparar_balanceados.py`, `probar_externo.py`…) se retiraron en la limpieza del 10 nov 2026 y están en el historial de Git (commit `d4ece74`). La arquitectura y el tokenizador siguen en [`bilstm/modelo.py`](../modelo.py), que es lo que usa el backend.
 

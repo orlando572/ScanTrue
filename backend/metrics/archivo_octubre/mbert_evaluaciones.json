@@ -1,0 +1,45 @@
+{
+  "modelo": "mbert",
+  "version": "mBERT_BiLSTM_main_len512_seed43",
+  "orden_clases": ["falsa", "real"],
+  "evaluaciones": [
+    {
+      "conjunto": "validacion",
+      "n": 132,
+      "matriz_confusion": [[38, 5], [2, 87]],
+      "exactitud": 0.946969696969697,
+      "precision_falsa": 0.95,
+      "recall_falsa": 0.8837209302325582,
+      "f1_falsa": 0.9156626506024096,
+      "f1_macro": 0.9384943087266191,
+      "fuente": "mBERT/runs/BILSTM_ES_main_len512_seed43_20261008-175737_516f4097/metrics_validation.json#validation"
+    },
+    {
+      "conjunto": "prueba_bilstm_filtrada",
+      "n": 146,
+      "matriz_confusion": [[26, 10], [0, 110]],
+      "exactitud": 0.9315068493150684,
+      "precision_falsa": 1.0,
+      "recall_falsa": 0.7222222222222222,
+      "f1_falsa": 0.8387096774193549,
+      "f1_macro": 0.8976157082748948,
+      "fuente": "mBERT/evaluations/bilstm_step6_20261008_v1/results.json#new_seed43/prueba/all"
+    },
+    {
+      "conjunto": "externa_bilstm_filtrada",
+      "n": 569,
+      "matriz_confusion": [[185, 77], [150, 157]],
+      "exactitud": 0.6010544815465729,
+      "precision_falsa": 0.5522388059701493,
+      "recall_falsa": 0.7061068702290076,
+      "f1_falsa": 0.6197654941373534,
+      "f1_macro": 0.6000860742405806,
+      "fuente": "mBERT/evaluations/bilstm_step6_20261008_v1/results.json#new_seed43/externa/all"
+    }
+  ],
+  "limitaciones": [
+    "La validación se usó para seleccionar el checkpoint; no estima rendimiento independiente.",
+    "La prueba y la externa son retrospectivas y presentan sesgos de fuente; en la externa hubo 150 noticias reales clasificadas como falsas entre 307.",
+    "La probabilidad_falsa no está calibrada como probabilidad de falsedad factual; la prueba española inédita sigue pendiente."
+  ]
+}

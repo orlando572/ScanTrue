@@ -1,6 +1,6 @@
 # Datos y modelos de ScanTrue
 
-Esta carpeta está fuera de Git (salvo este README). Reorganizada el 10 de noviembre de 2026.
+Esta carpeta está fuera de Git, salvo este README y los modelos de producción (`*_produccion/modelo/`, `*_produccion/archivo_octubre/modelo/` y `combinacion_produccion/`). Reorganizada el 10 de noviembre de 2026.
 
 ```
 datasets/
@@ -10,14 +10,13 @@ datasets/
 │   └── no_usadas/           Descargados pero sin usar por ningún modelo
 ├── unificado/               Todos los textos de las fuentes en un solo CSV (entrada del conjunto común)
 ├── embeddings/              Vectores fastText CC español (cc.es.300.vec.gz)
-├── bilstm_produccion/       BiLSTM que usa hoy la app
-│   ├── conjunto/            Particiones con que se entrenó y evaluó
-│   ├── modelo/              Checkpoint, config, historial y resultados
-│   └── evaluaciones/        Predicciones de la prueba externa y estudio de longitud mínima
-├── mbert_produccion/        mBERT que usa hoy la app (ver mBERT/docs/RESULTADOS_PRODUCCION.md)
-│   ├── conjunto/            Datos con que se entrenó y evaluó
-│   ├── modelo/              Checkpoint (LFS), tokenizador, selection.json y config
-│   └── evaluaciones/        Predicciones y métricas de validación, prueba y externa
+├── bilstm_produccion/       BiLSTM que usa la app
+│   ├── modelo/              B6 (desde el 11 nov 2026): modelo.pt, config, resultados y contrato.json
+│   └── archivo_octubre/     BiLSTM de octubre, sin uso: modelo/, conjunto/ y evaluaciones/
+├── mbert_produccion/        Modelo transformer que usa la app (clave «mbert»)
+│   ├── modelo/              BETO M3b semilla 42: best_model/ (pesos con LFS, tokenizador) y contrato.json
+│   └── archivo_octubre/     mBERT de octubre, sin uso: modelo/ (LFS, tokenizador, selection.json)
+├── combinacion_produccion/  combinacion.json: temperaturas y pesos (0,2 BiLSTM / 0,8 BETO) que lee el backend
 ├── modelos_base/            Modelos base de Hugging Face para mBERT (mbert/, beto/, …)
 ├── comun_v1/                Conjunto común (versión 1.1), el mismo para BiLSTM y mBERT
 └── comun_v1_corridas/       Resultados con el conjunto común

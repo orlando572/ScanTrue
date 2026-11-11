@@ -1,6 +1,6 @@
 # ScanTrue 🔎
 
-Extensión para Chrome y Chromium que analiza texto seleccionado en páginas web. Usa una API local con modelos BiLSTM y mBERT; Supabase gestiona la autenticación y el historial.
+Extensión para Chrome y Chromium que analiza texto seleccionado en páginas web. Usa una API local con dos modelos, un BiLSTM y BETO (BERT en español), cuyas probabilidades se calibran y combinan; Supabase gestiona la autenticación y el historial.
 
 ## Tecnologías 🧰
 
@@ -9,10 +9,10 @@ Extensión para Chrome y Chromium que analiza texto seleccionado en páginas web
 | Extensión | JavaScript, React, Vite, Tailwind CSS y Chrome Manifest V3 |
 | API | Python 3.14, FastAPI, PyTorch y Transformers |
 | Base de datos y autenticación | Supabase Auth y PostgreSQL |
-| Modelos | BiLSTM y mBERT |
+| Modelos | BiLSTM (B6) y BETO (M3b), calibrados y combinados 20/80 |
 | Registro blockchain (opcional) | Solidity, Foundry y Anvil |
 
-El checkpoint BiLSTM está en `datasets/bilstm_produccion/modelo/`. Los pesos de mBERT se descargan con Git LFS.
+Los modelos de producción están en `datasets/bilstm_produccion/modelo/` y `datasets/mbert_produccion/modelo/` (BETO; sus pesos se descargan con Git LFS: `git lfs pull`), cada uno con su `contrato.json`. La combinación está en `datasets/combinacion_produccion/combinacion.json`. Cómo se eligieron: [docs/mejora_modelos/](docs/mejora_modelos/README.md).
 
 ## Requisitos
 

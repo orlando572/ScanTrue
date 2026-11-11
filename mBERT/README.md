@@ -19,8 +19,8 @@ Los datos y los modelos viven en `datasets/` (ver [datasets/README.md](../datase
 
 | Carpeta | Contenido | En Git |
 | --- | --- | --- |
-| `datasets/mbert_produccion/modelo/` | Checkpoint que usa la app, tokenizador y `selection.json` | Sí (pesos con LFS) |
-| `datasets/mbert_produccion/conjunto/`, `evaluaciones/` | Datos y evaluaciones de ese checkpoint | No |
+| `datasets/mbert_produccion/modelo/` | BETO M3b (semilla 42) que usa la app: `best_model/` (pesos con LFS, tokenizador) y `contrato.json` | Sí (pesos con LFS) |
+| `datasets/mbert_produccion/archivo_octubre/modelo/` | mBERT de octubre, archivado sin uso, con su tokenizador y `selection.json` | Sí (pesos con LFS) |
 | `datasets/modelos_base/` | Modelos base descargados de Hugging Face (`mbert/`, después `beto/`, …) | No |
 | `datasets/comun_v1/` | Conjunto común, el mismo que el BiLSTM | No |
 | `datasets/comun_v1_corridas/mbert/` | Resultados de los experimentos nuevos | No |
@@ -68,6 +68,8 @@ Pruebas:
 
 ## Modelo de producción
 
-`google-bert/bert-base-multilingual-cased`, 512 tokens, semilla 43, etiquetas `0=REAL`, `1=FALSA`, umbral 0,5. F1 macro 0,9385 en su validación de 132 y **0,600** en la externa de 569 (150 de 307 reales marcadas falsas). Detalle y límites en [docs/RESULTADOS_PRODUCCION.md](docs/RESULTADOS_PRODUCCION.md). Lo carga [`backend/models/mbert.py`](../backend/models/mbert.py), que verifica los SHA-256 antes de inferir.
+Desde el 11 nov 2026 la app usa **BETO M3b** (`dccuchile/bert-base-spanish-wwm-cased` + brazo `usmsc`), semilla 42, 256 tokens, etiquetas `0 = real`, `1 = falsa`, temperatura T = 2,1347 y umbral 0,5. F1 macro de artículo 0,721 en la validación por fuente ([docs/RESULTADOS_MODELO_NUEVO.md](docs/RESULTADOS_MODELO_NUEVO.md)). Lo carga [`backend/models/mbert.py`](../backend/models/mbert.py) a partir de `datasets/mbert_produccion/modelo/contrato.json`, verificando los SHA-256 antes de inferir, y se combina con el BiLSTM (80 % BETO, 20 % BiLSTM; [04_CALIBRACION_CONJUNTA.md](../docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md)). La clave interna sigue siendo `mbert`.
+
+El mBERT de octubre (`google-bert/bert-base-multilingual-cased`, 512 tokens, semilla 43; F1 macro 0,600 en la externa de 569) se conserva sin uso en `datasets/mbert_produccion/archivo_octubre/`. Detalle en [docs/RESULTADOS_PRODUCCION.md](docs/RESULTADOS_PRODUCCION.md).
 
 Los scripts de octubre (preparación, matriz de entrenamiento, selección, evaluación e inferencia manual) se retiraron el 10 nov 2026 y están en el historial de Git (commit `ece259a`).

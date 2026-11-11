@@ -1,0 +1,38 @@
+{
+  "version": "comun_v1.1_conjunta_20261111",
+  "metodo": "media_ponderada_logits_calibrados",
+  "formula": "p_falsa = sigmoide(w_bilstm * z_bilstm / T_bilstm + w_mbert * z_mbert / T_mbert), z = logit_falsa - logit_real",
+  "temperaturas": {
+    "bilstm": 8.4468,
+    "mbert": 2.1347
+  },
+  "pesos": {
+    "bilstm": 0.2,
+    "mbert": 0.8
+  },
+  "motivo_pesos": "Decisión de diseño de Orlando (11 nov 2026): los dos modelos cuentan en el resultado unificado. La regresión logística aprendida da al BiLSTM un coeficiente negativo y, con coeficientes ≥ 0, un peso 0. Se fija 0,20 para el BiLSTM: es el mayor peso probado cuya pérdida de F1 frente a mBERT solo queda por debajo del margen de 0,02 de la regla común (§6).",
+  "umbral_falsa": 0.5,
+  "regla_discrepancia": null,
+  "nota_regla_discrepancia": "Evaluada en RESUMEN.md; no se aplica hasta que se decida.",
+  "semillas": {
+    "bilstm": 42,
+    "mbert": 42
+  },
+  "promediar_logits_semillas_mbert": false,
+  "contratos": {
+    "bilstm": "comun_v1.1_B6_20261107",
+    "mbert": "comun_v1.1_M3b_20261111"
+  },
+  "entradas": {
+    "bilstm": {
+      "ruta": "datasets/comun_v1_corridas/bilstm/final/predicciones_fuera_de_pliegue.csv",
+      "sha256": "0c528cbecb486b8ceb3be8b5fcd80a9865c75d1de640ac4818d9a49c7836adb0"
+    },
+    "mbert": {
+      "ruta": "datasets/comun_v1_corridas/mbert/final/predicciones_fuera_de_pliegue.csv",
+      "sha256": "4ada9a2ecb71d325096fa1f5d5e0f02a0395fbd63dd34271e8605e2a77943b8e"
+    }
+  },
+  "sha256_conjunto": "c13a9721648a864177d8a1e85de6f5e7e0823430596c3dd75e5d43da0e14aff9",
+  "sha256_script": "569ed3d0a17a959f27955599dc697f09d2f14739adb116cc55525748f93398e8"
+}

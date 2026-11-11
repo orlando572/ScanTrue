@@ -1,6 +1,8 @@
 # Resultados y pruebas del mBERT de producción
 
-Es el mBERT que usa hoy la app: `google-bert/bert-base-multilingual-cased` (revisión `3f076fdb1ab68d5b2880cb87a0886f315b8146f8`) ajustado como clasificador binario, configuración `main/512`, semilla 43, corrida `BILSTM_ES_main_len512_seed43_20261008-175737_516f4097`. Se entrenó el 8 de octubre de 2026.
+> **Archivado el 11 nov 2026:** la app usa ahora BETO M3b ([RESULTADOS_MODELO_NUEVO.md](RESULTADOS_MODELO_NUEVO.md)); este modelo se conserva sin uso en `datasets/mbert_produccion/archivo_octubre/`.
+
+Fue el mBERT de la app hasta el 11 nov 2026: `google-bert/bert-base-multilingual-cased` (revisión `3f076fdb1ab68d5b2880cb87a0886f315b8146f8`) ajustado como clasificador binario, configuración `main/512`, semilla 43, corrida `BILSTM_ES_main_len512_seed43_20261008-175737_516f4097`. Se entrenó el 8 de octubre de 2026.
 
 > Los scripts que lo prepararon, entrenaron, eligieron y evaluaron (`step1_…` a `step7_…`, `train_bilstm_step4.py`, `run_bilstm_step4_matrix.py`, `select_bilstm_step5.py`, `evaluate_bilstm_step6.py`, `inferir_bilstm_mbert.py`…) y los informes originales (`PASO_3`, `PASO_4`, `PLAN_REENTRENAMIENTO_BILSTM_20261008.md`, `REPORTE_PASO_5/6`, `MODELO_NUEVO_TARJETA.md`, `CIERRE_RETROSPECTIVO.md`) se retiraron en la limpieza del 10 nov 2026. Están en el historial de Git (commit `ece259a`). El informe técnico completo sigue en [INFORME_TECNICO.md](INFORME_TECNICO.md).
 
@@ -8,14 +10,14 @@ Es el mBERT que usa hoy la app: `google-bert/bert-base-multilingual-cased` (revi
 
 | Qué | Ruta | En Git |
 | --- | --- | --- |
-| Pesos (`model.safetensors`, 711 MB), `config.json` y tokenizador copiado | `datasets/mbert_produccion/modelo/best_model/` | Sí, pesos con LFS |
-| Tokenizador congelado (el que verifica el backend) | `datasets/mbert_produccion/modelo/tokenizer_mbert_cased/` | Sí |
-| Contrato de selección | `datasets/mbert_produccion/modelo/selection.json` | Sí |
-| Configuración, hashes de datos, log y métricas de la corrida | `datasets/mbert_produccion/modelo/{config,data_manifest,metrics_validation}.json`, `train_log.jsonl` | Sí |
+| Pesos (`model.safetensors`, 711 MB), `config.json` y tokenizador copiado | `datasets/mbert_produccion/archivo_octubre/modelo/best_model/` | Sí, pesos con LFS |
+| Tokenizador congelado | `datasets/mbert_produccion/archivo_octubre/modelo/tokenizer_mbert_cased/` | Sí |
+| Contrato de selección | `datasets/mbert_produccion/archivo_octubre/modelo/selection.json` | Sí |
+| Configuración, hashes de datos, log y métricas de la corrida | `datasets/mbert_produccion/archivo_octubre/modelo/{config,data_manifest,metrics_validation}.json`, `train_log.jsonl` | Sí |
 | Datos de entrenamiento y evaluación (JSONL) y su auditoría | `datasets/mbert_produccion/conjunto/` | No (textos de terceros) |
 | Predicciones y métricas de validación, prueba y externa | `datasets/mbert_produccion/evaluaciones/` | No |
 
-`config.json` y `selection.json` conservan las rutas absolutas de entonces (`D:\ScanTrue\mBERT\runs\…`). El backend no las usa: lee la carpeta `datasets/mbert_produccion/modelo/` y verifica los SHA-256 antes de cargar.
+`config.json` y `selection.json` conservan las rutas absolutas de entonces (`D:\ScanTrue\mBERT\runs\…`). El backend ya no usa este modelo.
 
 | Archivo | SHA-256 |
 | --- | --- |

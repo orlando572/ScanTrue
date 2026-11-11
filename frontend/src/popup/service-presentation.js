@@ -5,7 +5,7 @@ const PARTIAL = '#FFB21E';
 
 const services = [
   { key: 'bilstm', name: 'Modelo BiLSTM', short: 'BiLSTM', color: '#38E1FF', read: (data) => data?.modelos?.bilstm },
-  { key: 'mbert', name: 'Modelo mBERT', short: 'mBERT', color: '#A98BFF', read: (data) => data?.modelos?.mbert },
+  { key: 'mbert', name: 'Modelo BETO', short: 'BETO', color: '#A98BFF', read: (data) => data?.modelos?.mbert },
   { key: 'cuentas', name: 'Cuentas e historial', short: 'Cuentas', color: '#3DFF9A', read: (data) => data?.supabase_configurado },
   {
     key: 'cadena', name: 'Registro blockchain', short: 'Cadena', color: '#E6F4FF',

@@ -19,7 +19,7 @@ test('P09 consulta las métricas públicas sin sesión y conserva los datos reci
   finally { globalThis.fetch = originalFetch; }
 });
 
-test('P09 consulta las pruebas de mBERT por separado', async () => {
+test('P09 consulta las pruebas de BETO (clave mbert) por separado', async () => {
   const originalFetch = globalThis.fetch;
   const payload = { modelo: 'mbert', evaluaciones: [{ conjunto: 'prueba_bilstm_filtrada', exactitud: 0.94, f1_macro: 0.93 }] };
   globalThis.fetch = async (url, options) => {
@@ -30,7 +30,7 @@ test('P09 consulta las pruebas de mBERT por separado', async () => {
   try {
     assert.deepEqual(await getPublishedMetrics('mbert'), payload);
     const shown = presentMetrics(payload);
-    assert.equal(shown.model, 'mBERT');
+    assert.equal(shown.model, 'BETO');
     assert.equal(shown.evaluations[0].name, 'Prueba');
     assert.equal(shown.evaluations[0].accuracy, '94 %');
     assert.equal(shown.evaluations[0].f1, '93 %');

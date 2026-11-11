@@ -1,5 +1,7 @@
 # Feature implementada: contrato de integración con el frontend
 
+> **Nota (11 nov 2026):** los modelos, los límites de lectura y los pesos del resultado unificado cambiaron. Lo vigente está en [CAMBIO_MODELOS_CALIBRADOS.md](CAMBIO_MODELOS_CALIBRADOS.md); este documento se conserva como registro.
+
 > Este documento registra la entrega anterior. La integración posterior de
 > mBERT cambió los límites de lectura y el texto guardado; el contrato vigente
 > y la nota para frontend están en [CAMBIO_CONTRATO_MBERT.md](CAMBIO_CONTRATO_MBERT.md).

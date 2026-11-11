@@ -48,7 +48,7 @@ class AnalysisService {
   +predictor: BilstmPredictor
   +mbert_predictor: Predictor | None
   +mbert_text_policy: MbertTokenizer | None
-  +mbert_weight: float
+  +combination: Combination
   +analyze(payload) AnalysisOutcome
   -_bilstm_prefix(text) tuple~str, bool~
 }
@@ -112,8 +112,25 @@ class MbertPredictor {
   +predict(text) dict
 }
 class AnalysisSettings {
-  +mbert_weight: float
+  +combination_file: Path
   +from_environment() AnalysisSettings
+}
+class ModelContract {
+  +model: str
+  +version: str
+  +max_tokens: int
+  +temperature: float
+  +threshold: float
+  +load(path, model) ModelContract
+  +verify(weights)
+}
+class Combination {
+  +version: str
+  +weights: dict
+  +temperatures: dict
+  +load(path) Combination
+  +check(contract)
+  +combine(probabilities) tuple
 }
 class SupabaseSettings {
   +url: str
@@ -305,6 +322,11 @@ AnalysisService ..> AnalysisResponse
 BilstmPredictor ..|> Predictor
 MbertPredictor ..|> Predictor
 MbertPredictor --> MbertTokenizer
+AnalysisService --> Combination
+BilstmPredictor --> ModelContract
+MbertTokenizer --> ModelContract
+Combination ..> ModelContract : comprueba
+AppModule --> Combination : carga
 AnalysisService --> BilstmPredictor
 AnalysisService --> MbertPredictor
 IdentityService --> SupabaseSettings

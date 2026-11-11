@@ -6,9 +6,13 @@ import { SegmentTrack } from '../components/HudDecor.jsx';
 import ModelIcon from '../components/ModelIcon.jsx';
 
 // Cada modelo usa el mismo color que su luz en la tira de estado.
-const modelColors = { BiLSTM: { key: 'bilstm', color: '#38E1FF' }, mBERT: { key: 'mbert', color: '#A98BFF' } };
+const modelColors = { BiLSTM: { key: 'bilstm', color: '#38E1FF' }, BETO: { key: 'mbert', color: '#A98BFF' } };
 // Etiqueta de color según el tipo de conjunto de prueba.
-const setTones = { 'Validación': 'green', 'Prueba interna': 'magenta', 'Fuentes reservadas': 'amber', 'Prueba externa': 'amber', 'Prueba': 'cyan' };
+const setTones = {
+  'Validación': 'green', 'Prueba interna': 'magenta', 'Fuentes reservadas': 'amber', 'Prueba externa': 'amber', 'Prueba': 'cyan',
+  'Fuentes no vistas': 'green', 'Fuente no vista: v1': 'cyan', 'Fuente no vista: FakeDeS': 'cyan',
+  'Fuente no vista: Polyglot': 'cyan', 'Prueba congelada': 'magenta',
+};
 
 function Evaluation({ evaluation }) {
   const accuracy = Number.parseFloat(evaluation.accuracy ?? '');
@@ -52,7 +56,7 @@ export default function MetricsScreen({ onBack }) {
       responses.forEach((result, index) => {
         const metrics = result.status === 'fulfilled' ? result.value : null;
         if (metrics?.modelo === models[index] && Array.isArray(metrics.evaluaciones)) available.push(metrics);
-        else missing.push(models[index] === 'mbert' ? 'mBERT' : 'BiLSTM');
+        else missing.push(models[index] === 'mbert' ? 'BETO' : 'BiLSTM');
       });
       if (available.length === 0) throw new Error('No pudimos cargar las métricas.');
       setData(available);

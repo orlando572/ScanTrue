@@ -16,14 +16,17 @@ Este documento muestra **solo el recorrido principal de una noticia**. Cada frag
 
 ## 2. La API prepara los modelos y recibe la noticia
 
-**Fragmento de `lifespan()`**, en [`backend/app.py`](../app.py). Al iniciar el backend, crea los predictores y los entrega a `AnalysisService`, que queda disponible para las peticiones. Los checkpoints se cargan una vez, no por cada noticia. Si mBERT falla al cargar, BiLSTM puede seguir disponible.
+**Fragmento de `lifespan()`**, en [`backend/app.py`](../app.py). Al iniciar el backend, carga la combinación calibrada (`datasets/combinacion_produccion/combinacion.json`), crea los predictores a partir de sus contratos y comprueba que cada contrato coincide con la combinación (misma versión y temperatura). Los checkpoints se cargan una vez, no por cada noticia. Si BETO (clave `mbert`) falla al cargar, el BiLSTM puede seguir disponible.
 
 ```python
     try:
         analysis_settings = AnalysisSettings.from_environment()
+        combination = Combination.load(analysis_settings.combination_file)
         bilstm_predictor = BilstmPredictor()
+        combination.check(bilstm_predictor.contract)
         try:
             mbert_text_policy = MbertTokenizer()
+            combination.check(mbert_text_policy.contract)
         except Exception:
             logger.exception("No se pudo cargar el tokenizador mBERT")
             mbert_text_policy = None
@@ -38,7 +41,7 @@ Este documento muestra **solo el recorrido principal de una noticia**. Cada frag
             bilstm_predictor,
             mbert_predictor=mbert_predictor,
             mbert_text_policy=mbert_text_policy,
-            mbert_weight=analysis_settings.mbert_weight,
+            combination=combination,
         )
 ```
 
@@ -80,30 +83,33 @@ def clean_news_text(value: str) -> str:
     return WHITESPACE.sub(" ", text).strip()
 ```
 
-**Fragmento de `AnalysisService.analyze()`**, en [`backend/services/analysis.py`](../services/analysis.py). Recibe el texto limpio. Si hay tokenizador mBERT, `prepare()` lo recorta a su límite y devuelve `(texto, recortado, cantidad_de_tokens)`; si no está disponible, `_bilstm_prefix()` usa el límite de BiLSTM. El resultado `model_input` es el texto que reciben los predictores.
+**Fragmento de `AnalysisService.analyze()`**, en [`backend/services/analysis.py`](../services/analysis.py). Recibe el texto limpio. `_bilstm_prefix()` lo recorta a las 192 palabras del BiLSTM y, si hay tokenizador de BETO, `prepare()` lo recorta a sus 256 subpalabras y devuelve `(texto, recortado, cantidad_de_tokens)`. Los dos recortes son prefijos del mismo texto: `model_input` es el más largo, y cada predictor lee dentro de él hasta su propio límite.
 
 ```python
-        model_input = text
+        # Cada modelo lee hasta su propio límite (BiLSTM 192 palabras, mBERT 256 subpalabras).
+        # Los dos recortes son prefijos del mismo texto: se guarda y se envía el más largo y
+        # cada predictor recorta dentro de él lo que le corresponde.
+        model_input, truncated = self._bilstm_prefix(text)
         mbert_predictor = self.mbert_predictor
         mbert_prepare_failed = False
+        mbert_token_count = None
         if self.mbert_text_policy is not None:
             try:
-                model_input, truncated, mbert_token_count = self.mbert_text_policy.prepare(
-                    model_input
+                mbert_input, mbert_truncated, mbert_token_count = self.mbert_text_policy.prepare(
+                    text
                 )
+                if len(mbert_input) > len(model_input):
+                    model_input = mbert_input
+                truncated = truncated and mbert_truncated
             except Exception:
                 logger.exception("Falló la tokenización mBERT")
-                model_input, truncated = self._bilstm_prefix(model_input)
                 mbert_token_count = None
                 mbert_predictor = None
                 mbert_prepare_failed = True
-        else:
-            model_input, truncated = self._bilstm_prefix(model_input)
-            mbert_token_count = None
         token_count = len(self.predictor.tokenize(model_input))
 ```
 
-**Fragmento del mismo método `AnalysisService.analyze()`**. Antes de llamar a los modelos exige al menos **100 tokens** legibles. mBERT trabaja con hasta **512 tokens de su tokenizador**; el BiLSTM seleccionado lee hasta **192 tokens** según su checkpoint.
+**Fragmento del mismo método `AnalysisService.analyze()`**. Antes de llamar a los modelos exige al menos **100 tokens** legibles. BETO trabaja con hasta **256 subpalabras de su tokenizador**; el BiLSTM lee hasta **192 palabras**, según sus contratos.
 
 ```python
         if token_count < MIN_INPUT_TOKENS:
@@ -134,54 +140,66 @@ def clean_news_text(value: str) -> str:
                 )
 ```
 
-**Fragmento de `load_model()`**, en [`backend/models/bilstm.py`](../models/bilstm.py). Antes de analizar noticias, recibe la ruta del checkpoint, reconstruye la red, carga sus pesos aprendidos y devuelve modelo, vocabulario y límite de tokens.
+**Fragmento de `load_model()`**, en [`backend/models/bilstm.py`](../models/bilstm.py). Antes de analizar noticias, recibe el contrato (`datasets/bilstm_produccion/modelo/contrato.json`), verifica el SHA-256 del checkpoint y que su orden de clases, longitud y pooling coinciden con el contrato, reconstruye la red, carga sus pesos y devuelve modelo, vocabulario y límite de tokens.
 
 ```python
+        contract.verify(path)
+    device = resolve_device(device_name)
     checkpoint = torch.load(path, map_location="cpu", weights_only=True)
     config = checkpoint["config"]
+    if config.get("etiquetas") != contract.data["etiquetas"]:
+        raise ValueError("El orden de clases del checkpoint BiLSTM no coincide con su contrato")
+    if int(config["max_len"]) != contract.max_tokens:
+        raise ValueError("La longitud del checkpoint BiLSTM no coincide con su contrato")
+    if config.get("pooling", "final") != contract.data.get("pooling", "final"):
+        raise ValueError("El pooling del checkpoint BiLSTM no coincide con su contrato")
     model = BiLSTM(
         len(checkpoint["vocab"]),
         config["embedding_dim"],
         config["hidden_dim"],
         config["dropout"],
+        config.get("pooling", "final"),
     )
     model.load_state_dict(checkpoint["state_dict"])
     model.to(device).eval()
-    return model, checkpoint["vocab"], config["max_len"], device
+    return model, checkpoint["vocab"], contract.max_tokens, device
 ```
 
-**Método completo `BilstmPredictor.predict()`**, en [`backend/models/bilstm.py`](../models/bilstm.py). Recibe la noticia preparada. `predict_texts()` la convierte con el vocabulario y los pesos del checkpoint BiLSTM; devuelve una probabilidad de noticia falsa. Este método devuelve además clase, versión y tokens leídos. El umbral de clase falsa es **0,5**.
+**Fragmento de `predict_logits()`**, en el mismo archivo. Tokeniza, limita a `max_len` y devuelve, por texto, `logit_falsa − logit_real` (salida 1 = falsa, salida 0 = real, como en el contrato).
+
+```python
+            logits = model(padded.to(device), lengths).float()
+            # Contrato: salida 0 = real, salida 1 = falsa.
+            margins.extend((logits[:, 1] - logits[:, 0]).cpu().tolist())
+    return margins
+```
+
+**Función `calibrated_probability()`**, en [`backend/models/contrato.py`](../models/contrato.py). Convierte esa diferencia en probabilidad calibrada dividiéndola entre la temperatura del contrato (escalado de temperatura).
+
+```python
+def calibrated_probability(logit_fake_minus_real: float, temperature: float) -> float:
+    return sigmoid(logit_fake_minus_real / temperature)
+```
+
+**Método completo `BilstmPredictor.predict()`**, en [`backend/models/bilstm.py`](../models/bilstm.py). Devuelve probabilidad calibrada, clase según el umbral del contrato (0,5), versión del contrato y tokens leídos.
 
 ```python
     def predict(self, text: str) -> dict[str, str | float | int]:
         words = tokenize(text)
-        probability_fake = predict_texts(
+        margin = predict_logits(
             self.model, self.vocab, self.max_len, self.device, [text]
         )[0]
+        probability_fake = calibrated_probability(margin, self.contract.temperature)
         return {
             "modelo": "bilstm",
             "version": self.version,
-            "clase": "falsa" if probability_fake >= 0.5 else "real",
+            "clase": "falsa" if probability_fake >= self.contract.threshold else "real",
             "probabilidad_falsa": probability_fake,
             "tokens_leidos": min(len(words), self.max_len),
         }
 ```
 
-**Fragmento de `predict_texts()`**, en el mismo archivo. Muestra la parte clave: tokeniza, limita a `max_len`, sustituye cada palabra por su índice de vocabulario y obtiene de `scores[:, 0]` la probabilidad de la clase falsa.
-
-```python
-            for value in texts[start : start + batch_size]:
-                words = tokenize(value)[:max_len]
-                sequences.append([vocab.get(word, 1) for word in words] or [1])
-```
-
-```python
-            scores = model(padded.to(device), lengths).softmax(dim=1)
-            probabilities.extend(scores[:, 0].cpu().tolist())
-    return probabilities
-```
-
-**Fragmento de `MbertPredictor.__init__()`**, en [`backend/models/mbert.py`](../models/mbert.py). Al iniciar la API, carga desde el checkpoint local el modelo mBERT y lo deja en modo evaluación.
+**Fragmento de `MbertPredictor.__init__()`**, en [`backend/models/mbert.py`](../models/mbert.py). Al iniciar la API, tras verificar el SHA-256 de los pesos y el orden de clases, carga BETO desde el checkpoint local y lo deja en modo evaluación.
 
 ```python
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -190,7 +208,7 @@ def clean_news_text(value: str) -> str:
         ).to(self.device).eval()
 ```
 
-**Método completo `MbertPredictor.predict()`**, en [`backend/models/mbert.py`](../models/mbert.py). Recibe la misma noticia preparada. Su tokenizador genera los tensores de entrada; el modelo calcula las puntuaciones y la posición `[0, 1]` representa `FALSA`. Devuelve probabilidad, clase según el umbral guardado, versión y tokens leídos.
+**Método completo `MbertPredictor.predict()`**, en [`backend/models/mbert.py`](../models/mbert.py). Recibe la misma noticia preparada y la recorta a 256 subpalabras con su tokenizador. Calcula `logit_falsa − logit_real` y la calibra con la temperatura de su contrato.
 
 ```python
     def predict(self, text: str) -> dict[str, str | float | int]:
@@ -207,8 +225,9 @@ def clean_news_text(value: str) -> str:
                 else nullcontext()
             )
             with autocast:
-                logits = self.model(**encoded).logits
-            probability_fake = float(logits.float().softmax(dim=-1)[0, 1].item())
+                logits = self.model(**encoded).logits.float()[0]
+        margin = float((logits[1] - logits[0]).item())
+        probability_fake = calibrated_probability(margin, self.contract.temperature)
         return {
             "modelo": "mbert",
             "version": self.version,
@@ -222,7 +241,7 @@ Estas son predicciones estadísticas de los modelos. La salida de cada uno se co
 
 ## 5. Se forma el resultado conjunto
 
-**Fragmentos de `AnalysisService.analyze()`**, en [`backend/services/analysis.py`](../services/analysis.py). Usa solo modelos con `estado == "ok"`. Si responden ambos, compara sus clases. Si responde uno, recibe todo el peso; si responden dos, el peso predeterminado es **0,3 para BiLSTM y 0,7 para mBERT**. Devuelve las predicciones individuales, la probabilidad combinada, el texto utilizado y si hubo recorte.
+**Fragmentos de `AnalysisService.analyze()`**, en [`backend/services/analysis.py`](../services/analysis.py). Usa solo modelos con `estado == "ok"`. Si responden ambos, compara sus clases. La probabilidad conjunta la calcula `Combination.combine()`: si responde uno, se usa su probabilidad calibrada; si responden los dos, se combinan sus logits calibrados con **0,2 para el BiLSTM y 0,8 para BETO** (calibración conjunta, [04_CALIBRACION_CONJUNTA.md](../../docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md)). Devuelve las predicciones individuales, la probabilidad combinada con la versión de la combinación, el texto utilizado y si hubo recorte.
 
 ```python
         successful = [
@@ -240,22 +259,14 @@ Estas son predicciones estadísticas de los modelos. La salida de cada uno se co
                 if successful[0].clase == successful[1].clase
                 else "discrepan"
             )
-```
-
-```python
-        if len(successful) == 1:
-            weights = AppliedWeights(
-                bilstm=1.0 if successful[0].modelo == "bilstm" else 0.0,
-                mbert=1.0 if successful[0].modelo == "mbert" else 0.0,
-            )
-        else:
-            weights = AppliedWeights(
-                bilstm=1.0 - self.mbert_weight,
-                mbert=self.mbert_weight,
-            )
-        probability = sum(
-            result.probabilidad_falsa * getattr(weights, result.modelo)
-            for result in successful
+        # Cada modelo ya devuelve su probabilidad calibrada; se combinan sus logits
+        # (docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md).
+        probability, used_weights = self.combination.combine(
+            {result.modelo: result.probabilidad_falsa for result in successful}
+        )
+        weights = AppliedWeights(
+            bilstm=used_weights.get("bilstm", 0.0),
+            mbert=used_weights.get("mbert", 0.0),
         )
         probability = min(1.0, max(0.0, probability))
         response = AnalysisResponse(
@@ -264,6 +275,7 @@ Estas son predicciones estadísticas de los modelos. La salida de cada uno se co
                 probabilidad_falsa=probability,
                 modelos_utilizados=[result.modelo for result in successful],
                 pesos_aplicados=weights,
+                version_combinacion=self.combination.version,
             ),
             comparacion=comparison,
             nota="Las probabilidades son salidas experimentales de clasificadores; no verifican hechos.",
@@ -271,6 +283,21 @@ Estas son predicciones estadísticas de los modelos. La salida de cada uno se co
         return AnalysisOutcome(
             response=response, text=model_input, truncated=truncated,
         )
+```
+
+**Método `Combination.combine()`**, en [`backend/models/contrato.py`](../models/contrato.py).
+
+```python
+    def combine(self, probabilities: dict[str, float]) -> tuple[float, dict[str, float]]:
+        """Combina las probabilidades calibradas disponibles. Si solo hay un modelo, usa la suya."""
+        if not probabilities:
+            raise ValueError("No hay probabilidades que combinar")
+        if len(probabilities) == 1:
+            (name, probability), = probabilities.items()
+            return probability, {name: 1.0}
+        weights = {name: self.weights[name] for name in probabilities}
+        value = sum(weight * logit(probabilities[name]) for name, weight in weights.items())
+        return sigmoid(value), weights
 ```
 
 ## 6. Se guarda y se devuelve la respuesta

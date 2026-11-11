@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { presentBreakdown } from '../src/popup/result-presentation.js';
 
-test('P06 presenta BiLSTM y mBERT con la etiqueta de cada porcentaje', () => {
+test('P06 presenta BiLSTM y BETO con la etiqueta de cada porcentaje', () => {
   assert.deepEqual(presentBreakdown({
     resultados: {
       mbert: { estado: 'ok', clase: 'falsa', probabilidad_falsa: 0.76 },
@@ -12,7 +12,7 @@ test('P06 presenta BiLSTM y mBERT con la etiqueta de cada porcentaje', () => {
   }), {
     models: [
       { key: 'bilstm', name: 'BiLSTM', percentage: '71 %', value: 71, classification: 'falsa', level: 'Probablemente falso' },
-      { key: 'mbert', name: 'mBERT', percentage: '76 %', value: 76, classification: 'falsa', level: 'Probablemente falso' },
+      { key: 'mbert', name: 'BETO', percentage: '76 %', value: 76, classification: 'falsa', level: 'Probablemente falso' },
     ],
     noneAvailable: false,
   });

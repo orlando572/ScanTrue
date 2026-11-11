@@ -1,10 +1,10 @@
 # Inicio rápido del backend de ScanTrue
 
-Ejecuta los comandos desde la raíz del repositorio. Esta rama incluye el código
-de la API, las migraciones, el contrato y el checkpoint BiLSTM. Los pesos de
-mBERT no se incluyen porque el encargado del backend ya los tiene. Antes de
-iniciar la API, coloca su archivo `model.safetensors` en
-`mBERT/runs/BILSTM_ES_main_len512_seed43_20261008-175737_516f4097/best_model/`.
+Ejecuta los comandos desde la raíz del repositorio. El repositorio incluye el
+código de la API, las migraciones, el contrato blockchain y los dos modelos de
+producción: el BiLSTM B6 y BETO (clave `mbert`), con sus contratos y la
+combinación calibrada (`datasets/combinacion_produccion/combinacion.json`).
+Los pesos de BETO van con Git LFS: después de clonar, ejecuta `git lfs pull`.
 
 ## 1. Dependencias
 

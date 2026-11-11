@@ -1,45 +1,95 @@
 {
   "modelo": "mbert",
-  "version": "mBERT_BiLSTM_main_len512_seed43",
-  "orden_clases": ["falsa", "real"],
+  "version": "comun_v1.1_M3b_20261111",
+  "orden_clases": [
+    "falsa",
+    "real"
+  ],
   "evaluaciones": [
     {
-      "conjunto": "validacion",
-      "n": 132,
-      "matriz_confusion": [[38, 5], [2, 87]],
-      "exactitud": 0.946969696969697,
-      "precision_falsa": 0.95,
-      "recall_falsa": 0.8837209302325582,
-      "f1_falsa": 0.9156626506024096,
-      "f1_macro": 0.9384943087266191,
-      "fuente": "mBERT/runs/BILSTM_ES_main_len512_seed43_20261008-175737_516f4097/metrics_validation.json#validation"
+      "conjunto": "validacion_por_fuente_articulos",
+      "n": 1568,
+      "matriz_confusion": [
+        [
+          293,
+          264
+        ],
+        [
+          76,
+          935
+        ]
+      ],
+      "exactitud": 0.7831632653061225,
+      "precision_falsa": 0.7940379403794038,
+      "recall_falsa": 0.526032315978456,
+      "f1_falsa": 0.6328293736501079,
+      "f1_macro": 0.739491609901977,
+      "fuente": "datasets/comun_v1_corridas/calibracion/predicciones_combinadas_fuera_de_pliegue.csv#p_mbert"
     },
     {
-      "conjunto": "prueba_bilstm_filtrada",
-      "n": 146,
-      "matriz_confusion": [[26, 10], [0, 110]],
-      "exactitud": 0.9315068493150684,
-      "precision_falsa": 1.0,
-      "recall_falsa": 0.7222222222222222,
-      "f1_falsa": 0.8387096774193549,
-      "f1_macro": 0.8976157082748948,
-      "fuente": "mBERT/evaluations/bilstm_step6_20261008_v1/results.json#new_seed43/prueba/all"
+      "conjunto": "fuente_no_vista_v1",
+      "n": 544,
+      "matriz_confusion": [
+        [
+          68,
+          63
+        ],
+        [
+          19,
+          394
+        ]
+      ],
+      "exactitud": 0.8492647058823529,
+      "precision_falsa": 0.7816091954022989,
+      "recall_falsa": 0.5190839694656488,
+      "f1_falsa": 0.6238532110091743,
+      "f1_macro": 0.764800168722978,
+      "fuente": "datasets/comun_v1_corridas/calibracion/predicciones_combinadas_fuera_de_pliegue.csv#p_mbert&pliegue=F1"
     },
     {
-      "conjunto": "externa_bilstm_filtrada",
-      "n": 569,
-      "matriz_confusion": [[185, 77], [150, 157]],
-      "exactitud": 0.6010544815465729,
-      "precision_falsa": 0.5522388059701493,
-      "recall_falsa": 0.7061068702290076,
-      "f1_falsa": 0.6197654941373534,
-      "f1_macro": 0.6000860742405806,
-      "fuente": "mBERT/evaluations/bilstm_step6_20261008_v1/results.json#new_seed43/externa/all"
+      "conjunto": "fuente_no_vista_fakedes",
+      "n": 444,
+      "matriz_confusion": [
+        [
+          119,
+          84
+        ],
+        [
+          40,
+          201
+        ]
+      ],
+      "exactitud": 0.7207207207207207,
+      "precision_falsa": 0.7484276729559748,
+      "recall_falsa": 0.5862068965517241,
+      "f1_falsa": 0.6574585635359116,
+      "f1_macro": 0.7108585593344957,
+      "fuente": "datasets/comun_v1_corridas/calibracion/predicciones_combinadas_fuera_de_pliegue.csv#p_mbert&pliegue=F2"
+    },
+    {
+      "conjunto": "fuente_no_vista_polyglot",
+      "n": 580,
+      "matriz_confusion": [
+        [
+          106,
+          117
+        ],
+        [
+          17,
+          340
+        ]
+      ],
+      "exactitud": 0.7689655172413793,
+      "precision_falsa": 0.8617886178861789,
+      "recall_falsa": 0.47533632286995514,
+      "f1_falsa": 0.6127167630057804,
+      "f1_macro": 0.7240487991933079,
+      "fuente": "datasets/comun_v1_corridas/calibracion/predicciones_combinadas_fuera_de_pliegue.csv#p_mbert&pliegue=F3"
     }
   ],
   "limitaciones": [
-    "La validación se usó para seleccionar el checkpoint; no estima rendimiento independiente.",
-    "La prueba y la externa son retrospectivas y presentan sesgos de fuente; en la externa hubo 150 noticias reales clasificadas como falsas entre 307.",
-    "La probabilidad_falsa no está calibrada como probabilidad de falsedad factual; la prueba española inédita sigue pendiente."
+    "BETO M3b. Validación dejando una fuente fuera (v1, FakeDeS, Polyglot): cada fuente la predice un modelo entrenado sin ella (semilla 42). El modelo de producción se entrenó después con todo el desarrollo, así que estas cifras lo aproximan, no lo miden.",
+    "Métricas por artículo (media de las probabilidades de sus fragmentos) con umbral 0,5. La prueba congelada, nunca abierta, se evaluará una sola vez y se añadirá aquí.",
+    "La probabilidad está calibrada con temperatura T = 2.1347 y el resultado unificado combina BETO (80 %) y BiLSTM (20 %) (comun_v1.1_conjunta_20261111). Mide la confianza del clasificador según el estilo del texto; no verifica hechos."
   ]
 }

@@ -136,11 +136,21 @@ def bootstrap_pareado(a: pd.DataFrame, b: pd.DataFrame, repeticiones: int = 1000
             "prob_a_mejor": float((dif > 0).mean())}
 
 
+def porcentaje_extension(p) -> np.ndarray:
+    """Porcentaje entero que muestra la extensión: Math.round(p · 100) (los ,5 suben)."""
+    return np.floor(np.asarray(p, float) * 100 + 0.5).astype(int)
+
+
 def tabla_niveles(p, y) -> list[dict]:
+    """Niveles con la misma regla que la extensión (frontend/src/popup/result-presentation.js):
+    el porcentaje se redondea a entero y cae en el primer nivel con porcentaje ≤ su tope
+    (0–20, 21–40, 41–60, 61–80, 81–100)."""
     p, y = np.asarray(p, float), np.asarray(y, int)
+    valor = porcentaje_extension(p)
     filas = []
     for inicio, fin, nombre, objetivo in NIVELES:
-        m = (p >= inicio) & ((p < fin) if fin < 1 else (p <= fin))
+        tope, base = round(fin * 100), round(inicio * 100)
+        m = (valor <= tope) & ((valor > base) if inicio > 0 else True)
         n = int(m.sum())
         pct = float(y[m].mean()) if n else None
         lo, hi = inicio, fin

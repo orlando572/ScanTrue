@@ -1,5 +1,7 @@
 # Plan de implementación del backend de ScanTrue
 
+> **Nota (11 nov 2026):** los modelos, los límites de lectura y los pesos del resultado unificado cambiaron. Lo vigente está en [CAMBIO_MODELOS_CALIBRADOS.md](CAMBIO_MODELOS_CALIBRADOS.md); este documento se conserva como registro.
+
 ## Objetivo de esta entrega
 
 Dejar una API local funcional y demostrable desde FastAPI. Debe analizar texto con los checkpoints BiLSTM y mBERT seleccionados, guardar un historial separado por identidad en PostgreSQL de Supabase, consultar métricas y registrar cada análisis terminado en una cadena EVM local. Solo se muestran predicciones reales de modelos disponibles.

@@ -1,15 +1,16 @@
 // Mínimo de tokens que exige la API (MIN_INPUT_TOKENS en backend/services/analysis.py).
 export const MIN_WORDS = 100;
 // Esos 100 tokens son del BiLSTM (\b\w+\b), es decir, palabras.
-// Máximo útil: mBERT lee 512 subpalabras (max_length en backend/models/mbert.py). Medido con su
-// tokenizador sobre 2878 fragmentos de datasets/comun_v1: 1 palabra ≈ 1,44 subpalabras, así que
-// 510 subpalabras útiles ≈ 354 palabras (p10–p90: 328–380). Lo que pase de ahí se recorta.
-export const MAX_WORDS = 350;
+// Máximo útil: el BiLSTM lee 192 palabras y BETO 256 subpalabras (max_tokens en los contratos de
+// datasets/*_produccion/modelo/contrato.json). Medido con el tokenizador de BETO sobre los fragmentos
+// de datasets/comun_v1 que recorta: 254 subpalabras útiles ≈ 197 palabras (p10–p90: 181–209).
+// Lo que pase de ~200 palabras no lo lee ningún modelo.
+export const MAX_WORDS = 200;
 // A partir del 80 % del máximo útil la longitud se considera buena.
-export const GOOD_WORDS = 280;
+export const GOOD_WORDS = 160;
 
 // Estado de longitud compartido por el panel y la barra de la página:
-// short (rojo) < 100 ≤ ready (amarillo) < 280 ≤ good (verde) < 350 ≤ full (dorado).
+// short (rojo) < 100 ≤ ready (amarillo) < 160 ≤ good (verde) < 200 ≤ full (dorado).
 export function lengthLevel(words) {
   if (words < MIN_WORDS) return 'short';
   if (words < GOOD_WORDS) return 'ready';
