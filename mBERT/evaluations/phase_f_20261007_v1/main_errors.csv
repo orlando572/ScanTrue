@@ -1,0 +1,286 @@
+id,fuente,tema,anio,palabras,real,predicho,prob_falsa,tipo
+5ac2b0e6d9a8d46f3cad,El País,Internacional,sin fecha,301,0,1,0.9252299070358276,FP
+e53bb9a1f3fbc1834848,El Financiero,Covid-19,sin fecha,212,0,1,0.9244152307510376,FP
+09a14fec1fbfb2f63351,Tamaulipas Gob,Covid-19,sin fecha,650,0,1,0.9233161807060242,FP
+5a5617cde92af8c9e68d,Milenio,Sociedad,sin fecha,351,0,1,0.9222025275230408,FP
+bd2022a7251eaed76150,El País,Sociedad,sin fecha,1121,0,1,0.9184802770614624,FP
+af212e2da108def7fcb6,El Universal,Covid-19,sin fecha,1193,0,1,0.9118099808692932,FP
+adc7bd3453f946f4de6a,El País,Sociedad,sin fecha,188,0,1,0.907967209815979,FP
+3097d419731587b6ffaa,Marca,Covid-19,sin fecha,282,0,1,0.907312273979187,FP
+35bf8a166c588ee2b70f,UNAM,Covid-19,sin fecha,637,0,1,0.9046505093574524,FP
+41d78890108187223f93,Milenio,Covid-19,sin fecha,439,0,1,0.9043130874633789,FP
+c8bc9b0388bb7bdf9885,Proceso,Sociedad,sin fecha,689,0,1,0.9039745330810547,FP
+7aef15ab65a251105442,am de Queretaro,Covid-19,sin fecha,769,0,1,0.9005298018455505,FP
+a68dc82b7bae169d1205,Ministerio de Salud,Covid-19,sin fecha,389,0,1,0.9001793265342712,FP
+9aa21d9dc4277b016ac1,El Financiero,Covid-19,sin fecha,278,0,1,0.8998277187347412,FP
+ad5bc36c60a644379525,Milenio,Sociedad,sin fecha,568,0,1,0.8991213440895081,FP
+3288999493636cec1e72,CNN,Covid-19,sin fecha,614,0,1,0.8980534672737122,FP
+15f58284b0752311e5cb,asuntoslegales,Sociedad,sin fecha,286,0,1,0.8980534672737122,FP
+75ec4c5acc1642150ec0,France 24,Sociedad,sin fecha,592,0,1,0.896251380443573,FP
+6793a25e8de7670e0f06,El Heraldo,Covid-19,sin fecha,639,0,1,0.896251380443573,FP
+8203197eb51797b58499,El Universal,Covid-19,sin fecha,607,0,1,0.896251380443573,FP
+12c460114a31c11ab945,El Universal,Covid-19,sin fecha,562,0,1,0.8918110132217407,FP
+aa86a249390d2b82f4d5,El Financiero,Internacional,sin fecha,1223,0,1,0.8918110132217407,FP
+621984dd1029f9c6646c,Milenio,Sociedad,sin fecha,715,0,1,0.888372004032135,FP
+0bb4cced56a1c5fe4ed3,Minsalud,Covid-19,sin fecha,727,0,1,0.8816148638725281,FP
+69e31d5423d154f83c45,El comercio,Covid-19,sin fecha,328,0,1,0.879974365234375,FP
+b40eaca8d0a7b974ca03,El comercio,Política,sin fecha,339,0,1,0.8787311315536499,FP
+b9c69d27b6c7c1cd3a52,El Tiempo,Covid-19,sin fecha,1028,0,1,0.8783142566680908,FP
+1f466a285cd7e8fcf89b,Infobae,Política,sin fecha,532,0,1,0.8774768114089966,FP
+476793c8a1774f076377,El Universal,Covid-19,sin fecha,417,0,1,0.8770562410354614,FP
+2709c7aaa61f44bc4088,BBC,Covid-19,sin fecha,693,0,1,0.8757869601249695,FP
+97aef73c869d687ae781,Excelsior,Covid-19,sin fecha,496,0,1,0.8757869601249695,FP
+a49bb320e048bf0cc09a,El Diario,Política,sin fecha,974,0,1,0.875361442565918,FP
+2b34ae119443704b54a9,El Universal,Sociedad,sin fecha,247,0,1,0.8749346137046814,FP
+3deadb1175698cf76b3b,El País,Sociedad,sin fecha,536,0,1,0.8745065331459045,FP
+03684cd7d7892557f20f,Excelsior,Política,sin fecha,298,0,1,0.873214840888977,FP
+639c8ab001d3c96c4edf,DW Made for Minds,Covid-19,sin fecha,497,0,1,0.873214840888977,FP
+9ffb4bfd70f4d58e5f7e,Semana,Sociedad,sin fecha,414,0,1,0.8723474144935608,FP
+7a464e1f72b4d65744a4,El País,Sociedad,sin fecha,700,0,1,0.8723474144935608,FP
+5c8e10042fd695d75fb7,Antena 3,Sociedad,sin fecha,421,0,1,0.8719117641448975,FP
+37ee2b9ded0c21c80db9,El Financiero,Política,sin fecha,827,0,1,0.8705973029136658,FP
+9ecf2f14b6adf1b9f2b8,Milenio,Sociedad,sin fecha,178,0,1,0.8701565861701965,FP
+52d27550b492c66d965b,BBC News,Sociedad,sin fecha,1777,0,1,0.8692712783813477,FP
+418994d30fe16905643f,El Pais,Sociedad,sin fecha,750,0,1,0.8670357465744019,FP
+e315b6276681ab8ab201,El Universal,Covid-19,sin fecha,142,0,1,0.8665847778320312,FP
+4c1f8a27c90ac7f3d7a8,Noroeste,Política,sin fecha,1183,0,1,0.8652240633964539,FP
+3e9387ecde548bf3b28a,Redaccion Medica,Sociedad,sin fecha,496,0,1,0.8652240633964539,FP
+98f024d6f18731f3b31f,Heraldo,Sociedad,sin fecha,329,0,1,0.8629302382469177,FP
+da4ae80d0dc5b4090514,El Universal,Política,sin fecha,441,0,1,0.8624675869941711,FP
+c6a6cdd645f3eead4ee8,Milenio,Ciencia,sin fecha,197,0,1,0.8615382313728333,FP
+8672e0a55ee4bc065a17,El Economista,Covid-19,sin fecha,351,0,1,0.8615382313728333,FP
+5e79854ff391301037dc,Milenio,Ambiental,sin fecha,590,0,1,0.8615382313728333,FP
+4d708f1968cb2661693b,La Vanguardia,Sociedad,sin fecha,318,0,1,0.8601343035697937,FP
+7fda11689e581b3740a1,CNN,Covid-19,sin fecha,1086,0,1,0.859663724899292,FP
+5a51d98630e39317d86a,BBC News,Internacional,sin fecha,405,0,1,0.859663724899292,FP
+83ab13ac4b35b198fba0,Redacción Médica,Sociedad,sin fecha,548,0,1,0.8591918349266052,FP
+2d3fe51701d4c3d9bd84,tuexpertomovil,Ciencia,sin fecha,296,0,1,0.8577680587768555,FP
+6f5eb7ab66076cec6563,El Financiero,Covid-19,sin fecha,144,0,1,0.8572908639907837,FP
+15f8f6b84ca310b04aaf,Tec CR,Covid-19,sin fecha,485,0,1,0.8568122982978821,FP
+c9aa5bbebe037183f843,El Economista,Covid-19,sin fecha,302,0,1,0.8563323616981506,FP
+d2e3a5456b75dce7dd51,La Jornada,Sociedad,sin fecha,839,0,1,0.8563323616981506,FP
+7876b3c92f83a48cb068,Milenio,Sociedad,sin fecha,252,0,1,0.8558511734008789,FP
+b40490ac626963108d01,Milenio,Política,sin fecha,189,0,1,0.8539127111434937,FP
+831050ec212785efb681,El País,Sociedad,sin fecha,1028,0,1,0.8539127111434937,FP
+373ee251a7e7cafa20e9,Business Insider,Covid-19,sin fecha,292,0,1,0.8524448275566101,FP
+f1b7ae505e2b39e0daf7,El Universal,Política,sin fecha,402,0,1,0.8524448275566101,FP
+cc1b0e5ebbbb0a822834,El País,Política,sin fecha,907,0,1,0.851952850818634,FP
+425dc8633d78a031a809,Milenio,Sociedad,sin fecha,510,0,1,0.8509646654129028,FP
+78ba6c84e63d536473df,CNN,Covid-19,sin fecha,923,0,1,0.8509646654129028,FP
+4de72c9d383732505691,elEconomista.es,Política,sin fecha,852,0,1,0.8499711751937866,FP
+2dcb267ab1e9fbe8501f,CNN,Covid-19,sin fecha,642,0,1,0.8499711751937866,FP
+c7e44ece09c8108ba02a,Milenio,Sociedad,sin fecha,235,0,1,0.8494724035263062,FP
+564ee58edf68a9a3cd50,La Razon,Sociedad,sin fecha,412,0,1,0.8494724035263062,FP
+261f4861243bbc9f8297,BBC,Covid-19,sin fecha,1254,0,1,0.8489722013473511,FP
+403ea392c32c9fc2e724,Infobae,Covid-19,sin fecha,615,0,1,0.8474634885787964,FP
+7ba7f7aa17d6ba7a440d,BBC News,Política,sin fecha,375,0,1,0.8474634885787964,FP
+e721f33482a212803294,caracol,Sociedad,sin fecha,178,0,1,0.8469578623771667,FP
+4e6d60dee8b4e7ad06fc,El País,Covid-19,sin fecha,941,0,1,0.8464508652687073,FP
+cd383c611a66090ad95a,El Financiero,Covid-19,sin fecha,111,0,1,0.8459424376487732,FP
+70aa1fd64e72220234b5,Milenio,Covid-19,sin fecha,519,0,1,0.8459424376487732,FP
+2cb949faf7558933d83c,El Espectador,Covid-19,sin fecha,1039,0,1,0.8459424376487732,FP
+f5287bdfb1e5f596712f,National Geographic,Sociedad,sin fecha,655,0,1,0.8459424376487732,FP
+2cfe5fd33f8b591753e2,La vanguardia,Covid-19,sin fecha,384,0,1,0.845432698726654,FP
+08a9a4f87920dba58c56,La Vanguardia,Covid-19,sin fecha,252,0,1,0.845432698726654,FP
+4a53b3577edaf07bfa63,BBC,Covid-19,sin fecha,426,0,1,0.8444089889526367,FP
+548c6bfcd17698818787,El País,Política,sin fecha,776,0,1,0.8444089889526367,FP
+060a0d4bf582353a51be,El Universal,Covid-19,sin fecha,197,0,1,0.8438951373100281,FP
+a3fc10cb3aa58e76425b,BBC,Covid-19,sin fecha,458,0,1,0.842863142490387,FP
+d3bd36cc7263662f7f3d,Noticia ONU,Internacional,sin fecha,587,0,1,0.8423450589179993,FP
+4797f60c69943483ab38,Milenio,Sociedad,sin fecha,118,0,1,0.8418256044387817,FP
+9b3d5d9429ec566b18d6,Milenio,Política,sin fecha,1549,0,1,0.8418256044387817,FP
+0ebd2ff9fad15981509e,El Pais,Covid-19,sin fecha,737,0,1,0.8418256044387817,FP
+97f50f8705eb6e0bcafe,El Tiempo,Política,sin fecha,727,0,1,0.8413047790527344,FP
+aa458b1ab1e247d121c1,Milenio,Sociedad,sin fecha,678,0,1,0.8413047790527344,FP
+5e6f21f5b9600581e067,La Vanguardia,Sociedad,sin fecha,409,0,1,0.8407825827598572,FP
+4db99c190a2acc07f77c,El País,Sociedad,sin fecha,709,0,1,0.8407825827598572,FP
+f6db3c2c24080853ba5a,Forbes,Covid-19,sin fecha,1458,0,1,0.8392075896263123,FP
+9a713f7510c0f3a8589a,CNN,Covid-19,sin fecha,436,0,1,0.8392075896263123,FP
+a9f9f3cc1028f5cfe1d5,El Universal,Sociedad,sin fecha,429,0,1,0.8392075896263123,FP
+e536a6e41ac7d4694ee7,El Día,Sociedad,sin fecha,185,0,1,0.8370879292488098,FP
+ebbaba37f23546b53f8b,El Pais,Política,sin fecha,1100,0,1,0.8354835510253906,FP
+2771716aa8779e8e2a2a,El Periodico,Política,sin fecha,580,0,1,0.8349459171295166,FP
+1ac0a64d7e3ee53194f8,El Universal,Covid-19,sin fecha,556,0,1,0.8333246111869812,FP
+c81d19ae097a3cf49198,El Mundo,Política,sin fecha,291,0,1,0.8327813148498535,FP
+9ebb13834763d1543e6d,El Tiempo,Covid-19,sin fecha,264,0,1,0.8327813148498535,FP
+f9f77e94fdc39b28c1fc,BBC,Covid-19,sin fecha,727,0,1,0.8322367072105408,FP
+4080dc2515cde9c6fd47,El Universal,Sociedad,sin fecha,477,0,1,0.8316905498504639,FP
+c3867c76fb61dd0812d9,Crisis Group,Política,sin fecha,1329,0,1,0.8316905498504639,FP
+b2e8194eccd899d1119d,Milenio,Política,sin fecha,735,0,1,0.8300437331199646,FP
+ba56a1613d5775b4d704,BBC,Sociedad,sin fecha,265,0,1,0.8300437331199646,FP
+a850a83eba02f91df379,El Universal,Covid-19,sin fecha,275,0,1,0.8294920325279236,FP
+42a06986b9d740c19a7a,Milenio,Internacional,sin fecha,683,0,1,0.8272706270217896,FP
+ffba6c6c528c41dfdfa6,Prensa Libre,Covid-19,sin fecha,359,0,1,0.826151430606842,FP
+c7e57d7f9f72a64599b0,Salud con Lupa,Covid-19,sin fecha,580,0,1,0.826151430606842,FP
+5d9505d393a539540999,Noticia & protagonistas,Política,sin fecha,373,0,1,0.826151430606842,FP
+7aca3d244075017aba6b,BBC,Política,sin fecha,869,0,1,0.8255897164344788,FP
+e4306d337444602054d0,CNN,Ciencia,sin fecha,328,0,1,0.8244618773460388,FP
+1c2de86fadb28ab43c88,El Financiero,Covid-19,sin fecha,161,0,1,0.8233283758163452,FP
+c1aca7d004b22458cf15,Forbes,Covid-19,sin fecha,1433,0,1,0.8221890926361084,FP
+4e69c3f86c4de1473f42,LA Times,Política,sin fecha,732,0,1,0.8221890926361084,FP
+86ca584d6ae8b72540db,El Tiempo,Sociedad,sin fecha,399,0,1,0.8221890926361084,FP
+c7537a3ada2b45d989f9,El Universal,Política,sin fecha,382,0,1,0.8216173648834229,FP
+01912a3f6661bcacac03,El Universal,Sociedad,sin fecha,200,0,1,0.8210441470146179,FP
+0d5fff91f151fc7c937a,El Economista,Covid-19,sin fecha,790,0,1,0.819604754447937,FP
+b608774cbb5a4983eca1,CNN Español,Política,sin fecha,562,0,1,0.818156361579895,FP
+fa8bbea7e3adbe34a06d,Imagen Radio,Internacional,sin fecha,256,0,1,0.8169911503791809,FP
+3c1f51c8b0f9fa7df8cd,The New York Times,Sociedad,sin fecha,1021,0,1,0.8169911503791809,FP
+6a2c93b8536686f24872,BBC News,Covid-19,sin fecha,456,0,1,0.8169911503791809,FP
+d78cf802f8da421f880b,El Confidencial,Sociedad,sin fecha,1357,0,1,0.8169911503791809,FP
+eb5763d22af04bbba444,El Economista,Sociedad,sin fecha,681,0,1,0.8164063692092896,FP
+aef1cfd703b90362f2cf,El Comercio,Sociedad,sin fecha,519,0,1,0.8164063692092896,FP
+5b468a4525c44d9d6f86,El Pais,Covid-19,sin fecha,1026,0,1,0.8164063692092896,FP
+6a8379424fe02945aa0a,El País,Política,sin fecha,2010,0,1,0.8158201575279236,FP
+055790c421da65f6f9fa,Milenio,Sociedad,sin fecha,1404,0,1,0.8158201575279236,FP
+608fdea49b47a232f41f,El Sol de la Laguna,Covid-19,sin fecha,598,0,1,0.8155264854431152,FP
+80ec4b368389f5449b92,AEMPS,Covid-19,sin fecha,755,0,1,0.815232515335083,FP
+c25aa462271ea8191f9b,NoticiaTrabajo,Política,sin fecha,691,0,1,0.815232515335083,FP
+e0c0c7befbdb69e0ba4c,BBC,Sociedad,sin fecha,1740,0,1,0.8140527606010437,FP
+a549420019617f158550,El Tiempo,Política,sin fecha,259,0,1,0.8134608268737793,FP
+f11518b2e8f89994cb4a,UDG,Covid-19,sin fecha,405,0,1,0.8125700354576111,FP
+a13ad6f0652802a0eb75,BBC News,Covid-19,sin fecha,848,0,1,0.8125700354576111,FP
+7ded1eaf101ebc8fce65,BBC News,Política,sin fecha,2255,0,1,0.8122723698616028,FP
+2fbceb640261455f8447,Xataka,Covid-19,sin fecha,285,0,1,0.8110781908035278,FP
+c60840596dba9813825a,Vanguardia,Sociedad,sin fecha,742,0,1,0.8104788661003113,FP
+aaa1438c602cb0ccb702,Marca,Covid-19,sin fecha,272,0,1,0.8104788661003113,FP
+b1cb029bc4b9dccd0683,El País,Sociedad,sin fecha,255,0,1,0.8089743256568909,FP
+1113f673525dec3056e1,Proceso,Política,sin fecha,898,0,1,0.8080672025680542,FP
+26b946ee0a9cf04903d0,Xataka,Sociedad,sin fecha,453,0,1,0.8080672025680542,FP
+4a420dd71191878c13b9,Centros para el Control y Prevención de Enfermedades,Covid-19,sin fecha,1028,0,1,0.8080672025680542,FP
+a63fa187ad27cc91733b,ABC,Sociedad,sin fecha,364,0,1,0.8074606657028198,FP
+179ec50824213d2b3397,El Tiempo,Covid-19,sin fecha,617,0,1,0.8071568012237549,FP
+b4da49f0f8318af7123c,National Geographic,Política,sin fecha,1469,0,1,0.8068526387214661,FP
+22263bc191bc7d69cc43,La Jornada,Covid-19,sin fecha,967,0,1,0.8062431216239929,FP
+6698aa5527b00809b207,El País,Sociedad,sin fecha,1088,0,1,0.8050197958946228,FP
+4ab2f972e4d8948e1a30,La Jornada,Sociedad,sin fecha,208,0,1,0.8050197958946228,FP
+6c3f57b1a878b7b47fc0,El Universal,Sociedad,sin fecha,617,0,1,0.8031737804412842,FP
+acfbc126280e93e01706,El País,Política,sin fecha,410,0,1,0.8031737804412842,FP
+fb83387d56d6d37e9567,La Vanguardia,Sociedad,sin fecha,580,0,1,0.8031737804412842,FP
+ca0ec1a1010efe6e3a7e,teleSURtv,Sociedad,sin fecha,602,0,1,0.8031737804412842,FP
+3ec4eec5ae1255fc0952,BBC News,Política,sin fecha,1457,0,1,0.802555501461029,FP
+2fe32ad78523c8aa242a,El Financiero,Política,sin fecha,481,0,1,0.802555501461029,FP
+32b1aee843227f927349,El Comercio,Política,sin fecha,276,0,1,0.8019358515739441,FP
+a6c508d69bc948187662,El Financiero,Covid-19,sin fecha,328,0,1,0.8003801107406616,FP
+ac98510e15e02b321ffe,El Financiero,Covid-19,sin fecha,944,0,1,0.8003801107406616,FP
+bcd331f10fc12a4366b7,El Universal,Política,sin fecha,178,0,1,0.8000679016113281,FP
+eaaf6cadf333836e01ae,Milenio,Sociedad,sin fecha,442,0,1,0.7991290092468262,FP
+db38b4272530c9eec80b,El Confidencial,Sociedad,sin fecha,582,0,1,0.7988152503967285,FP
+dc69835d1fba8b5dc573,La Vanguardia,Sociedad,sin fecha,648,0,1,0.7988152503967285,FP
+7c9bd30bab676273d82f,El Universal,Covid-19,sin fecha,377,0,1,0.798501193523407,FP
+1012ad9c23c5b0d80606,Forbes,Covid-19,sin fecha,831,0,1,0.7981867790222168,FP
+1ab8c1e64edeba51969f,Excelsior,Deporte,sin fecha,415,0,1,0.7978719472885132,FP
+fec53530329c45d15a8a,BBC News,Covid-19,sin fecha,443,0,1,0.7975568175315857,FP
+51d628bb3afd7839c3ef,Proceso,Política,sin fecha,1035,0,1,0.796609103679657,FP
+d888216809f0ca9c682e,NY Times,Covid-19,sin fecha,515,0,1,0.7962924242019653,FP
+dd3c7c4273d52e11a478,CNN,Ciencia,sin fecha,394,0,1,0.7953404188156128,FP
+9179588cff28e2b2ef13,El Pais,Sociedad,sin fecha,894,0,1,0.7943849563598633,FP
+d2a0682181cf2dc14170,El Comercio,Sociedad,sin fecha,326,0,1,0.7934262752532959,FP
+9306fd23a316019bcb1f,El Financiero,Covid-19,sin fecha,322,0,1,0.793105959892273,FP
+92c7a7f3c22730caa6c3,El Pais,Política,sin fecha,1178,0,1,0.7921428084373474,FP
+6810a7699f8ca3e0c362,La Jornada,Sociedad,sin fecha,116,0,1,0.7914988994598389,FP
+ed4d9737a68bf5b8db6d,NY Times,Covid-19,sin fecha,1341,0,1,0.7908535599708557,FP
+f58d8bf7d4984e4564ee,El Universal,Covid-19,sin fecha,812,0,1,0.7902066707611084,FP
+29c7e73ef1f51e439f35,Portafolio,Covid-19,sin fecha,869,0,1,0.7902066707611084,FP
+13209cf708ee661d1c3e,Expansion,Sociedad,sin fecha,943,0,1,0.7898827195167542,FP
+54546e821e62f55e0094,NY Times,Covid-19,sin fecha,597,0,1,0.7898827195167542,FP
+912fb50997ea58b43792,La Silla Rota,Covid-19,sin fecha,399,0,1,0.7898827195167542,FP
+463ffdfed2e8b5855a5d,El Mundo,Sociedad,sin fecha,736,0,1,0.7885831594467163,FP
+f08154ad97dd458385dc,La Republica,Sociedad,sin fecha,290,0,1,0.788257360458374,FP
+f16564a035ed1cb1f0fe,El País,Política,sin fecha,1559,0,1,0.7872777581214905,FP
+78ba9265d68c07c02551,El Diario,Sociedad,sin fecha,218,0,1,0.7853085398674011,FP
+a814f64dcdc740b5f620,Excelsior,Sociedad,sin fecha,528,0,1,0.7839884757995605,FP
+9f8c0a0c0a4a29fb2276,El Confidencial,Sociedad,sin fecha,1561,0,1,0.7839884757995605,FP
+69c1554fe1b60d82cc96,Milenio,Covid-19,sin fecha,439,0,1,0.7829945087432861,FP
+ad48177ff720a263ebc9,El Universo,Covid-19,sin fecha,618,0,1,0.7813306450843811,FP
+36dc32cd98f139d2b4ad,El Universal,Política,sin fecha,1258,0,1,0.7813306450843811,FP
+8f0a381b943c4a99343c,Diario Constitucional,Covid-19,sin fecha,278,0,1,0.7799928784370422,FP
+e150dd0a0c8a4e6b6e4e,El Universal,Política,sin fecha,289,0,1,0.7793218493461609,FP
+9a6c7f1e51ae2de66583,La Tercera,Covid-19,sin fecha,164,0,1,0.7783125042915344,FP
+cef26ca68d8014a2a425,Milenio,Covid-19,sin fecha,357,0,1,0.7779753804206848,FP
+3e28ce14070e23ce7f23,Eluniverso,Política,sin fecha,457,0,1,0.7769615650177002,FP
+6ce71f9a51b09c2f2028,Vanguardia,Sociedad,sin fecha,671,0,1,0.775604784488678,FP
+eb78dbe8c83aa4e602d5,Vanguardia,Sociedad,sin fecha,650,0,1,0.775604784488678,FP
+fb898c5c4c8133cace1c,Milenio,Sociedad,sin fecha,170,0,1,0.7735586762428284,FP
+94595b464c4512fad29d,BBC,Covid-19,sin fecha,873,0,1,0.7718434929847717,FP
+555b96710657c7bd1c92,RTVE,Covid-19,sin fecha,340,0,1,0.7714993357658386,FP
+cb0923813c2490cb45f3,Marca,Covid-19,sin fecha,384,0,1,0.7708100080490112,FP
+63f51713c66d4e916e06,Redacción Médica,Covid-19,sin fecha,619,0,1,0.7704647779464722,FP
+ac546f7f00c59010e8bc,El País,Sociedad,sin fecha,1466,0,1,0.7704647779464722,FP
+01ef4ce873f5b953cb64,El Economista,Covid-19,sin fecha,537,0,1,0.7701191902160645,FP
+81db105dc82b703de5bd,LA Times,Covid-19,sin fecha,1371,0,1,0.7687332034111023,FP
+0a8482cc567f69351047,El Tiempo,Sociedad,sin fecha,240,0,1,0.7683857679367065,FP
+9e93bfd79fc2902ab31f,El Universal,Covid-19,sin fecha,671,0,1,0.7673413753509521,FP
+02ff91dee46d9c31c706,The New York Times,Sociedad,sin fecha,4017,0,1,0.765943706035614,FP
+3442db1f2376dc416441,Reportur,Política,sin fecha,317,0,1,0.7648916244506836,FP
+4c3c6dd75ce827e9064f,El Tiempo,Sociedad,sin fecha,766,0,1,0.7645401358604431,FP
+d4dbbc67753c6e33832f,Redaccion Medica,Covid-19,sin fecha,297,0,1,0.7638362646102905,FP
+c992628c4fba251e0654,CNN,Covid-19,sin fecha,1278,0,1,0.7638362646102905,FP
+2dd2ffd0d4931fca215d,El Economista,Sociedad,sin fecha,944,0,1,0.7631309032440186,FP
+f1a7cd50156e66147b01,Gaceta Medica,Ciencia,sin fecha,668,0,1,0.7620701193809509,FP
+3657144c991e37601b1a,Excelsior,Covid-19,sin fecha,879,0,1,0.7602949142456055,FP
+d837044ad5fb062cfd99,La Nación,Sociedad,sin fecha,1002,0,1,0.7592254281044006,FP
+59e9bf7c0eec9a82c4e4,Actualidad,Covid-19,sin fecha,471,0,1,0.7592254281044006,FP
+a93cb0250181acfb226f,BBC,Política,sin fecha,1338,0,1,0.756717324256897,FP
+8dd5f8a3ac86b12e103f,Gaceta Medica,Covid-19,sin fecha,483,0,1,0.7559974193572998,FP
+77c14102d89fb24b0422,El Espectador,Sociedad,sin fecha,498,0,1,0.7559974193572998,FP
+31e70548ba4431565e42,La Silla Vacía,Internacional,sin fecha,1645,0,1,0.7549149990081787,FP
+d0dc3458b9edcc56eed0,El comercio,Covid-19,sin fecha,459,0,1,0.7549149990081787,FP
+b66edc083ef52ceb86b5,El Tiempo,Sociedad,sin fecha,215,0,1,0.754553496837616,FP
+e9935861cec683c27959,Clinica Medellin,Covid-19,sin fecha,615,0,1,0.754553496837616,FP
+925ccb93f728021b980c,Milenio,Sociedad,sin fecha,778,0,1,0.7531036734580994,FP
+9be190b94c983a4dc92c,AARP,Covid-19,sin fecha,1052,0,1,0.7527403235435486,FP
+37da84a56512e43dea0b,Excelsior,Sociedad,sin fecha,219,0,1,0.7527403235435486,FP
+e09be8adf046b023ed3e,El Universal,Covid-19,sin fecha,256,0,1,0.7520125508308411,FP
+af99dc5aedde27983e39,Bladi,Sociedad,sin fecha,265,0,1,0.7512834072113037,FP
+14da8930cbb7be2a9cfa,BBC,Covid-19,sin fecha,800,0,1,0.7498207092285156,FP
+5dd3052e0253c90ccc85,La Vanguardia,Covid-19,sin fecha,346,0,1,0.7490872144699097,FP
+2ad9349eeb9165cc1d72,Infobae,Política,sin fecha,649,0,1,0.7461389899253845,FP
+731a2f6a0435a9cf2a0a,National Geographic,Sociedad,sin fecha,1016,0,1,0.7461389899253845,FP
+28c596e4020654645224,El País,Sociedad,sin fecha,935,0,1,0.7457688450813293,FP
+6a9e5bbe07e9d2ba9964,El País,Sociedad,sin fecha,1220,0,1,0.7446563243865967,FP
+3020066091ad4eb3937c,Business Insider,Sociedad,sin fecha,901,0,1,0.7442848086357117,FP
+961f490f0e07b731faac,Gizmodo,Sociedad,sin fecha,267,0,1,0.7442848086357117,FP
+40d7765dc9fc1e590a5b,El país,Sociedad,sin fecha,353,0,1,0.7442848086357117,FP
+0ee6f1a732af719e0c8e,CNN,Sociedad,sin fecha,850,0,1,0.7424216866493225,FP
+e3b8a817f3ff8ea339bf,DallasNews,Covid-19,sin fecha,1123,0,1,0.7409248948097229,FP
+7b7d9d008bcb8d3891bc,El Comercio,Sociedad,sin fecha,495,0,1,0.740174412727356,FP
+6db67d17cb2881192d37,NY Times,Covid-19,sin fecha,496,0,1,0.7397985458374023,FP
+7c494edf68d137f46a13,El Universal,Sociedad,sin fecha,544,0,1,0.7375364303588867,FP
+eb58330605800050ceeb,El Universal,Política,sin fecha,596,0,1,0.7371581792831421,FP
+59fe902330cf18b10793,ABC,Sociedad,sin fecha,989,0,1,0.7333563566207886,FP
+14f7f5bbcc0907350a17,El correo,Sociedad,sin fecha,1162,0,1,0.7329742908477783,FP
+99a1ade82e58590279f2,El Pais,Covid-19,sin fecha,1185,0,1,0.7322090864181519,FP
+7904b89d513f1d1f33f1,BBC News,Covid-19,sin fecha,98,0,1,0.7299049496650696,FP
+9ece509a45cb6e691247,Heraldo,Covid-19,sin fecha,559,0,1,0.729519784450531,FP
+aaea5a53259e0b5dc99e,El Financiero,Covid-19,sin fecha,291,0,1,0.729519784450531,FP
+70ed00275d5d6f6f402d,,Covid-19,sin fecha,762,0,1,0.729519784450531,FP
+ec2a160224ed1bf9d90b,El Universal,Sociedad,sin fecha,537,0,1,0.729134202003479,FP
+bcf9b2301fe77cd9af1d,France24,Covid-19,sin fecha,467,0,1,0.7283620238304138,FP
+11cfbcdf83268a980bb5,BBC,Covid-19,sin fecha,766,0,1,0.7264255881309509,FP
+8bc6646957e463abd32b,Heraldo,Sociedad,sin fecha,757,0,1,0.7260372638702393,FP
+902cec74d8bf32fc305a,Agencia EFE,Covid-19,sin fecha,725,0,1,0.7260372638702393,FP
+bf75ac4e20143d9d9072,News ONU,Política,sin fecha,804,0,1,0.7221353054046631,FP
+77af5332e8c68765d109,El Financiero,Covid-19,sin fecha,313,0,1,0.7217432260513306,FP
+b78c941f0963438719fe,ok diario,Política,sin fecha,361,0,1,0.7213507294654846,FP
+7050209c6184353b62e9,adn 40,Política,sin fecha,280,0,1,0.7170118689537048,FP
+d56ef2433bf94a2715b2,El Economista,Política,sin fecha,723,0,1,0.7166153788566589,FP
+3f538a0f089ac522f67e,Redacción Médica,Covid-19,sin fecha,246,0,1,0.7146279811859131,FP
+28af05cb4048cce0a4f5,sputnkinews,Política,sin fecha,596,0,1,0.7134315967559814,FP
+2776f79d672caa23a64c,BBC News,Covid-19,sin fecha,926,0,1,0.7061904072761536,FP
+245b320a25a4fe2d43d4,El Universal,Sociedad,sin fecha,151,0,1,0.7021217346191406,FP
+41d7b893db84e7f6e72a,El Financiero,Covid-19,sin fecha,568,0,1,0.7017130851745605,FP
+e6f1d591f60f22df60b1,AS,Covid-19,sin fecha,336,0,1,0.696784257888794,FP
+2eec1b7af76a9d516e28,Milenio,Ciencia,sin fecha,555,0,1,0.6951311230659485,FP
+d320540496de479b6dc3,Universo,Política,sin fecha,391,0,1,0.6804540753364563,FP
+8af4e5dc896c1846a123,,Sociedad,sin fecha,390,0,1,0.6766199469566345,FP
+a120e36a207044f38ca0,El País,Política,sin fecha,669,0,1,0.6667138338088989,FP
+5a092d3045779bd45ab8,SDP Noticia,Ambiental,sin fecha,776,0,1,0.6641048192977905,FP
+75a3233eaf954acaa16b,BBC News,Sociedad,sin fecha,1258,0,1,0.6325027346611023,FP
+35a8b3522550fa62b4d6,El Financiero,Covid-19,sin fecha,399,0,1,0.6069644689559937,FP
+15d9e30bdc261e66df4c,Milenio,Covid-19,sin fecha,394,0,1,0.5923129320144653,FP
+8c97bfacd6cd3e32ef80,Forbes,Covid-19,sin fecha,439,0,1,0.5854566693305969,FP
+3256412e870cbc683111,DW,Sociedad,sin fecha,1003,0,1,0.5610945224761963,FP
+4ea5272de9a69ec37f40,Excelsior,Sociedad,sin fecha,120,0,1,0.5531395077705383,FP
+9249d2889fb460330ee9,Mediterráneo Digital,Sociedad,sin fecha,336,1,0,0.489747554063797,FN
+8aee0262dea26723907d,Bluradio,Sociedad,sin fecha,222,1,0,0.44601204991340637,FN
+b63e50e387c6f25ddd38,Mediterráneo Digital,Sociedad,sin fecha,226,1,0,0.3773685693740845,FN

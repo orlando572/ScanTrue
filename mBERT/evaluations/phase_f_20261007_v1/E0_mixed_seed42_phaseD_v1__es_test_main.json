@@ -1,0 +1,37 @@
+{
+  "experiment": "E0",
+  "run": "E0_mixed_seed42_phaseD_v1",
+  "partition": "es_test_main",
+  "max_length": null,
+  "n": 451,
+  "support": {
+    "real": 284,
+    "fake": 167
+  },
+  "real_precision": 0.7689393939393939,
+  "real_recall": 0.7147887323943662,
+  "real_f1": 0.7408759124087592,
+  "fake_precision": 0.5668449197860963,
+  "fake_recall": 0.6347305389221557,
+  "fake_f1": 0.5988700564971752,
+  "macro_f1": 0.6698729844529672,
+  "accuracy": 0.6851441241685144,
+  "balanced_accuracy": 0.674759635658261,
+  "confusion_matrix_real_fake": [
+    [
+      203,
+      81
+    ],
+    [
+      61,
+      106
+    ]
+  ],
+  "tn": 203,
+  "fp": 81,
+  "fn": 61,
+  "tp": 106,
+  "average_precision_fake": 0.6287781017249707,
+  "brier_fake": 0.21341926451212181,
+  "threshold": 0.5
+}

@@ -1,0 +1,6 @@
+{
+  "train_distinct_sources": 113,
+  "test_main_known_source_count": 192,
+  "test_main_new_source_count": 259,
+  "note": "Exact casefolded source-name overlap only; source aliases are possible."
+}

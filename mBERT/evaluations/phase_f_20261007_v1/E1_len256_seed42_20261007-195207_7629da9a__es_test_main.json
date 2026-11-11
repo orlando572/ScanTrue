@@ -1,0 +1,39 @@
+{
+  "experiment": "E1",
+  "run": "E1_len256_seed42_20261007-195207_7629da9a",
+  "partition": "es_test_main",
+  "max_length": 256,
+  "seed": 42,
+  "model_sha256": "356161a3ef4ffb9323ffafddaae5315593906e6e4d8afddab9f9153057962616",
+  "n": 451,
+  "support": {
+    "real": 284,
+    "fake": 167
+  },
+  "real_precision": 0.6666666666666666,
+  "real_recall": 0.07746478873239436,
+  "real_f1": 0.138801261829653,
+  "fake_precision": 0.37320574162679426,
+  "fake_recall": 0.9341317365269461,
+  "fake_f1": 0.5333333333333333,
+  "macro_f1": 0.3360672975814932,
+  "accuracy": 0.3946784922394678,
+  "balanced_accuracy": 0.5057982626296702,
+  "confusion_matrix_real_fake": [
+    [
+      22,
+      262
+    ],
+    [
+      11,
+      156
+    ]
+  ],
+  "tn": 22,
+  "fp": 262,
+  "fn": 11,
+  "tp": 156,
+  "average_precision_fake": 0.43539984901378137,
+  "brier_fake": 0.37086451558856953,
+  "threshold": 0.5
+}

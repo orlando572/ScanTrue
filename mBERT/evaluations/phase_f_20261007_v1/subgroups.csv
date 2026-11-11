@@ -1,0 +1,790 @@
+partition,category,value,n,real,fake,fp,fn,fake_precision,fake_recall,fake_f1,accuracy
+en_test_perez_rosas,dataset,perez_rosas_2018,949,490,459,486,1,0.4851694915254237,0.9978213507625272,0.6528866714183891,0.4868282402528978
+en_test_perez_rosas,entrada,pair,949,490,459,486,1,0.4851694915254237,0.9978213507625272,0.6528866714183891,0.4868282402528978
+en_test_perez_rosas,fuente,sin fuente,949,490,459,486,1,0.4851694915254237,0.9978213507625272,0.6528866714183891,0.4868282402528978
+en_test_perez_rosas,fuente_entrenamiento,nueva/sin fuente,949,490,459,486,1,0.4851694915254237,0.9978213507625272,0.6528866714183891,0.4868282402528978
+en_test_perez_rosas,longitud_palabras,200-499,323,156,167,156,1,0.515527950310559,0.9940119760479041,0.6789366053169734,0.5139318885448917
+en_test_perez_rosas,longitud_palabras,500-999,64,35,29,33,0,0.46774193548387094,1.0,0.6373626373626373,0.484375
+en_test_perez_rosas,longitud_palabras,<200,541,281,260,279,0,0.48237476808905383,1.0,0.6508135168961202,0.48428835489833644
+en_test_perez_rosas,longitud_palabras,>=1000,21,18,3,18,0,0.14285714285714285,1.0,0.25,0.14285714285714285
+en_test_perez_rosas,periodo,sin fecha,949,490,459,486,1,0.4851694915254237,0.9978213507625272,0.6528866714183891,0.4868282402528978
+en_test_perez_rosas,tema,celebrityDataset,499,250,249,248,1,0.5,0.9959839357429718,0.6657718120805369,0.501002004008016
+en_test_perez_rosas,tema,fakeNewsDataset,450,240,210,238,0,0.46875,1.0,0.6382978723404256,0.4711111111111111
+en_test_perez_rosas,tipo_texto,article,949,490,459,486,1,0.4851694915254237,0.9978213507625272,0.6528866714183891,0.4868282402528978
+es_test_main,dataset,spanish_v2,451,284,167,282,3,0.36771300448430494,0.9820359281437125,0.5350734094616639,0.36807095343680707
+es_test_main,entrada,body_only,3,0,3,0,0,1.0,1.0,1.0,1.0
+es_test_main,entrada,pair,448,284,164,282,3,0.36343115124153497,0.9817073170731707,0.5304777594728172,0.3638392857142857
+es_test_main,fuente,12 minutos,2,0,2,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,2020 News,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,AARP,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,ABC,3,2,1,2,0,0.3333333333333333,1.0,0.5,0.3333333333333333
+es_test_main,fuente,AEMPS,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,AS,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Actualidad,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Agencia EFE,5,1,4,1,0,0.8,1.0,0.888888888888889,0.8
+es_test_main,fuente,Alerta Digital,6,0,6,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Alerta Nacional,3,0,3,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Antena 3,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Astillas de realidad,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,AvcNoticia,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,BBC,15,13,2,12,0,0.14285714285714285,1.0,0.25,0.2
+es_test_main,fuente,BBC News,11,11,0,11,0,0.0,0,0,0.0
+es_test_main,fuente,Bladi,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Bluradio,3,0,3,0,1,1.0,0.6666666666666666,0.8,0.6666666666666666
+es_test_main,fuente,Business Insider,2,2,0,2,0,0.0,0,0,0.0
+es_test_main,fuente,CNN,9,9,0,9,0,0.0,0,0,0.0
+es_test_main,fuente,CNN Español,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,COPE,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Caso Aislado,2,0,2,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Centros para el Control y Prevención de Enfermedades,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Cerebrother,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,ChicaNoticia,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Clasica Radio,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Clinica Medellin,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Columna Cero,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Crisis Group,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Crónica Directo,2,0,2,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Crónica sur,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,DW,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,DW Made for Minds,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,DallasNews,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Delicias Noticia,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Diario 26,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Diario Constitucional,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Diario Financiero,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Diario Patriota,3,0,3,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Don Diario,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Arconte,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Bonaerense,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Cierre Digital,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Comercio,4,4,0,4,0,0.0,0,0,0.0
+es_test_main,fuente,El Confidencial,3,3,0,3,0,0.0,0,0,0.0
+es_test_main,fuente,El Correo de España,2,0,2,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Cultural Canario,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Diario,2,2,0,2,0,0.0,0,0,0.0
+es_test_main,fuente,El Diario mx,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Diestro,4,0,4,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Dizque,8,0,8,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Día,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,El Economista,8,8,0,7,0,0.0,0,0,0.125
+es_test_main,fuente,El Español,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Espectador,3,2,1,2,0,0.3333333333333333,1.0,0.5,0.3333333333333333
+es_test_main,fuente,El Expediente,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Financiero,15,15,0,15,0,0.0,0,0,0.0
+es_test_main,fuente,El Heraldo,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,El Mundo,3,2,1,2,0,0.3333333333333333,1.0,0.5,0.3333333333333333
+es_test_main,fuente,El Norte de Castilla,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Pais,7,7,0,7,0,0.0,0,0,0.0
+es_test_main,fuente,El Paìs,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El País,19,19,0,19,0,0.0,0,0,0.0
+es_test_main,fuente,El Periodico,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,El Plural,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El Sol de la Laguna,2,1,1,1,0,0.5,1.0,0.6666666666666666,0.5
+es_test_main,fuente,El Tiempo,9,9,0,9,0,0.0,0,0,0.0
+es_test_main,fuente,El Universal,28,27,1,27,0,0.03571428571428571,1.0,0.0689655172413793,0.03571428571428571
+es_test_main,fuente,El Universo,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,El comercio,3,3,0,3,0,0.0,0,0,0.0
+es_test_main,fuente,El correo,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,El matinal,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,El país,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Eluniverso,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Enfoque Scott,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Enigma Planetario,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Es Diario,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Esdiario,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,España es voz,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Excelsior,7,7,0,7,0,0.0,0,0,0.0
+es_test_main,fuente,Expansion,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Forbes,4,4,0,4,0,0.0,0,0,0.0
+es_test_main,fuente,France 24,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,France24,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Gaceta Medica,2,2,0,2,0,0.0,0,0,0.0
+es_test_main,fuente,Gentlx,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Gizmodo,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Gob,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Gov,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Heraldo,3,3,0,3,0,0.0,0,0,0.0
+es_test_main,fuente,Imagen Radio,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Infobae,4,3,1,3,0,0.25,1.0,0.4,0.25
+es_test_main,fuente,Informativo del Sur,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,LA Times,2,2,0,2,0,0.0,0,0,0.0
+es_test_main,fuente,La Gaceta,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,La Jornada,5,4,1,4,0,0.2,1.0,0.33333333333333337,0.2
+es_test_main,fuente,La Libertad,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,La Nación,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,La Opcion,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,La Razon,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,La Razón,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,La Republica,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,La República,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,La Silla Rota,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,La Silla Vacía,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,La Tercera,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,La Vanguardia,6,6,0,6,0,0.0,0,0,0.0
+es_test_main,fuente,La comarca de Puerto Llano,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,La nueva prensa,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,La realidad diario,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,La republica,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,La vanguardia,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,La voz del pueblo 920 am,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Latinus,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Libertad Digital,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Libre Mercado,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,LocalNews,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Los Danieles,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,MN Radio,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,MONCLOA,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Maduras,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Mallorca Diario,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Marca,3,3,0,3,0,0.0,0,0,0.0
+es_test_main,fuente,Mediterráneo Digital,16,0,16,0,2,1.0,0.875,0.9333333333333333,0.875
+es_test_main,fuente,Medium,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Milenio,27,25,2,25,0,0.07407407407407407,1.0,0.13793103448275862,0.07407407407407407
+es_test_main,fuente,Ministerio de Salud,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Minsalud,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Más Portal,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,NY Times,4,4,0,4,0,0.0,0,0,0.0
+es_test_main,fuente,National Geographic,3,3,0,3,0,0.0,0,0,0.0
+es_test_main,fuente,News ONU,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Noroeste,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Noticia & protagonistas,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Noticia ONU,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Noticia de Juan Pardo,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,NoticiaTrabajo,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Noticiarcn,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Oiga Noticia,2,0,2,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Onda Cero,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Panam Post,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Periodista Digital,2,0,2,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Politika,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Portafolio,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Prensa Libre,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Proceso,3,3,0,3,0,0.0,0,0,0.0
+es_test_main,fuente,Publimetro,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Qué!,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,RTVE,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Rambla Libre,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Rebelión en la granja,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,RedRaiove,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Redaccion Medica,2,2,0,2,0,0.0,0,0,0.0
+es_test_main,fuente,Redacción Médica,3,3,0,3,0,0.0,0,0,0.0
+es_test_main,fuente,Reportur,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Rosario Net,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,SDP Noticia,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Salud con Lupa,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Semana,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Tamaulipas Gob,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Taringa!,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Tec CR,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,The New York Times,2,2,0,2,0,0.0,0,0,0.0
+es_test_main,fuente,The Patriota,4,0,4,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Tiempo digital.mx,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,TuBarco,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,UDG,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,UNAM,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,Universo,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,UnoRed,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Vanguardia,3,3,0,3,0,0.0,0,0,0.0
+es_test_main,fuente,Varones Unidos,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Viral John,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Wradio,2,0,2,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Xataka,2,2,0,2,0,0.0,0,0,0.0
+es_test_main,fuente,Ya no Miramos el Cielo,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,Yucatán All,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,adn 40,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,am de Queretaro,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,andoc,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,as,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,as Epika,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,asuntoslegales,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,caracol,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,defensoria,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,diariogol,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,elEconomista.es,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,europa press,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,lancelot digital.com,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,mexicowebcast,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,mpr21,3,0,3,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,noentiendonada.es,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,ok diario,2,1,1,1,0,0.5,1.0,0.6666666666666666,0.5
+es_test_main,fuente,servimedia,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente,sin fuente,4,2,2,2,0,0.5,1.0,0.6666666666666666,0.5
+es_test_main,fuente,sputnkinews,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,teleSURtv,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,tuexpertomovil,1,1,0,1,0,0.0,0,0,0.0
+es_test_main,fuente,viscalcant.com,2,0,2,0,0,1.0,1.0,1.0,1.0
+es_test_main,fuente_entrenamiento,conocida,192,167,25,165,0,0.13157894736842105,1.0,0.23255813953488372,0.140625
+es_test_main,fuente_entrenamiento,nueva/sin fuente,259,117,142,117,3,0.54296875,0.9788732394366197,0.6984924623115578,0.5366795366795367
+es_test_main,longitud_palabras,200-499,209,110,99,109,3,0.4682926829268293,0.9696969696969697,0.6315789473684211,0.46411483253588515
+es_test_main,longitud_palabras,500-999,136,107,29,107,0,0.21323529411764705,1.0,0.3515151515151515,0.21323529411764705
+es_test_main,longitud_palabras,<200,46,19,27,19,0,0.5869565217391305,1.0,0.7397260273972603,0.5869565217391305
+es_test_main,longitud_palabras,>=1000,60,48,12,47,0,0.2033898305084746,1.0,0.33802816901408456,0.21666666666666667
+es_test_main,periodo,sin fecha,451,284,167,282,3,0.36771300448430494,0.9820359281437125,0.5350734094616639,0.36807095343680707
+es_test_main,tema,Ambiental,3,2,1,2,0,0.3333333333333333,1.0,0.5,0.3333333333333333
+es_test_main,tema,Ciencia,10,6,4,6,0,0.4,1.0,0.5714285714285715,0.4
+es_test_main,tema,Covid-19,158,117,41,116,0,0.2611464968152866,1.0,0.41414141414141414,0.26582278481012656
+es_test_main,tema,Deporte,2,1,1,1,0,0.5,1.0,0.6666666666666666,0.5
+es_test_main,tema,Internacional,14,7,7,7,0,0.5,1.0,0.6666666666666666,0.5
+es_test_main,tema,Política,86,53,33,53,0,0.38372093023255816,1.0,0.5546218487394958,0.38372093023255816
+es_test_main,tema,Sociedad,178,98,80,97,3,0.4425287356321839,0.9625,0.6062992125984252,0.43820224719101125
+es_test_main,tipo_texto,article_or_post_unverified,451,284,167,282,3,0.36771300448430494,0.9820359281437125,0.5350734094616639,0.36807095343680707
+es_test_polyglot_stress,dataset,polyglot_v2,750,473,277,467,11,0.36289222373806274,0.9602888086642599,0.5267326732673268,0.3626666666666667
+es_test_polyglot_stress,entrada,pair,750,473,277,467,11,0.36289222373806274,0.9602888086642599,0.5267326732673268,0.3626666666666667
+es_test_polyglot_stress,fuente,Interfax-russia polit.info tass.ru ria.ru,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,Katehon - Russian fondsk.ru reosh.ru russnov.ru,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,Moskovskij Komsomolets ria.ru,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,Rubaltic.ru teleskop-by.org,1,0,1,0,1,0,0.0,0,0.0
+es_test_polyglot_stress,fuente,Topky.sk,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,Večernje novosti,1,0,1,0,1,0,0.0,0,0.0
+es_test_polyglot_stress,fuente,actualidad-rt.com,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,akhbarak.net arabic.rt.com,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,antifashist.online novoross.info,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,ar.albousla.ps arabic.sputniknews.com misrday.com news-lb.com mn2ol.com newsformy.com news.essahra.net,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,asd.news news-front.info VK.com Resource,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,dan-news.info nahnews.org politobzor.net TK Union - YouTube,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,gazeta.ru infosmi.net tsargrad.tv politros.com tass.ru lenta.ru ria.ru ren.tv russian.rt.com osnmedia.ru jpgazeta.ru rossaprimavera.ru iz.ru svpressa.ru radiosputnik.ria.ru riafan.ru tvzvezda.ru regnum.ru ru.sputnik.md,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,gazeta.ru ren.tv,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,gazeta.ru rg.ru iz.ru Interfax Azerbaijan ria.ru Interfax lenta.ru Moskva 24 russian.rt.com vz.ru tvzvezda.ru sputniknews.lt dumatv.ru nsn.fm,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,gazeta.ru ria.ru tvzvezda.ru ru.armeniasputnik.am iz.ru vz.ru govoritmoskva.ru lt.sputniknews.ru Moskva 24 rg.ru news.ru SEGODNYA - YouTube tass.ru lenta.ru business-gazeta.ru life.ru russian.rt.com ntv.ru,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,hlavnespravy.sk,3,0,3,0,1,1.0,0.6666666666666666,0.8,0.6666666666666666
+es_test_polyglot_stress,fuente,iz.ru Kommersant ukraina.ru rg.ru tass.ru argumenti.ru vesti.ru Rubaltic.ru tsargrad.tv russian.rt.com tvzvezda.ru ren.tv sputniknews.com mundo.sputniknews.com br.sputniknews.com rs.sputniknews.com 3yonnews.com akhbarak.net aniraq.com arabic.rt.com Arabnews 24 iq.shafaqna.com tvzvezda.ru,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,iz.ru ria.ru,2,0,2,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,lug-info.com ukraina.ru,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,lv.sputniknews.ru ru.armeniasputnik.am,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,mundo.es,473,473,0,467,0,0.0,0,0,0.012684989429175475
+es_test_polyglot_stress,fuente,news-front.info riafan.ru antifashist.com,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,news-front.info rusvesna.su,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,news-front.info www.1lurer.am tvzvezda.ru iz.ru crimea.ria.ru,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,novorosinform.org ukraina.ru,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,politnavigator.net anna-news.info,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,rs.sputniknews.com,10,0,10,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,russian.rt.com ria.ru,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,fuente,sin fuente,235,0,235,0,7,1.0,0.9702127659574468,0.9848812095032397,0.9702127659574468
+es_test_polyglot_stress,fuente,sputnik.by ria.ru,2,0,2,0,1,1.0,0.5,0.6666666666666666,0.5
+es_test_polyglot_stress,fuente_entrenamiento,nueva/sin fuente,750,473,277,467,11,0.36289222373806274,0.9602888086642599,0.5267326732673268,0.3626666666666667
+es_test_polyglot_stress,longitud_palabras,200-499,207,95,112,94,4,0.5346534653465347,0.9642857142857143,0.6878980891719746,0.5265700483091788
+es_test_polyglot_stress,longitud_palabras,500-999,307,230,77,230,4,0.24092409240924093,0.948051948051948,0.3842105263157895,0.23778501628664495
+es_test_polyglot_stress,longitud_palabras,<200,105,62,43,58,3,0.40816326530612246,0.9302325581395349,0.5673758865248227,0.41904761904761906
+es_test_polyglot_stress,longitud_palabras,>=1000,131,86,45,85,0,0.34615384615384615,1.0,0.5142857142857142,0.3511450381679389
+es_test_polyglot_stress,periodo,2016,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,periodo,2017,4,0,4,0,1,1.0,0.75,0.8571428571428571,0.75
+es_test_polyglot_stress,periodo,2018,5,0,5,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,periodo,2019,13,0,13,0,2,1.0,0.8461538461538461,0.9166666666666666,0.8461538461538461
+es_test_polyglot_stress,periodo,2020,6,0,6,0,1,1.0,0.8333333333333334,0.9090909090909091,0.8333333333333334
+es_test_polyglot_stress,periodo,2021,13,0,13,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,periodo,2022,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,periodo,sin fecha,707,473,234,467,7,0.3270893371757925,0.9700854700854701,0.48922413793103453,0.32956152758132956
+es_test_polyglot_stress,tema,(sin tema),234,0,234,0,7,1.0,0.9700854700854701,0.9848156182212581,0.9700854700854701
+es_test_polyglot_stress,tema,"Anti-Russian, Donald Trump, Russophobia",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Anti-Russian, USSR, Ukrainian statehood",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Coup, Viktor Yanukovych, Diplomacy with Russia, Sanctions, Anti-Russian",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,Crimea,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Crimea, Elections",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"DNR, Civil war, Donbas",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,EU/NATO enlargement,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"European Parliament, European Commission, European Union, Genocide",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"European Union, Crimea",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Human rights, War in Ukraine, Ukraine",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"INF Treaty, Nuclear issues, NATO",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Imperialism/colonialism, Joe Biden, Corruption, Conspiracy theory",1,0,1,0,1,0,0.0,0,0.0
+es_test_polyglot_stress,tema,Missile defence system,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Molotov-Ribbentrop Pact, World War 2, European Parliament, Historical revisionism",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Molotov-Ribbentrop Pact, World War 2, West, Adolf Hitler",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"NATO, EU/NATO enlargement, Anti-Russian, Military",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"NATO, EU/NATO enlargement, security threat, Military, Diplomacy with Russia",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Nazi/Fascist, State oppression, Ukraine, Coup",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Nazi/Fascist, Ukrainian statehood, Ukraine",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Orthodox Church, NATO",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Protest, Victoria Nuland, CIA, Odessa tragedy, Secret services",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Provocation, Chemical weapons/attack, Terrorism, Syrian War",1,0,1,0,1,0,0.0,0,0.0
+es_test_polyglot_stress,tema,"Russia Today (RT), Freedom of speech, Sputnik, Baltic states",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,Russophobia,2,0,2,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Russophobia, Freedom of speech, Media, Baltic states, Sputnik, Russia Today (RT)",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Sanctions, Anti-Russian",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Sputnik V, coronavirus, vaccination",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Theresa May, Brexit, Angela Merkel",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,US presence in Europe,1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Ukraine, DNR, fake news, Eastern Ukraine, LNR, Donbas, War in Ukraine",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Ukraine, Ukrainian statehood, Euromaidan, Coup",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"United States of Europe, European Union",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Volodymyr Zelensky, Manipulated elections/referendum, Novorossiya, Elections, Petro Poroshenko",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"War in Ukraine, Ukrainian statehood, Volodymyr Zelensky, Eastern Ukraine",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"War preparation, Donald Trump, Secret elites / global elites",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"West, Colour revolutions, Conspiracy theory",1,0,1,0,1,0,0.0,0,0.0
+es_test_polyglot_stress,tema,"West, Dmitry Medvedev, Vladimir Putin",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"Yugoslavia, Bosnia war, West, War crimes, Muslim/Islam, Genocide",1,0,1,0,1,0,0.0,0,0.0
+es_test_polyglot_stress,tema,"bill, rights, civil, movement",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"conveys, shangri-la, shangri, ideas",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"coronavirus, Deep state, Secret elites / global elites",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"coronavirus, economy, Economic difficulties",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"crime, although, grand, health",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, australia, monday, arrested",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, australian, zealand, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, boils, title, income",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, brenton, tarrant, education",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, british, france, investigation",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, british, june, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, carlos, elizabeth, public",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, catholic, fidel, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, central, american, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, church, sandinista, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, clevelandon, twitter, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, communist, party, public",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, crotone, sunday, victim",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, dealing, cambodia, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, egypt, south, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, fleeing, palermo, justice",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, friday, christchurch, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, gabino, calion, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, guayaquil, ecuador, violence",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, hela, courier, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, high, commissioner, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, iachr, cuban, traffic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, islah, saudi-backed, party",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, kaczynski, theodore, sentence",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, keechant, sewell, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, kiev, concern, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, kyrgyzstan's, tuesday, arrest",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, laotian, laos, investigation",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, mustafa, zealand, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, national, guard, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, national, police, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, northern, serbs, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, optimism, ukrainian, invader",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, police, several, climate",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, police, united, arrested",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, president, macron, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, ralph, yarl, hospital",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, rina, maia, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, sentenced, tramacúa, investigation",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, serbia, atlantic, violence",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, several, german, violence",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, since, november, health",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, sunday, amazon, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, thailand, nirut, accused",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, thousands, immigration, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, thursday, annecy, murder",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, wednesday, colombian, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, yevgueni, prigozhin, arrested",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"crime, zealand, catherine, health",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, agency, income, online",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, brazilian, chinese, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, brazilian, shanghai, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, bulgaria, hungary, europe",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, central, america, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, china, tuesday, pandemic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, commission, russia, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, court, cassation, sentence",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, despite, china, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, europe, military, conflict",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, european, commission, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, five, silvio, business",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, german, swiss, society",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, italian, israeli, storm",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, jinan, china, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, king, bhumibol, social",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, observer, britons, european",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"economy, turkish, syria, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"education, italian, history, teacher",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"education, mundo's, english, online",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"education, south, korea, arrested",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"education, thirteen, chinese, social",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"energy, russian, moscow, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, colombian, sunday, public",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, covid-19, premium, pandemic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, experts, brazil, social",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, gemelli, hospital, medical",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, gemelli, rome, doctor",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, geneina, arabic, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, gilbert, balberán, hospital",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, human, rights, hospital",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, international, committee, conflict",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, magdalena, lesly, medicine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, mato, grosso, treatment",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, neil, danielle, railway",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, portadadespite, chinese, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, president, gustavo, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, since, beijing, pandemic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, six-year-old, belgian, accident",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, texas, supreme, judge",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, thursday, milan, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, treatment, mosquitoes, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"health, world, colombian, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"illegal annexation, Crimea, Donbas, Coup, War in Ukraine, Eastern Ukraine, Anti-Russian, Ukrainian statehood, Euromaidan, DNR, Civil war",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"international, africa, tunisia, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, aliona, russia, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, american, nancy, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, armed, forces, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, asia-pacific, singapore, officers",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, asian, yemen, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, august, soviet, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, belgorod, ukrainian, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, biden, kiev, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, brazilian, ukrainian, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, brexit, ukraine, pandemic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, british, foreign, crime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, british, tuesday, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, british, united, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, chassiv, iar, accused",1,1,0,0,0,0,0,0,1.0
+es_test_polyglot_stress,tema,"international, chassiv, yar, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, chechen, ramzan, putin",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, china's, moscow, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, china, uyghur, economic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, chinese, european, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, convey, european, ideas",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, conveys, sahel, conflict",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, crossings, english, europe",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, defense, sunday, deputy",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, donetsk, zaporizhia, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, eu-cuba, political, european",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, europakiev, warsaw, moscow",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, european, political, community",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, european, union, opposition",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, explosions, sudan, power",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, fighting, khartoum, medical",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, fighting, russian, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, four, ukraine, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, french, president, train",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, gayun, february, investigation",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, german, kiev, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, grand, canal, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, high, representative, economic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, high, representative, foreign",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, hundreds, orthodox, moscow",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, international, ukraine, putin",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, international, ukraine, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, it's, born, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kateryna, krupich, social",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kherson, ukraine, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kiev, dnipro, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kiev, monday, breaks",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kiev, moscow, accused",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kiev, patriot, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kiev, russian, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kiev, russians, achieves",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kiev, sevastopol, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kiev, ukrainian, deputy",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kishida, russian, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kleibus, germany, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, kremlin, january, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, leopard, ukraine, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, leyen, beijing, european",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, liberals, greens, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, macron, paris, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, marina, saprykina, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, mariupol, ukrainian, student",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, mark, leonard, european",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, mexico, child, power",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ministry, defense, public",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, moldova, european, putin",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, moscow's, beijing, moscow",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, moscowthe, vitaly, population",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, nicolas, maduro, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, north, korea, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, nova, kakhovka, ukraine",1,1,0,0,0,0,0,0,1.0
+es_test_polyglot_stress,tema,"international, odessa, sunday, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, pacific, tsunami, alert",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, patriot, ukraine, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, plaza, revolución, public",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, polish, volunteer, great",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, pope, president, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, president, biden, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, president, tsai, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, president, ukraine, zelensky",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, pressure, chancellor, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, prigozhin, russia's, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, przemysl, spanish, lawyer",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, putin's, foreign, putin",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, putin, security, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, putin, september, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, rallies, russia, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, reports, boris, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russia, bakhmut, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russia, china, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russia, kiev, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russia, putin, court",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russia, ukraine, attack",2,2,0,2,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russia, ukraine, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russian, defense, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russian, kursk, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russian, lavrov, diplomacy",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russian, ministry, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russian, moscow's, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russian, moscow, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russian, ukraine, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, russians, cold, conflict",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, saturday, russia, citizens",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, sergei, narishkin, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, several, russian, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, shelling, belgorodthe, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, sipri, asian, nuclear",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, sources, mundo, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, south, africa, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, state, government, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, stresses, kiev, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, sudan, saudi, conflict",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, sunday, sudan, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, sánchez's, russian, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, t-14s, russia, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, tass, ukraine, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, teacher, olena, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, three, sudanese, european",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine'""'""the, hiroshima, financial",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, bakhmut, deputy",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, bakhmut, putin",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, bakhmut, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, britain, storm",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, chinese, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, crimea, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, european, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, monday, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, moscow's, moscow",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, mother's, computer",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, russia, moscow",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, russian, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, russian, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, sunday, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukraine, zaporizhia, nuclear",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukrainian, europe, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukrainian, houses, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukrainian, kursk, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukrainian, poland, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukrainian, president, prime",2,2,0,2,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukrainian, russia, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukrainian, russian, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukrainian, russian, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukrainian, volodimir, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, ukrainian, zelensky, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, united, nations, conflict",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, vladen, tatarsky, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, wagner, ukraine's, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, wearing, ukrainian, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, western, kiev, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, world, bank, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, yemen, united, conflict",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, yevgeny, prigozhin, moscow",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, yevgeny, prigozhin, public",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, zakhar, prilepin, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, zaporizhia, nova, nuclear",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"international, zelensky, important, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, although, let's, internet",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, april, sudan, power",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, attorney, general, accused",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, azuaje, ysmel, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, chavista, leoner, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, democratic, biden, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, donald, trump, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, government, maduro, foreign",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, maduro, april, opposition",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, malaysian, amnesty, website",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, miami, tuesday, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, president, ukraine, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, russian, russia, putin",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, saturday, paris, victim",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, short, constitution, justice",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, silvio, berlusconi, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, sources, german, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, twelve, amlo, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, ukraine, poland, court",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, united, states, president",2,2,0,2,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"legal, vasip, sahin, accident",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"migration, Terrorism",1,0,1,0,0,1.0,1.0,1.0,1.0
+es_test_polyglot_stress,tema,"politics, accusations, argentine, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, allied, north, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, allies, chavismo, sanctions",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, almost, cubans, voted",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, amlo, andrés, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, annecy, french, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, argentina, august, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, argentine, juan, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, asian, australia, nuclear",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, august, portoviejo, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, australia's, papua, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, australia, finance, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, austria, bucharest, crime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, bangkok, mcdonald's, party",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, behind, tarek, attorney",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, beijing's, caribbean, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, beijing's, pyongyang's, nuclear",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, beijing, house, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, beijing, shandong, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, berlusconi, trump, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, biden, brazilreactions, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, biden, republicans, opposition",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, brexitboris, johnson, parliament",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, brussels, turkish, european",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, cafemin, mexican, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, canel, miguel, power",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, carondelet, palace, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, cecchignola, stella, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, chavista, nicolás, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, chile, argentina, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, china, covid-19, covid",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, chinese, foreign, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, colombian, international, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, colombian, nicolás, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, communist, party''""we, assembly",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, congress, senate, power",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, considered, malaysia, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, continuity, cuban, power",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, cross, israel, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, cuba, monday, citizens",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, cuba, saturday, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, cuban, constitution, parliament",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, cuban, parliament, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, cuban, president, economic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, details, italian, prime",1,1,0,0,0,0,0,0,1.0
+es_test_polyglot_stress,tema,"politics, donations, donald, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, downing, streetscotland, investigation",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, ecuador, congress, opposition",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, emmanuel, macron, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, english, premium, government",1,1,0,0,0,0,0,0,1.0
+es_test_polyglot_stress,tema,"politics, enzo, biagi, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, esplanade, mosques, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, ethiopian, prime, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, florence, thursday, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, foreign, minister, accused",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, former, halimah, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, former, italian, medical",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, former, scottish, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, french, beijing, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, french, minister, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, french, prime, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, fumio, kishida, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, girls, south, pandemic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, government, china, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, guillermo, lasso, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, guillermo, lasso, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, harassed, josé, power",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, havana, august, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, hiroshima, barack, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, honduras, china, diplomacy",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, hundreds, caimanera, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, international, court, justice",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, international, summit, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, internet, sudan, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, investigators, ryuji, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, italian, arianna, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, italian, council, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, italian, forza, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, italian, prime, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, italian, prime, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, italian, social, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, italy, brothers, party",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, japanese, foreign, economy",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, javier, milei, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, jean, carroll, trial",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, juan, guaidó, opposition",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, luis, miguel, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, maduro, beyond, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, madurothe, nicolás, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, matteo, salvini, coalition",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, meloni, italian, public",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, miguel, díaz-canel, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, minister, interior, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, monday, mahdia, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, move, forward, power",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, nicaragua, holy, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, nicaragua, national, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, nicaraguan, twitter, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, nicolás, maduro, european",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, nicolás, maduro, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, nigeria's, bola, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, opposition, draupadi, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, oro, peru, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, ortega, february, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, pablo, iglesias, party",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, parliament, boris, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, participation, luiz, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, pedro, sánchez, citizens",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, peronism, casa, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, peter, murrell, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, portadathe, european, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, president, guillermo, voting",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, president, gustavo, crime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, president, ukraine, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, prime, minister, european",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, prime, minister, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, prime, minister, internet",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, prime, minister, power",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, prohibition, holy, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, russia, ukraine, putin",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, sandinista, monsignor, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, sandinista, united, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, saviano, italian, justice",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, scott, morrison, prime",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, senegal, ousmane, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, seoul, following, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, seven, shabab, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, since, cuban, traffic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, since, denmark, season",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, spain, tuesday, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, state, mexico, party",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, steve, bray, parliament",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, sudanese, african, opposition",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, suella, braverman, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, syriza, socialist, party",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, taiwan, taiwanese, political",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, taiwanese, china, russia",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, thousands, yemenis, foreign",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, three, cavaliere, business",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, title, democratic, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, trudeau, roxham, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, tuesday, petro, government",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, ukrainian, hiroshima, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, ukrainian, oleg, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, united, states, community",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, united, states, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, united, states, sanctions",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, venezuela, delegations, opposition",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, venezuela, miami, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, venezuela, prisa, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, yemeni, houthi, school",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, ying-jeou, taiwanese, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"politics, zealanders, prime, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"silvio, berlusconi, project, conveys",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, among, nicaraguan, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, asian, hindus, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, august, tuesday, community",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, brazilian, sunday, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, british, association, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, chinese, hong, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, community, madrid, holidays",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, cooperative, development, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, dina, boluarte, community",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, early, sunday, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, fifteen, montana, medical",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, lack, congolese, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, mtayamoyo, river, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, saturday, latin, police",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"social, ukrainian, sunday, citizens",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"sports, brusselswho, royale, league",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"technology, caucus, throw, biden",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"technology, khartoum, become, countries",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"technology, nova, kajovka, explosives",1,1,0,0,0,0,0,0,1.0
+es_test_polyglot_stress,tema,"technology, republican, desantis, candidate",1,1,0,0,0,0,0,0,1.0
+es_test_polyglot_stress,tema,"technology, spaniard, boris, opposition",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"technology, teixeira's, discord, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"technology, trump, united, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"technology, youtube, alphabet, attack",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"transport, army, colombian, accident",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"transport, beijing, monday, president",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"transport, castroism, cubans, economic",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"transport, huitoto, lesly, school",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"transport, i-95a, interstate, vehicle",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"transport, niugini, friday, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"transport, president, gustavo, accident",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"transport, rosa, maría, opposition",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"transport, since, m-608, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"universal, exhibition, brussels, leopold",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"weather, climate, mocha's, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"weather, emilia, romagna, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"weather, government, italy, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"weather, italy, cesena, minister",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"weather, kakhovka, ukraine's, ukraine",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"weather, kiev, russians, amassed",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"weather, lake, maggiore, storm",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"weather, mundo, ukrainian, people",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"weather, sunday, divers, storm",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tema,"weather, world, ukrainian, visits",1,1,0,1,0,0.0,0,0,0.0
+es_test_polyglot_stress,tipo_texto,article,750,473,277,467,11,0.36289222373806274,0.9602888086642599,0.5267326732673268,0.3626666666666667

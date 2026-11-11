@@ -1,0 +1,19 @@
+{
+  "method": "paired source-group bootstrap",
+  "seed": 42,
+  "requested_resamples": 1000,
+  "valid_resamples": 1000,
+  "source_group_count": 194,
+  "e1_f1_95pct": [
+    0.4347756632865676,
+    0.6444181276763723
+  ],
+  "e3_seed44_f1_95pct": [
+    0.2377592388306674,
+    0.3923685211507277
+  ],
+  "e3_minus_e1_95pct": [
+    -0.3447342862382217,
+    -0.10405595251825064
+  ]
+}
