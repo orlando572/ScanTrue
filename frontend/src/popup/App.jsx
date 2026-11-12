@@ -15,6 +15,7 @@ import { LoaderSweep } from './components/HudLoader.jsx';
 // El mismo fondo interactivo que la web.
 import VectorField from '../../../web/src/components/VectorField.jsx';
 import { countWords, hasSelectionText, meterState, presentFragments } from './selection-presentation.js';
+import { keepsSource, sourceOf } from '../shared/selection.js';
 import { presentServices } from './service-presentation.js';
 import scanTrueMark from './assets/scantrue-mark.svg';
 
@@ -65,6 +66,18 @@ function ServiceAlert({ health, onRetry }) {
   </div>;
 }
 
+// Hay fragmentos de otra página: no se mezclan. Se elige entre empezar de nuevo aquí o conservarlos.
+function ConflictAlert({ conflict, busy, onRestart, onKeep }) {
+  if (!conflict) return null;
+  const from = conflict.domain ? ` de ${conflict.domain}` : ' de otra página';
+  return <div className="hud-panel hud-panel--amber mt-4" role="alert">
+    <p className="hud-code" aria-hidden="true">Otra página</p>
+    <p className="mt-1 text-sm leading-5 text-ink">Tienes {conflict.count} {conflict.count === 1 ? 'fragmento' : 'fragmentos'}{from}. Solo se analiza una noticia a la vez.</p>
+    <button type="button" className="primary-button mt-3" onClick={onRestart} disabled={busy}>Empezar de nuevo aquí</button>
+    <button type="button" className="secondary-button mt-2" onClick={onKeep} disabled={busy}>Conservar lo que tengo</button>
+  </div>;
+}
+
 function selectionDomain(url) {
   try {
     const parsed = new URL(url);
@@ -83,7 +96,7 @@ function RemoveIcon() {
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M6 6l12 12M18 6 6 18" /></svg>;
 }
 
-function SelectionScreen({ selection, error, selecting, selectionMode, submitting, onAnalyze, onAddText, onEdit, onBack, onRemoveFragment, onClear }) {
+function SelectionScreen({ selection, error, selecting, selectionMode, submitting, notice, conflict, onAnalyze, onAddText, onRestart, onKeep, onDismissNotice, onEdit, onBack, onRemoveFragment, onClear }) {
   const domain = selectionDomain(selection.url);
   const fragments = presentFragments(selection);
   const meter = meterState(countWords(selection.text));
@@ -91,7 +104,15 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
     <ScreenHeader title="Texto para analizar" onBack={onBack}>
       {selectionMode && <span className="live-chip mt-2" role="status"><span aria-hidden="true">Seleccionando</span><span className="sr-only">Modo selección activo en la página</span></span>}
     </ScreenHeader>
-    {domain && <p className="hud-readout mt-4">Origen: <b>{domain}</b></p>}
+    {domain
+      ? <p className="hud-readout mt-4">Origen: <b>{domain}</b></p>
+      : hasSelectionText(selection) && <p className="hud-readout mt-4">Sin página de origen: hay texto escrito o pegado.</p>}
+    {selection.mixedArticles && <p className="mt-2 text-[12px] leading-[18px] text-amber" role="status">▲ Parecen notas distintas de esta página. Revisa que todo sea de la misma noticia.</p>}
+    {notice?.kind === 'navigated' && <div className="hud-panel hud-panel--amber mt-4" role="status">
+      <p className="hud-code" aria-hidden="true">Cambiaste de página</p>
+      <p className="mt-1 text-sm leading-5 text-ink">La selección terminó. {notice.count === 1 ? 'Tu fragmento' : `Tus ${notice.count} fragmentos`}{notice.domain ? ` de ${notice.domain}` : ''} {notice.count === 1 ? 'sigue' : 'siguen'} aquí: puedes analizarlos o vaciar para empezar con otra noticia.</p>
+      <button type="button" className="text-link mt-2" onClick={onDismissNotice}>Entendido</button>
+    </div>}
 
     <div className={`word-meter word-meter--${meter.level} mt-4`}>
       <div className="flex items-baseline justify-between gap-2">
@@ -126,7 +147,8 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
       </div>
     </details>
 
-    {!selectionMode && <button type="button" className="secondary-button mt-5" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : 'Seleccionar más texto'}</button>}
+    {!selectionMode && !conflict && <button type="button" className="secondary-button mt-5" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : 'Seleccionar más texto'}</button>}
+    <ConflictAlert conflict={conflict} busy={selecting || submitting} onRestart={onRestart} onKeep={onKeep} />
   </>;
 }
 
@@ -181,6 +203,9 @@ export default function App() {
   const [analysisError, setAnalysisError] = useState('');
   const [selecting, setSelecting] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
+  // Fragmentos de otra página al intentar seleccionar, y aviso de que la pestaña cambió de página.
+  const [conflict, setConflict] = useState(null);
+  const [selectionNotice, setSelectionNotice] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [resultError, setResultError] = useState('');
@@ -231,7 +256,7 @@ export default function App() {
       const foundSelection = pending?.ok && typeof pending.selection?.text === 'string' ? pending.selection : null;
       const foundOperation = active?.ok ? active.operation : null;
       if (foundSelection) setSelection(foundSelection);
-      if (pending?.ok) setSelectionMode(pending.selecting === true);
+      if (pending?.ok) { setSelectionMode(pending.selecting === true); setSelectionNotice(pending.notice ?? null); }
       if (foundOperation) setOperation(foundOperation);
       if (foundOperation?.status === 'completed') setStack(hasSelectionText(foundSelection) ? ['P01', 'P02', 'P05'] : ['P01', 'P05']);
       else if (['working', 'error', 'uncertain', 'session_error', 'service_error', 'storage_error'].includes(foundOperation?.status)) setStack(['P01', 'P02', 'P04']);
@@ -246,6 +271,7 @@ export default function App() {
     const handleChange = (changes, area) => {
       if (area !== 'session') return;
       if ('selectionTargetTabId' in changes) setSelectionMode(changes.selectionTargetTabId.newValue !== undefined);
+      if ('selectionNotice' in changes) setSelectionNotice(changes.selectionNotice.newValue ?? null);
       const pendingChange = changes.pendingSelection?.newValue;
       // Si se borra del almacenamiento, la App no conserva una copia vieja.
       if ('pendingSelection' in changes && !pendingChange) setSelection((previous) => previous && { text: '', fragments: [], url: null });
@@ -298,8 +324,12 @@ export default function App() {
   };
   const back = () => setStack((items) => items.length > 1 ? items.slice(0, -1) : items);
   const editSelection = (text) => {
-    // Editar el texto capturado no cambia la página de origen; vaciarlo, sí.
-    const draft = { ...selectionRef.current, text, fragments: text.trim() ? [{ id: 'manual', text }] : [], url: text.trim() ? selectionRef.current?.url ?? null : null, capturedAt: Date.now(), updatedBy: 'popup' };
+    // Recortar el texto marcado conserva la página de origen; añadir texto que no estaba en
+    // ella la quita (vuelve si se deshace el cambio). Vaciarlo borra también la página marcada.
+    const filled = text.trim() !== '';
+    const source = filled ? sourceOf(selectionRef.current) : null;
+    const url = source?.url && keepsSource(source.text, text) ? source.url : null;
+    const draft = { ...selectionRef.current, text, fragments: filled ? [{ id: 'manual', text }] : [], url, source, mixedArticles: false, capturedAt: Date.now(), updatedBy: 'popup' };
     selectionRef.current = draft;
     setSelection(draft);
     setSelectionError('');
@@ -319,7 +349,11 @@ export default function App() {
     try { await draftWrite.current; }
     catch { throw new Error('No pudimos guardar los cambios del texto.'); }
   };
-  const startSelection = async () => {
+  const dismissNotice = () => {
+    setSelectionNotice(null);
+    void chrome.storage?.session?.remove('selectionNotice')?.catch?.(() => {});
+  };
+  const startSelection = async (restart = false) => {
     setSelectionError('');
     setAnalysisError('');
     setSelecting(true);
@@ -328,8 +362,12 @@ export default function App() {
       const granted = await chrome.permissions?.request?.({ origins: ['http://*/*', 'https://*/*'] }) ?? true;
       if (!granted) { setSelectionError('ScanTrue necesita permiso para leer la página y marcar el texto. Pulsa «Escoger texto» y acepta el permiso.'); return; }
       if (current === 'P02' && selection) await persistSelection();
-      const response = await sendExtensionMessage({ type: 'START_SELECTION' });
+      const response = await sendExtensionMessage({ type: 'START_SELECTION', restart });
+      if (response?.conflict) { setConflict(response.conflict); return; }
+      setConflict(null);
       if (!response?.ok) { setSelectionError(response?.error ?? 'No se puede seleccionar texto en esta pestaña.'); return; }
+      // Al empezar de nuevo, el servicio ya vació los fragmentos de la otra página.
+      if (restart) { selectionRef.current = null; setSelection(null); }
       if (!inPanel) { window.close(); return; }
       // En el panel lateral la App sigue visible: se muestra la lista en vivo.
       setSelectionMode(true);
@@ -353,6 +391,7 @@ export default function App() {
       const response = await sendExtensionMessage({ type: 'CLEAR_FRAGMENTS' });
       if (!response?.ok) throw new Error();
       setSelection({ text: '', fragments: [], url: null });
+      setConflict(null);
     } catch { setSelectionError('No pudimos vaciar la selección. Inténtalo de nuevo.'); }
   };
   const stopSelectionMode = async () => {
@@ -367,6 +406,8 @@ export default function App() {
     analysisLock.current = true;
     setSubmitting(true);
     setAnalysisError('');
+    setConflict(null);
+    dismissNotice();
     try {
       await persistSelection();
       if (selectionMode) await stopSelectionMode();
@@ -463,7 +504,8 @@ export default function App() {
           <p className="mt-2 text-sm leading-5 text-muted">Marca el titular y unos párrafos de la noticia. Te mostramos si se parece más a una noticia falsa o a una real.</p>
           <p className="mt-2 text-[12px] leading-[18px] text-muted opacity-80">Es una orientación, no una verificación de los hechos.</p>
           <ServiceAlert health={health} onRetry={refreshHealth} />
-          <button type="button" className="primary-button mt-5" onClick={startSelection} disabled={selecting}>{selecting ? 'Preparando selección…' : 'Escoger texto'}</button>
+          <button type="button" className="primary-button mt-5" onClick={() => startSelection()} disabled={selecting}>{selecting ? 'Preparando selección…' : 'Escoger texto'}</button>
+          <ConflictAlert conflict={conflict} busy={selecting} onRestart={() => startSelection(true)} onKeep={() => { setConflict(null); open('P02'); }} />
           {selectionError && <p className="hud-alert mt-3 text-[12px] leading-[18px]" role="alert">{selectionError}</p>}
           {hasSelectionText(selection) && <button type="button" className="text-link mt-4 w-fit" onClick={() => open('P02')}>Ver texto para analizar</button>}
         </div>
@@ -471,7 +513,7 @@ export default function App() {
         {current !== 'P02' && current !== 'P04' && current !== 'P05' && current !== 'P06' && current !== 'P07' && current !== 'P08' && current !== 'P09' && current !== 'P11' && current !== 'P12' && current !== 'P13' && <button type="button" className="text-link mb-5 flex w-fit items-center gap-1.5" onClick={back}><span className="size-5"><Icon name="back" /></span>Volver</button>}
         {stack.includes('P07') && <div hidden={current !== 'P07'}><HistoryScreen deletedAnalysis={deletedAnalysis} onBack={back} onOpen={(id) => { historyScroll.current = popupScroll.current?.scrollTop ?? 0; setHistoryDetail(null); setSelectedAnalysisId(id); open('P08'); }} onChooseText={() => setStack(['P01'])} /></div>}
         {stack.includes('P08') && selectedAnalysisId && <div hidden={current !== 'P08'}><HistoryDetailScreen key={selectedAnalysisId} id={selectedAnalysisId} onBack={back} onLoaded={setHistoryDetail} onDeletingChange={setDetailDeleting} onBreakdown={(item) => { setHistoryDetail(item); open('P06'); }} onDeleted={(id) => { setDeletedAnalysis({ id }); setHistoryDetail(null); setSelectedAnalysisId(null); back(); }} /></div>}
-        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} onAnalyze={analyze} onAddText={startSelection} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
+        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} notice={selectionNotice} conflict={conflict} onAnalyze={analyze} onAddText={() => startSelection()} onRestart={() => startSelection(true)} onKeep={() => setConflict(null)} onDismissNotice={dismissNotice} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
           : current === 'P04' ? <AnalysisScreen operation={operation} onHistory={() => open('P07')} onBack={() => setStack(['P01', 'P02'])} onRetry={analyze} />
           : current === 'P05' ? <ResultScreen result={operation?.result} url={selection?.url} text={selection?.text} onBack={back} onBreakdown={() => open('P06')} onStartOver={startOver} clearing={clearing} error={resultError} />
           : current === 'P06' ? <BreakdownScreen result={stack.at(-2) === 'P08' ? historyDetail : operation?.result} onBack={back} />

@@ -40,3 +40,49 @@ export function normalizeFragments(selection) {
   }
   return typeof selection?.text === 'string' && selection.text.trim() ? [{ id: 'previo', text: selection.text }] : [];
 }
+
+// ── Una selección pertenece a una sola página ──────────────────────────────
+
+// Misma página aunque cambien el ancla o los parámetros (p. ej. #comentarios, ?utm=…).
+export function samePage(a, b) {
+  try {
+    const first = new URL(a);
+    const second = new URL(b);
+    return first.origin === second.origin && first.pathname === second.pathname;
+  } catch { return false; }
+}
+
+const flat = (text) => text.replace(/\s+/g, ' ').trim();
+
+// El texto editado conserva la página de origen solo si no añade nada: cada párrafo debe
+// estar contenido en lo que se marcó en la página. Recortar o borrar partes sí la conserva.
+export function keepsSource(sourceText, edited) {
+  if (typeof sourceText !== 'string' || typeof edited !== 'string') return false;
+  const source = flat(sourceText);
+  const parts = edited.split(/\n\s*\n/).map(flat).filter(Boolean);
+  return parts.length > 0 && parts.every((part) => source.includes(part));
+}
+
+export function isDuplicate(fragments, text) {
+  const wanted = flat(text);
+  return fragments.some((fragment) => flat(fragment.text) === wanted);
+}
+
+// Página y texto marcados de una selección. Las guardadas antes de esta regla no traen
+// `source`: se toma su propia URL y su texto.
+export function sourceOf(selection) {
+  const source = selection?.source;
+  if (source && typeof source === 'object') {
+    return { url: typeof source.url === 'string' ? source.url : null, text: typeof source.text === 'string' ? source.text : '' };
+  }
+  return { url: typeof selection?.url === 'string' ? selection.url : null, text: typeof selection?.text === 'string' ? selection.text : '' };
+}
+
+// Los fragmentos caen en bloques <article> distintos de la misma página.
+export function hasMixedArticles(fragments) {
+  return new Set(fragments.map((fragment) => fragment.article).filter((article) => Number.isInteger(article))).size > 1;
+}
+
+export function pageDomain(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return null; }
+}

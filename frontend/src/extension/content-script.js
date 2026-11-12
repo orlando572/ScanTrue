@@ -58,6 +58,25 @@ function createSelectionController() {
     ranges.delete(id);
   }
 
+  // Posición del <article> que contiene la selección, para avisar si se marcan notas distintas
+  // de una misma página (portadas, directos). `null` si la página no usa <article>.
+  function articleIndex() {
+    const node = window.getSelection()?.anchorNode;
+    const element = node instanceof Element ? node : node?.parentElement;
+    const article = element?.closest?.('article');
+    return article ? [...document.querySelectorAll('article')].indexOf(article) : null;
+  }
+
+  // Aviso breve en la barra (fragmento rechazado, notas distintas).
+  let noticeTimer;
+  function notice(text) {
+    if (!bar || typeof text !== 'string') return;
+    bar.notice.textContent = `▲ ${text}`;
+    bar.notice.hidden = false;
+    clearTimeout(noticeTimer);
+    noticeTimer = setTimeout(() => { if (bar) bar.notice.hidden = true; }, 3500);
+  }
+
   function isInsideUi(event) {
     return event.composedPath().some((node) => node === bar?.host || node === removeMenu);
   }
@@ -84,9 +103,10 @@ function createSelectionController() {
     }
     closeRemoveMenu();
     const id = crypto.randomUUID();
+    const article = inField ? null : articleIndex();
     if (!inField) mark(id);
     window.getSelection()?.removeAllRanges();
-    send({ type: 'SELECTION_CAPTURED', text, id }, (response) => {
+    send({ type: 'SELECTION_CAPTURED', text, id, article }, (response) => {
       if (!response?.ok) unmark(id);
     });
   }
@@ -136,6 +156,7 @@ function createSelectionController() {
       .led { flex: none; width: 7px; height: 7px; background: #e6ff4d; box-shadow: 0 0 6px #e6ff4d; animation: blink 1s steps(1, end) infinite; }
       .label { color: #e6ff4d; text-transform: uppercase; letter-spacing: .14em; }
       .meta, .hint { color: #9a9aa8; }
+      .notice { color: #ffb21e; }
       .meta b { font-weight: 400; } .meta b.count { color: #f2f2f5; }
       .meta b { color: #ff4a3d; } .meta b.ready { color: #f5e14a; } .meta b.good { color: #3dff9a; } .meta b.full { color: #e2b13c; }
       [hidden] { display: none !important; }
@@ -152,6 +173,7 @@ function createSelectionController() {
       <span class="label">Seleccionando</span>
       <span class="hint" data-hint>· Marca texto en la página para añadirlo</span>
       <span class="meta" data-meta aria-live="polite" hidden>· <b class="count" data-count>0</b> <span data-noun>fragmentos</span> · <b data-words>0</b> palabras</span>
+      <span class="notice" data-notice role="status" hidden></span>
       <button type="button" data-clear title="Quitar todos los fragmentos">Vaciar</button>
       <button type="button" class="primary" data-stop title="Terminar la selección">Terminar</button>
     </div>`;
@@ -161,7 +183,7 @@ function createSelectionController() {
     bar = {
       host, count: root.querySelector('[data-count]'), words: root.querySelector('[data-words]'),
       noun: root.querySelector('[data-noun]'), hint: root.querySelector('[data-hint]'), meta: root.querySelector('[data-meta]'),
-      clear: root.querySelector('[data-clear]'),
+      clear: root.querySelector('[data-clear]'), notice: root.querySelector('[data-notice]'),
     };
     update(0, 0);
   }
@@ -192,6 +214,7 @@ function createSelectionController() {
   function stop() {
     active = false;
     closeRemoveMenu();
+    clearTimeout(noticeTimer);
     document.removeEventListener('mouseup', capture, true);
     document.removeEventListener('keyup', capture, true);
     bar?.host.remove();
@@ -203,6 +226,7 @@ function createSelectionController() {
       case 'SCANTRUE_START': start(); break;
       case 'SCANTRUE_STOP': stop(); break;
       case 'SCANTRUE_SYNC': update(message.count, message.words); break;
+      case 'SCANTRUE_NOTICE': notice(message.text); break;
       case 'SCANTRUE_REMOVE': unmark(message.id); break;
       case 'SCANTRUE_CLEAR': for (const id of [...ranges.keys()]) unmark(id); break;
       default: break;

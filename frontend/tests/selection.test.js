@@ -97,16 +97,88 @@ test('agrega una nueva selección al borrador editado en el popup', async () => 
   assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.text, 'Texto pegado\n\nÚltima parte');
 });
 
-test('conserva la fuente solo si los fragmentos vienen de la misma página', async () => {
+test('rechaza un fragmento marcado en otra página y conserva la fuente', async () => {
   const worker = createWorker();
   await worker.send({ type: 'START_SELECTION' });
-  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno' }, page);
+  assert.equal((await worker.send({ type: 'SELECTION_CAPTURED', text: 'Dos' }, page)).ok, true);
+  // La página cambió de dirección sin recargar (p. ej. scroll infinito a la nota siguiente).
+  const rejected = await worker.send({ type: 'SELECTION_CAPTURED', text: 'Tres' }, { tab: { id: 3, url: 'https://ejemplo.test/otra-nota' } });
+  assert.deepEqual(plain(rejected), { ok: false, reason: 'other_page' });
+  const { selection } = await worker.send({ type: 'GET_PENDING_SELECTION' });
+  assert.equal(selection.text, 'Uno\n\nDos');
+  assert.equal(selection.url, 'https://ejemplo.test/noticia');
+  assert.equal(worker.toTabs.at(-1).type, 'SCANTRUE_NOTICE');
+});
+
+test('con fragmentos de otra página no empieza a seleccionar hasta que se pide empezar de nuevo', async () => {
+  const worker = createWorker({ id: 4, url: 'https://otro.test/nota' });
+  worker.values.pendingSelection = { fragments: [{ id: 'a', text: 'Uno' }, { id: 'b', text: 'Dos' }], text: 'Uno\n\nDos', url: 'https://www.ejemplo.test/noticia', source: { url: 'https://www.ejemplo.test/noticia', text: 'Uno\n\nDos' } };
+  const blocked = await worker.send({ type: 'START_SELECTION' });
+  assert.deepEqual(plain(blocked), { ok: false, conflict: { domain: 'ejemplo.test', count: 2 } });
+  assert.equal(worker.injected, false);
+  assert.equal(worker.values.selectionTargetTabId, undefined);
+
+  assert.equal((await worker.send({ type: 'START_SELECTION', restart: true })).ok, true);
+  assert.equal(worker.values.pendingSelection.text, '');
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Nuevo' }, { tab: { id: 4, url: 'https://otro.test/nota' } });
+  assert.equal(worker.values.pendingSelection.url, 'https://otro.test/nota');
+});
+
+test('texto pegado deja el análisis sin fuente, pero la página marcada sigue bloqueando otra', async () => {
+  const worker = createWorker({ id: 4, url: 'https://otro.test/nota' });
+  // Así lo guarda el panel cuando se añade texto que no estaba en la página.
+  worker.values.pendingSelection = { fragments: [{ id: 'manual', text: 'Uno y algo pegado' }], text: 'Uno y algo pegado', url: null, source: { url: 'https://ejemplo.test/noticia', text: 'Uno' }, updatedBy: 'popup' };
+  assert.equal((await worker.send({ type: 'START_SELECTION' })).conflict.domain, 'ejemplo.test');
+});
+
+test('rechaza marcar dos veces el mismo texto', async () => {
+  const worker = createWorker();
   await worker.send({ type: 'START_SELECTION' });
-  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Dos' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } });
-  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, 'https://ejemplo.test/noticia');
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'El mismo  párrafo' }, page);
+  assert.equal((await worker.send({ type: 'SELECTION_CAPTURED', text: ' El mismo párrafo ' }, page)).reason, 'duplicate');
+  assert.equal(worker.values.pendingSelection.fragments.length, 1);
+});
+
+test('avisa si los fragmentos caen en bloques article distintos de la misma página', async () => {
+  const worker = createWorker();
   await worker.send({ type: 'START_SELECTION' });
-  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Tres' }, { tab: { id: 3, url: 'https://otra.test' } });
-  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, null);
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno', article: 0 }, page);
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Dos', article: 0 }, page);
+  assert.equal(worker.values.pendingSelection.mixedArticles, false);
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Tres', article: 2 }, page);
+  assert.equal(worker.values.pendingSelection.mixedArticles, true);
+  assert.ok(worker.toTabs.some((message) => message.type === 'SCANTRUE_NOTICE' && /notas distintas/.test(message.text)));
+});
+
+test('si la pestaña pasa a otra página con fragmentos, termina el modo y deja un aviso', async () => {
+  const worker = createWorker();
+  await worker.send({ type: 'START_SELECTION' });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno' }, page);
+  // Misma página (ancla): no pasa nada.
+  worker.tabEvents.updated(3, { url: 'https://ejemplo.test/noticia#comentarios' }, { id: 3 });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(worker.values.selectionTargetTabId, 3);
+  // Otra dirección sin recargar.
+  worker.tabEvents.updated(3, { url: 'https://ejemplo.test/otra-nota' }, { id: 3 });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(worker.values.selectionTargetTabId, undefined);
+  assert.deepEqual(plain(worker.values.selectionNotice), { kind: 'navigated', domain: 'ejemplo.test', count: 1 });
+  assert.deepEqual(plain((await worker.send({ type: 'GET_PENDING_SELECTION' })).notice), { kind: 'navigated', domain: 'ejemplo.test', count: 1 });
+  assert.equal(worker.values.pendingSelection.text, 'Uno');
+  // Vaciar retira el aviso.
+  await worker.send({ type: 'CLEAR_FRAGMENTS' });
+  assert.equal(worker.values.selectionNotice, undefined);
+});
+
+test('recargar la misma página termina el modo sin aviso', async () => {
+  const worker = createWorker();
+  await worker.send({ type: 'START_SELECTION' });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno' }, page);
+  worker.tabEvents.updated(3, { status: 'loading' }, { id: 3, url: 'https://ejemplo.test/noticia' });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(worker.values.selectionTargetTabId, undefined);
+  assert.equal(worker.values.selectionNotice, undefined);
 });
 
 test('la fuente ignora el ancla y los parámetros de la misma página', async () => {
@@ -117,14 +189,12 @@ test('la fuente ignora el ancla y los parámetros de la misma página', async ()
   assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, 'https://ejemplo.test/noticia');
 });
 
-test('tras vaciar la selección, el siguiente fragmento vuelve a tener fuente', async () => {
+test('tras vaciar la selección se puede marcar en otra página y vuelve a tener fuente', async () => {
   const worker = createWorker();
   await worker.send({ type: 'START_SELECTION' });
   await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno' }, { tab: { id: 3, url: 'https://otra.test/a' } });
-  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Dos' }, { tab: { id: 3, url: 'https://ejemplo.test/b' } });
-  assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, null);
   await worker.send({ type: 'CLEAR_FRAGMENTS' });
-  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Tres' }, { tab: { id: 3, url: 'https://ejemplo.test/noticia' } });
+  assert.equal((await worker.send({ type: 'SELECTION_CAPTURED', text: 'Tres' }, page)).ok, true);
   assert.equal((await worker.send({ type: 'GET_PENDING_SELECTION' })).selection.url, 'https://ejemplo.test/noticia');
 });
 
@@ -227,4 +297,18 @@ test('quitar un fragmento sin selección guardada devuelve una selección vacía
   const response = await worker.send({ type: 'REMOVE_FRAGMENT', id: 'f1' });
   assert.equal(response.ok, true);
   assert.equal(response.selection.text, '');
+});
+
+test('el texto editado conserva la fuente solo si no añade nada a lo marcado', async () => {
+  const { keepsSource, samePage } = await import('../src/shared/selection.js');
+  const marked = 'Primer párrafo de la nota.\n\nSegundo párrafo,   con más texto.';
+  assert.equal(keepsSource(marked, marked), true);
+  assert.equal(keepsSource(marked, 'Segundo párrafo, con más texto.'), true);
+  assert.equal(keepsSource(marked, 'Primer párrafo\n\ncon más texto.'), true);
+  assert.equal(keepsSource(marked, 'Primer párrafo de la nota. Y una frase pegada.'), false);
+  assert.equal(keepsSource(marked, `${marked}\n\nTexto de otra noticia`), false);
+  assert.equal(keepsSource(marked, '   '), false);
+  assert.equal(samePage('https://a.test/n?x=1#y', 'https://a.test/n'), true);
+  assert.equal(samePage('https://a.test/n', 'https://a.test/m'), false);
+  assert.equal(samePage('https://a.test/n', null), false);
 });

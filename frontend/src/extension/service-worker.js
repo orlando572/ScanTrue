@@ -2,10 +2,12 @@ import { clearCompletedAnalysis, getAnalysisOperation, startAnalysis } from './a
 import { deleteHistoryDetail, getHistoryDetail, listHistory } from './history.js';
 import { getPublishedMetrics } from './metrics.js';
 import { closeAccountSession, getAccountState, loginAccount, registerAccount } from './account.js';
-import { countWords, joinFragments, normalizeFragments } from '../shared/selection.js';
+import { countWords, hasMixedArticles, isDuplicate, joinFragments, normalizeFragments, pageDomain, samePage, sourceOf } from '../shared/selection.js';
 
 const PENDING_SELECTION = 'pendingSelection';
 const SELECTION_TARGET = 'selectionTargetTabId';
+// Aviso para el panel cuando la pestaña en selección pasa a otra página.
+const SELECTION_NOTICE = 'selectionNotice';
 const restrictLocalStorage = chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' });
 
 // Panel lateral por defecto. Si el manifiesto vuelve a declarar `default_popup`, se usa el popup.
@@ -18,22 +20,43 @@ async function endSelectionForTab(tabId) {
   const target = (await chrome.storage.session.get(SELECTION_TARGET))[SELECTION_TARGET];
   if (target === tabId) await chrome.storage.session.remove(SELECTION_TARGET);
 }
+
+// La pestaña en selección cambió de dirección, con recarga (`loading`) o sin ella (sitios
+// que cargan la nota siguiente al bajar). Si ya hay fragmentos de otra página, el modo
+// termina y el panel lo avisa: una selección pertenece a una sola página.
+async function handleTabUpdate(tabId, change, tab) {
+  const target = (await chrome.storage.session.get(SELECTION_TARGET))[SELECTION_TARGET];
+  if (target !== tabId) return;
+  const url = change.url ?? tab?.url;
+  const selection = await readSelection();
+  const count = normalizeFragments(selection).length;
+  const source = sourceOf(selection).url;
+  const left = count > 0 && source && typeof url === 'string' && !samePage(source, url);
+  if (change.status !== 'loading' && !left) return;
+  await chrome.storage.session.remove(SELECTION_TARGET);
+  if (left) {
+    notifyTab(tabId, { type: 'SCANTRUE_STOP' });
+    await chrome.storage.session.set({ [SELECTION_NOTICE]: { kind: 'navigated', domain: pageDomain(source), count } });
+  }
+}
 chrome.tabs.onRemoved?.addListener((tabId) => { void endSelectionForTab(tabId).catch(() => {}); });
-chrome.tabs.onUpdated?.addListener((tabId, change) => {
-  if (change.status === 'loading') void endSelectionForTab(tabId).catch(() => {});
+chrome.tabs.onUpdated?.addListener((tabId, change, tab) => {
+  if (change.status === 'loading' || change.url) void handleTabUpdate(tabId, change, tab).catch(() => {});
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message?.type === 'START_SELECTION') {
-    startSelection()
+    startSelection(message.restart === true)
       .then(() => sendResponse({ ok: true }))
-      .catch((error) => sendResponse({ ok: false, error: selectionErrors[error?.message] ?? selectionErrors.unsupported }));
+      .catch((error) => sendResponse(error?.conflict
+        ? { ok: false, conflict: error.conflict }
+        : { ok: false, error: selectionErrors[error?.message] ?? selectionErrors.unsupported }));
     return true;
   }
 
   if (message?.type === 'GET_PENDING_SELECTION') {
-    chrome.storage.session.get([PENDING_SELECTION, SELECTION_TARGET])
-      .then((items) => sendResponse({ ok: true, selection: items[PENDING_SELECTION] ?? null, selecting: items[SELECTION_TARGET] !== undefined }))
+    chrome.storage.session.get([PENDING_SELECTION, SELECTION_TARGET, SELECTION_NOTICE])
+      .then((items) => sendResponse({ ok: true, selection: items[PENDING_SELECTION] ?? null, selecting: items[SELECTION_TARGET] !== undefined, notice: items[SELECTION_NOTICE] ?? null }))
       .catch(() => sendResponse({ ok: false, selection: null }));
     return true;
   }
@@ -141,8 +164,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message?.type === 'SELECTION_CAPTURED' && sender.tab?.id) {
-    saveSelection(message.text, sender.tab, message.id, pageUrl(sender))
-      .then((saved) => sendResponse({ ok: saved }))
+    saveSelection(message.text, sender.tab, message.id, pageUrl(sender), message.article)
+      .then((reason) => sendResponse(reason ? { ok: false, reason } : { ok: true }))
       .catch(() => sendResponse({ ok: false }));
     return true;
   }
@@ -153,13 +176,23 @@ const selectionErrors = {
   unsupported: 'Esta página no permite seleccionar texto. Prueba en una página de noticias.',
 };
 
-async function startSelection() {
+async function startSelection(restart = false) {
   await restrictLocalStorage;
   const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
   if (!tab?.id) throw new Error('unsupported');
   // Sin permiso de host ni activeTab, Chrome no expone la URL de la pestaña.
   if (tab.url === undefined) throw new Error('permission');
   if (!/^https?:\/\//.test(tab.url)) throw new Error('unsupported');
+
+  // Con fragmentos de otra página no se sigue: el panel ofrece empezar de nuevo aquí.
+  const pending = await readSelection();
+  const count = normalizeFragments(pending).length;
+  const source = sourceOf(pending).url;
+  if (count > 0 && source && !samePage(source, tab.url)) {
+    if (!restart) throw Object.assign(new Error('conflict'), { conflict: { domain: pageDomain(source), count } });
+    await clearFragments();
+  }
+  await chrome.storage.session.remove(SELECTION_NOTICE);
 
   const previous = (await chrome.storage.session.get(SELECTION_TARGET))[SELECTION_TARGET];
   if (previous !== undefined && previous !== tab.id) notifyTab(previous, { type: 'SCANTRUE_STOP' });
@@ -197,8 +230,10 @@ async function syncTab(tabId) {
   notifyTab(tabId, { type: 'SCANTRUE_SYNC', count: fragments.length, words: countWords(joinFragments(fragments)) });
 }
 
-async function writeFragments(fragments, url, updatedBy) {
-  const selection = { fragments, text: joinFragments(fragments), url, capturedAt: Date.now(), updatedBy };
+// `url` es la fuente que se publica; `source`, la página y el texto que se marcaron (la fuente
+// puede perderse si se añade texto a mano, pero la página sigue valiendo para no mezclar otra).
+async function writeFragments(fragments, url, updatedBy, source = null) {
+  const selection = { fragments, text: joinFragments(fragments), url, source: fragments.length ? source : null, mixedArticles: hasMixedArticles(fragments), capturedAt: Date.now(), updatedBy };
   await chrome.storage.session.set({ [PENDING_SELECTION]: selection });
   const operation = (await chrome.storage.session.get('analysisOperation')).analysisOperation;
   if (operation?.status !== 'working') await chrome.storage.session.remove('analysisOperation');
@@ -212,33 +247,39 @@ function pageUrl(sender) {
   return typeof candidate === 'string' && /^https?:\/\//.test(candidate) && candidate.length <= 2048 ? candidate : null;
 }
 
-// Misma página aunque cambien el ancla o los parámetros (p. ej. #comentarios, ?utm=…).
-function samePage(a, b) {
-  try {
-    const first = new URL(a);
-    const second = new URL(b);
-    return first.origin === second.origin && first.pathname === second.pathname;
-  } catch { return false; }
-}
+const rejections = {
+  other_page: 'Otra página: no se añadió',
+  duplicate: 'Ese texto ya está marcado',
+};
 
-async function addFragment(text, tab, id, url) {
+// Devuelve el motivo del rechazo o `null` si el fragmento se guardó.
+async function addFragment(text, tab, id, url, article) {
   const previous = await readSelection();
   const fragmentId = typeof id === 'string' && /^[\w-]{1,64}$/.test(id) ? id : crypto.randomUUID();
   const kept = normalizeFragments(previous);
-  const fragments = [...kept, { id: fragmentId, text, tabId: tab.id }];
+  const source = kept.length === 0 ? { url, text: '' } : sourceOf(previous);
+  // Una selección pertenece a una página: lo marcado en otra se rechaza (también si la página
+  // cambió de dirección sin recargar).
+  if (kept.length > 0 && source.url && url && !samePage(source.url, url)) return 'other_page';
+  if (isDuplicate(kept, text)) return 'duplicate';
+  const fragments = [...kept, { id: fragmentId, text, tabId: tab.id, article: Number.isInteger(article) ? article : null }];
   // Sin fragmentos previos (selección nueva o vaciada), la fuente es esta página. Con fragmentos,
-  // se conserva solo si vienen de la misma página; texto pegado o de otra página no tiene fuente única.
+  // se conserva solo si sigue vigente; con texto escrito o pegado no hay fuente única.
   const keepUrl = kept.length === 0 ? url : previous?.url && url && samePage(previous.url, url) ? previous.url : null;
-  return writeFragments(fragments, keepUrl, 'page');
+  const mixedBefore = hasMixedArticles(kept);
+  await writeFragments(fragments, keepUrl, 'page', { url: source.url, text: [source.text, text].filter(Boolean).join('\n\n') });
+  if (!mixedBefore && hasMixedArticles(fragments)) notifyTab(tab.id, { type: 'SCANTRUE_NOTICE', text: 'Parecen notas distintas de esta página' });
+  return null;
 }
 
-async function saveSelection(text, tab, id, url = null) {
-  if (typeof text !== 'string' || !text.trim()) return false;
+async function saveSelection(text, tab, id, url = null, article = null) {
+  if (typeof text !== 'string' || !text.trim()) return 'empty';
   const items = await chrome.storage.session.get(SELECTION_TARGET);
-  if (items[SELECTION_TARGET] !== tab.id) return false;
-  await addFragment(text, tab, id, url);
-  await syncTab(tab.id);
-  return true;
+  if (items[SELECTION_TARGET] !== tab.id) return 'inactive';
+  const reason = await addFragment(text, tab, id, url, article);
+  if (reason) notifyTab(tab.id, { type: 'SCANTRUE_NOTICE', text: rejections[reason] });
+  else await syncTab(tab.id);
+  return reason;
 }
 
 async function removeFragment(id, senderTab) {
@@ -253,7 +294,7 @@ async function removeFragment(id, senderTab) {
   // Desde una página solo se puede quitar un fragmento marcado en esa misma pestaña.
   if (senderTab && fragment.tabId !== senderTab.id) return false;
   const remaining = fragments.filter((item) => item.id !== id);
-  const updated = await writeFragments(remaining, remaining.length ? selection.url : null, 'worker');
+  const updated = await writeFragments(remaining, remaining.length ? selection.url : null, 'worker', sourceOf(selection));
   if (fragment.tabId !== undefined) {
     notifyTab(fragment.tabId, { type: 'SCANTRUE_REMOVE', id });
     await syncTab(fragment.tabId);
@@ -275,6 +316,7 @@ async function clearFragments(senderTab) {
   if (senderTab && senderTab.id !== target) return false;
   const tabs = new Set(normalizeFragments(await readSelection()).map((fragment) => fragment.tabId).filter((tabId) => tabId !== undefined));
   await writeFragments([], null, 'worker');
+  await chrome.storage.session.remove(SELECTION_NOTICE);
   for (const tabId of tabs) notifyTab(tabId, { type: 'SCANTRUE_CLEAR' });
   await syncTab(target);
   return true;
