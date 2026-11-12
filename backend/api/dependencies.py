@@ -1,6 +1,6 @@
 """Dependencias HTTP para sesiones y almacenamiento."""
 
-from fastapi import Header, HTTPException, Request
+from fastapi import Depends, Header, HTTPException, Request
 
 from backend.repositories.supabase import SupabaseRepository
 from backend.services.identity import IdentityService
@@ -36,3 +36,40 @@ def identity_service(request: Request) -> IdentityService:
 def history_repository(request: Request) -> SupabaseRepository:
     identity = identity_service(request)
     return identity.repository
+
+
+def service_repository(request: Request) -> SupabaseRepository:
+    """Repositorio con la clave secreta: lecturas de la web pública y del panel."""
+    identity = identity_service(request)
+    if not identity.settings.secret_key:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "codigo": "clave_secreta_no_configurada",
+                "mensaje": "Configura SUPABASE_SECRET_KEY para la web y el panel.",
+                "reintentar": False,
+            },
+        )
+    return identity.repository
+
+
+def is_admin(user) -> bool:
+    metadata = getattr(user, "app_metadata", None) or {}
+    return metadata.get("role") == "admin"
+
+
+def admin_user(
+    token: str = Depends(bearer_token),
+    identity: IdentityService = Depends(identity_service),
+):
+    """Solo deja pasar sesiones con app_metadata.role = 'admin' (ver crear_admin.py)."""
+    user = identity.verify_user(token)
+    if not is_admin(user):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "codigo": "no_es_admin",
+                "mensaje": "Esta cuenta no tiene acceso de administrador.",
+            },
+        )
+    return user

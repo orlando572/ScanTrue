@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { countWords, meterState, presentFragments } from '../src/popup/selection-presentation.js';
+import { countWords, hasSelectionText, meterState, presentFragments } from '../src/popup/selection-presentation.js';
 
 test('cuenta palabras igual que el TOKEN_PATTERN del backend', () => {
   assert.equal(countWords('Hola, ¿qué tal? El niño comió 3,5 kg_de pan.'), 10);
@@ -24,4 +24,11 @@ test('presenta fragmentos numerados y trata el texto antiguo como uno', () => {
   assert.deepEqual(shown.map(({ id, number, text, words }) => [id, number, text, words]), [['a', '01', 'Titular', 1], ['c', '02', 'Cuerpo de la noticia', 4]]);
   assert.deepEqual(presentFragments({ text: 'Texto previo' }).map((fragment) => fragment.text), ['Texto previo']);
   assert.deepEqual(presentFragments(null), []);
+});
+
+test('solo una selección con texto cuenta como texto para analizar', () => {
+  assert.equal(hasSelectionText(null), false);
+  assert.equal(hasSelectionText({ text: '', fragments: [], url: null }), false);
+  assert.equal(hasSelectionText({ text: '  \n\t ' }), false);
+  assert.equal(hasSelectionText({ text: 'Titular de la noticia' }), true);
 });

@@ -5,27 +5,32 @@ import asyncio
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from backend.api.admin_routes import router as admin_router
 from backend.api.history_routes import router as history_router
 from backend.api.blockchain_routes import router as blockchain_router
 from backend.api.identity_routes import router as identity_router
 from backend.api.metrics_routes import router as metrics_router
+from backend.api.public_routes import router as public_router
 from backend.api.routes import router as analysis_router
 from backend.blockchain.client import RegistryClient
 from backend.blockchain.worker import BlockchainWorker
-from backend.core.config import AnalysisSettings, BlockchainSettings, SupabaseSettings
-from backend.models.bilstm import BilstmPredictor
-from backend.models.contrato import Combination
-from backend.models.mbert import MbertPredictor, MbertTokenizer
+from backend.core.config import (
+    AnalysisSettings,
+    BlockchainSettings,
+    SupabaseSettings,
+    web_origins,
+)
 from backend.repositories.supabase import SupabaseDataError, SupabaseRepository
-from backend.services.analysis import AnalysisService
 from backend.services.identity import (
     AuthOperationError,
     IdentityService,
     InvalidSessionError,
     SupabaseAuthUnavailable,
 )
+from backend.services.model_versions import ModelVersionManager
 
 logger = logging.getLogger(__name__)
 
@@ -50,31 +55,18 @@ async def lifespan(app: FastAPI):
         worker_task = asyncio.create_task(
             BlockchainWorker(repository, app.state.blockchain_client).run()
         )
-    # Cada modelo se carga una vez y puede degradarse de forma independiente.
+    # La versión activa de los modelos se carga una vez (backend/despliegues/); BETO
+    # puede faltar sin detener el servicio. El panel puede cambiarla sin reiniciar.
+    def swap_service(service) -> None:
+        app.state.analysis_service = service
+
+    versions = ModelVersionManager(on_swap=swap_service)
+    app.state.model_versions = versions
     try:
-        analysis_settings = AnalysisSettings.from_environment()
-        combination = Combination.load(analysis_settings.combination_file)
-        bilstm_predictor = BilstmPredictor()
-        combination.check(bilstm_predictor.contract)
-        try:
-            mbert_text_policy = MbertTokenizer()
-            combination.check(mbert_text_policy.contract)
-        except Exception:
-            logger.exception("No se pudo cargar el tokenizador mBERT")
-            mbert_text_policy = None
-        try:
-            mbert_predictor = (
-                MbertPredictor(mbert_text_policy) if mbert_text_policy else None
-            )
-        except Exception:
-            logger.exception("No se pudo cargar el checkpoint mBERT")
-            mbert_predictor = None
-        app.state.analysis_service = AnalysisService(
-            bilstm_predictor,
-            mbert_predictor=mbert_predictor,
-            mbert_text_policy=mbert_text_policy,
-            combination=combination,
-        )
+        AnalysisSettings.from_environment()
+        app.state.analysis_service = await asyncio.to_thread(versions.start)
+        if app.state.analysis_service is None:
+            logger.error("No se pudo iniciar el servicio de análisis")
     except Exception:
         logger.exception("No se pudo iniciar el servicio de análisis")
         app.state.analysis_service = None
@@ -90,7 +82,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="ScanTrue API",
     description="API local para clasificar textos con los modelos disponibles.",
-    version="0.7.0",
+    version="0.8.0",
     lifespan=lifespan,
 )
 app.include_router(analysis_router)
@@ -98,6 +90,16 @@ app.include_router(identity_router)
 app.include_router(history_router)
 app.include_router(metrics_router)
 app.include_router(blockchain_router)
+app.include_router(public_router)
+app.include_router(admin_router)
+# La web (web/) llama a la API desde el navegador; la extensión usa sus permisos de host.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=web_origins(),
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+    expose_headers=["Content-Disposition"],
+)
 
 
 @app.exception_handler(InvalidSessionError)

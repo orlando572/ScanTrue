@@ -1,0 +1,21 @@
+{
+  "version": "comun_v1.1_conjunta_20261111",
+  "nombre": "Conjunto común v1.1 · BiLSTM B6 + BETO M3b",
+  "fecha": "2026-11-11",
+  "notas": "Modelos entrenados con el conjunto común y calibrados juntos: 80 % BETO + 20 % BiLSTM sobre logits calibrados.",
+  "activable": true,
+  "predeterminado": true,
+  "contratos": {
+    "bilstm": "datasets/bilstm_produccion/modelo/contrato.json",
+    "mbert": "datasets/mbert_produccion/modelo/contrato.json"
+  },
+  "combinacion": "datasets/combinacion_produccion/combinacion.json",
+  "versiones_modelo": {
+    "bilstm": "comun_v1.1_B6_20261107",
+    "mbert": "comun_v1.1_M3b_20261111"
+  },
+  "metricas": {
+    "bilstm": "backend/metrics/evaluaciones.json",
+    "mbert": "backend/metrics/mbert_evaluaciones.json"
+  }
+}

@@ -1,3 +1,5 @@
+import { normalizeFragments } from '../shared/selection.js';
+
 const API_BASE = 'http://127.0.0.1:8000';
 const OPERATION_KEY = 'analysisOperation';
 const SESSION_KEY = 'authSession';
@@ -80,7 +82,7 @@ async function performAnalysis(selection, operation) {
     let response = await request('/analisis', {
       method: 'POST',
       headers: { Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify({ texto: selection.text, url: selection.url ?? null }),
+      body: analysisBody(selection),
     });
     if (response.status === 401 && session.refresh_token) {
       sent = false;
@@ -91,7 +93,7 @@ async function performAnalysis(selection, operation) {
       response = await request('/analisis', {
         method: 'POST',
         headers: { Authorization: `Bearer ${renewed.access_token}` },
-        body: JSON.stringify({ texto: selection.text, url: selection.url ?? null }),
+        body: analysisBody(selection),
       });
     }
     if (response.status === 422) {
@@ -133,6 +135,20 @@ async function performAnalysis(selection, operation) {
       retryable: true,
     });
   }
+}
+
+// Los fragmentos viajan por separado para que la web los muestre uno a uno; la API solo
+// los guarda si juntos forman el mismo texto (pudo editarse después de marcarlos).
+function analysisBody(selection) {
+  // Una selección antigua (solo `text`) no tiene fragmentos que enviar.
+  const fragments = Array.isArray(selection.fragments)
+    ? normalizeFragments(selection).map((fragment) => fragment.text.trim()).filter(Boolean)
+    : [];
+  return JSON.stringify({
+    texto: selection.text,
+    url: selection.url ?? null,
+    ...(fragments.length > 0 && fragments.length <= 60 ? { fragmentos: fragments } : {}),
+  });
 }
 
 async function markRequestStarted(operation) {

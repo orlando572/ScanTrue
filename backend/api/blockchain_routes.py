@@ -25,9 +25,11 @@ def verify_analysis(
     record = repository.get_analysis(token, UUID(user.id), analysis_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Análisis no encontrado.")
-    client: RegistryClient | None = getattr(
-        request.app.state, "blockchain_client", None
-    )
+    return verification_for(record, getattr(request.app.state, "blockchain_client", None))
+
+
+def verification_for(record, client: RegistryClient | None) -> VerificationResponse:
+    """Comprueba el registro de un análisis en la cadena; lo usa también la web pública."""
     if client is None:
         return VerificationResponse(
             estado_blockchain=record.estado_blockchain,

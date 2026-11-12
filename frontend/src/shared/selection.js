@@ -24,6 +24,11 @@ export function countWords(text) {
   return typeof text === 'string' ? (text.match(WORD)?.length ?? 0) : 0;
 }
 
+// Hay texto que analizar (no basta con una selección vacía guardada tras vaciarla).
+export function hasSelectionText(selection) {
+  return typeof selection?.text === 'string' && selection.text.trim() !== '';
+}
+
 export function joinFragments(fragments) {
   return fragments.map((fragment) => fragment.text).join('\n\n');
 }
