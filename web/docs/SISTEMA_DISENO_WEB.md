@@ -36,9 +36,9 @@ Las mismas tres familias, empaquetadas con `@fontsource`: **Orbitron** (marca y 
 `src/components/VectorField.jsx`, un `<canvas>` fijo a pantalla completa, sin librerías:
 
 - **Retícula en perspectiva** bajo un horizonte luminoso, que avanza despacio; el punto de fuga sigue un poco al puntero.
-- **Constelación** de 28 a 90 nodos (según el tamaño de la pantalla) unidos por líneas. Cerca del puntero los nodos se apartan, se encienden en ácido y se conectan a una **mira** que gira.
+- **Constelación** de 44 a 130 nodos (según el tamaño de la pantalla) unidos por líneas. Cerca del puntero los nodos se apartan, se encienden en ácido y se conectan a una **mira** que gira.
 - **Un clic** lanza una onda de radar coral que empuja los nodos a su paso.
-- En páginas de lectura (todo menos Inicio) baja al 50 % de opacidad. Encima va una capa de líneas de escaneo y viñeta.
+- En páginas de lectura (todo menos Inicio) baja al 60 % de opacidad. Encima va una capa de líneas de escaneo y viñeta.
 - Es decorativo (`aria-hidden`, `pointer-events: none`). Se detiene con la pestaña oculta, limita la densidad de píxeles a 2 y con `prefers-reduced-motion` dibuja un solo fotograma fijo, sin mira ni ondas.
 
 ## Componentes
