@@ -194,7 +194,7 @@ a.source:hover { text-decoration: underline; text-underline-offset: 3px; }
 .fragment { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 4px; padding-left: 12px; border-left: 2px solid var(--accent); }
 .fragment .n { font-family: var(--font-mono); font-size: 12px; color: var(--color-coral); }
 .fragment p { margin: 0; overflow-wrap: anywhere; color: #e2e2ea; }
-.fragment--clamp p { display: -webkit-box; overflow: hidden; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+.fragment--clamp p { display: -webkit-box; overflow: hidden; -webkit-line-clamp: var(--lines, 4); -webkit-box-orient: vertical; }
 .readout { display: grid; align-content: start; gap: 14px; padding-left: 24px; border-left: 1px dashed var(--color-line-2); }
 .verdict { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; }
 .verdict .pct { font-family: var(--font-mono); font-size: 44px; line-height: 1; color: var(--tone); text-shadow: 0 0 18px color-mix(in srgb, var(--tone) 45%, transparent); font-variant-numeric: tabular-nums; }
@@ -290,6 +290,8 @@ table.data td.num { font-family: var(--font-mono); text-align: right; white-spac
 @media (max-width: 900px) {
   .card, .detail, .cases { grid-template-columns: minmax(0, 1fr); }
   .readout { padding: 16px 0 0; border-top: 1px dashed var(--color-line-2); border-left: 0; }
+  /* En una columna no hay hueco que llenar: como mucho 4 líneas por fragmento. */
+  .fragment--clamp p { -webkit-line-clamp: min(var(--lines, 4), 4); }
   .case-detail { position: static; max-height: none; }
 }
 @media (max-width: 640px) {

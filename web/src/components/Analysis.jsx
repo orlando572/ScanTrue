@@ -3,11 +3,17 @@ import { LEVELS } from '../lib/filters.js';
 import { CRITERIA } from '../lib/presentation.js';
 import { Icon } from './ui.jsx';
 
+// Líneas que se muestran de cada fragmento en una tarjeta: se reparten unas 12 entre los
+// que hay, para que uno o dos fragmentos largos llenen la tarjeta en vez de dejar un hueco.
+function clampLines(count) {
+  return count <= 1 ? 12 : count === 2 ? 6 : count === 3 ? 4 : 3;
+}
+
 // Fragmentos marcados por el usuario: no hay título separado, solo el texto.
 export function Fragments({ fragments, hidden = 0, clamp = false }) {
   return (
     <>
-      <ol className="fragments">
+      <ol className="fragments" style={clamp ? { '--lines': clampLines(fragments.length) } : undefined}>
         {fragments.map((fragment) => (
           <li key={fragment.number} className={`fragment${clamp ? ' fragment--clamp' : ''}`}>
             <span className="n" aria-hidden="true">#{fragment.number}</span>

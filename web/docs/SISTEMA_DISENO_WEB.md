@@ -48,7 +48,7 @@ Las mismas tres familias, empaquetadas con `@fontsource`: **Orbitron** (marca y 
 | Panel (`.panel`) | Opaco, borde de 1 px y dos esquinas cortadas de 14 px. `--edge` da color al borde (`panel--accent`, `panel--tone`); `panel--mark` añade una escuadra. |
 | Botón (`.btn`) | Tecla con chaflán; principal con el acento y texto negro; `btn--ghost` gris; `btn--danger` rojo. Uno principal por vista. |
 | Filtros (`Filters.jsx`) | Buscador con retardo de 350 ms, teclas de nivel con su color y desplegables. Los filtros viven en la URL, así que una búsqueda se puede compartir. |
-| Tarjeta de resultado | Izquierda: código, fecha, página de origen y **solo los fragmentos** (`#01`, `#02`…; no hay título). Derecha: porcentaje y nivel, espectro, los tres criterios y estado. El borde toma el color del nivel. |
+| Tarjeta de resultado | Izquierda: código, fecha, página de origen y **solo los fragmentos** (`#01`, `#02`…; no hay título). Cada fragmento se corta según cuántos hay, para llenar la tarjeta: 12 líneas con uno, 6 con dos, 4 con tres y 3 con más (en una columna, 4 como máximo). Derecha: porcentaje y nivel, espectro, los tres criterios y estado. El borde toma el color del nivel. |
 | Espectro (`Spectrum`) | Cinco zonas; BETO ▼ encima, BiLSTM ▲ debajo y el combinado como rombo. |
 | Dial (`Dial`) | 40 segmentos en un arco de 270° que se encienden en orden. |
 | Texto leído | En el detalle, cada modelo despliega el texto que leyó; lo que quedó fuera de su límite va en gris. |
