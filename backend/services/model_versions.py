@@ -56,6 +56,9 @@ class Deployment:
     combination: Path | None
     metrics: dict[str, Path]
     model_versions: dict[str, str]
+    # Nombre con el que se muestra un modelo cuando no es el de producción (p. ej. mBERT
+    # en la versión archivada de octubre; el hueco «mbert» de la actual es BETO).
+    model_names: dict[str, str]
 
     @classmethod
     def load(cls, path: Path) -> "Deployment":
@@ -76,6 +79,7 @@ class Deployment:
             combination=combination,
             metrics={name: resolve(value) for name, value in (data.get("metricas") or {}).items()},
             model_versions=dict(data.get("versiones_modelo") or {}),
+            model_names=dict(data.get("nombres_modelo") or {}),
         )
 
     def load_metrics(self, model: str) -> MetricsResponse | None:
