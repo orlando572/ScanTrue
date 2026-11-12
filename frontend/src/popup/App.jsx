@@ -24,6 +24,8 @@ const inPanel = typeof document !== 'undefined' && document.body.classList.conta
 
 // Tiempo que se muestran los avisos que se cierran solos (la barra de cuenta atrás usa el mismo valor).
 const NOTICE_MS = 6000;
+// Tiempo que se muestra en el panel el aviso de un fragmento rechazado.
+const REJECTED_MS = 6000;
 
 const titles = { P01: 'Inicio', P02: 'Texto para analizar', P04: 'Analizando texto', P05: 'Resultado del análisis', P06: 'Desglose por modelo', P07: 'Historial de análisis', P08: 'Análisis anterior', P09: 'Pruebas del modelo', P11: 'Cuenta', P12: 'Crear cuenta', P13: 'Iniciar sesión' };
 
@@ -67,15 +69,49 @@ function ServiceAlert({ health, onRetry }) {
 }
 
 // Hay fragmentos de otra página: no se mezclan. Se elige entre empezar de nuevo aquí o conservarlos.
+// Alerta llamativa del panel: banda de advertencia, borde grueso y destello al aparecer.
+// Al mostrarse, el panel se desplaza hasta ella. `timedMs` la cierra sola con cuenta atrás.
+function Alarm({ title, tone = 'coral', timedMs, children }) {
+  const element = useRef(null);
+  useEffect(() => { element.current?.scrollIntoView?.({ block: 'nearest' }); }, []);
+  return <div ref={element} className={`hud-panel hud-panel--alarm${tone === 'amber' ? ' hud-panel--alarm-amber' : ''}${timedMs ? ' notice-timed' : ''} mt-4`} style={timedMs ? { '--notice-ms': `${timedMs}ms` } : undefined} role="alert">
+    <div className="hazard-band" aria-hidden="true" />
+    <p className="alarm-title"><span aria-hidden="true">▲ </span>{title}</p>
+    {children}
+    {timedMs ? <span className="notice-timer" aria-hidden="true" /> : null}
+  </div>;
+}
+
 function ConflictAlert({ conflict, busy, onRestart, onKeep }) {
   if (!conflict) return null;
   const from = conflict.domain ? ` de ${conflict.domain}` : ' de otra página';
-  return <div className="hud-panel hud-panel--amber mt-4" role="alert">
-    <p className="hud-code" aria-hidden="true">Otra página</p>
-    <p className="mt-1 text-sm leading-5 text-ink">Tienes {conflict.count} {conflict.count === 1 ? 'fragmento' : 'fragmentos'}{from}. Solo se analiza una noticia a la vez.</p>
+  return <Alarm title="Esta es otra página">
+    <p className="mt-2 text-sm leading-5 text-ink">Tienes {conflict.count} {conflict.count === 1 ? 'fragmento' : 'fragmentos'}{from}. Solo se analiza una noticia a la vez.</p>
     <button type="button" className="primary-button mt-3" onClick={onRestart} disabled={busy}>Empezar de nuevo aquí</button>
     <button type="button" className="secondary-button mt-2" onClick={onKeep} disabled={busy}>Conservar lo que tengo</button>
-  </div>;
+  </Alarm>;
+}
+
+const rejectionTexts = {
+  other_page: 'Ese texto es de otra página. Solo se analiza una noticia a la vez.',
+  duplicate: 'Ese texto ya estaba marcado.',
+};
+
+// Avisos de la selección que llegan del servicio: la pestaña cambió de página, se rechazó un
+// fragmento (se cierra solo) o se está mirando otra pestaña con el modo activo.
+function SelectionNotice({ notice, selectionMode, onDismiss, onStop }) {
+  if (notice?.kind === 'navigated') return <Alarm title="Cambiaste de página">
+    <p className="mt-2 text-sm leading-5 text-ink">La selección terminó. {notice.count === 1 ? 'Tu fragmento' : `Tus ${notice.count} fragmentos`}{notice.domain ? ` de ${notice.domain}` : ''} {notice.count === 1 ? 'sigue' : 'siguen'} aquí: puedes analizarlos o vaciar para empezar con otra noticia.</p>
+    <button type="button" className="secondary-button mt-3" onClick={onDismiss}>Entendido</button>
+  </Alarm>;
+  if (notice?.kind === 'rejected') return <Alarm key={notice.at} title="No se añadió" timedMs={REJECTED_MS}>
+    <p className="mt-2 text-sm leading-5 text-ink">{rejectionTexts[notice.reason] ?? 'Ese texto no se pudo añadir.'}</p>
+  </Alarm>;
+  if (notice?.kind === 'other_tab' && selectionMode) return <Alarm title="Estás en otra pestaña" tone="amber">
+    <p className="mt-2 text-sm leading-5 text-ink">La selección sigue en la otra pestaña{notice.domain ? ` (${notice.domain})` : ''}. Vuelve a ella, o termina la selección para analizar esta página.</p>
+    <button type="button" className="secondary-button mt-3" onClick={onStop}>Terminar selección</button>
+  </Alarm>;
+  return null;
 }
 
 function selectionDomain(url) {
@@ -96,7 +132,7 @@ function RemoveIcon() {
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M6 6l12 12M18 6 6 18" /></svg>;
 }
 
-function SelectionScreen({ selection, error, selecting, selectionMode, submitting, notice, conflict, onAnalyze, onAddText, onRestart, onKeep, onDismissNotice, onEdit, onBack, onRemoveFragment, onClear }) {
+function SelectionScreen({ selection, error, selecting, selectionMode, submitting, notice, conflict, onAnalyze, onAddText, onRestart, onKeep, onDismissNotice, onStop, onEdit, onBack, onRemoveFragment, onClear }) {
   const domain = selectionDomain(selection.url);
   const fragments = presentFragments(selection);
   const meter = meterState(countWords(selection.text));
@@ -107,12 +143,10 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
     {domain
       ? <p className="hud-readout mt-4">Origen: <b>{domain}</b></p>
       : hasSelectionText(selection) && <p className="hud-readout mt-4">Sin página de origen: hay texto escrito o pegado.</p>}
-    {selection.mixedArticles && <p className="mt-2 text-[12px] leading-[18px] text-amber" role="status">▲ Parecen notas distintas de esta página. Revisa que todo sea de la misma noticia.</p>}
-    {notice?.kind === 'navigated' && <div className="hud-panel hud-panel--amber mt-4" role="status">
-      <p className="hud-code" aria-hidden="true">Cambiaste de página</p>
-      <p className="mt-1 text-sm leading-5 text-ink">La selección terminó. {notice.count === 1 ? 'Tu fragmento' : `Tus ${notice.count} fragmentos`}{notice.domain ? ` de ${notice.domain}` : ''} {notice.count === 1 ? 'sigue' : 'siguen'} aquí: puedes analizarlos o vaciar para empezar con otra noticia.</p>
-      <button type="button" className="text-link mt-2" onClick={onDismissNotice}>Entendido</button>
-    </div>}
+    {/* Las alertas van arriba, bajo el título: es lo primero que se ve. */}
+    <ConflictAlert conflict={conflict} busy={selecting || submitting} onRestart={onRestart} onKeep={onKeep} />
+    <SelectionNotice notice={notice} selectionMode={selectionMode} onDismiss={onDismissNotice} onStop={onStop} />
+    {selection.mixedArticles && <p className="alarm-note mt-4" role="status"><span aria-hidden="true">▲ </span>Parecen notas distintas de esta página. Revisa que todo sea de la misma noticia.</p>}
 
     <div className={`word-meter word-meter--${meter.level} mt-4`}>
       <div className="flex items-baseline justify-between gap-2">
@@ -148,7 +182,6 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
     </details>
 
     {!selectionMode && !conflict && <button type="button" className="secondary-button mt-5" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : 'Seleccionar más texto'}</button>}
-    <ConflictAlert conflict={conflict} busy={selecting || submitting} onRestart={onRestart} onKeep={onKeep} />
   </>;
 }
 
@@ -353,6 +386,12 @@ export default function App() {
     setSelectionNotice(null);
     void chrome.storage?.session?.remove('selectionNotice')?.catch?.(() => {});
   };
+  // El aviso de fragmento rechazado se retira solo.
+  useEffect(() => {
+    if (selectionNotice?.kind !== 'rejected') return;
+    const timer = setTimeout(dismissNotice, REJECTED_MS);
+    return () => clearTimeout(timer);
+  }, [selectionNotice?.kind, selectionNotice?.at]);
   const startSelection = async (restart = false) => {
     setSelectionError('');
     setAnalysisError('');
@@ -513,7 +552,7 @@ export default function App() {
         {current !== 'P02' && current !== 'P04' && current !== 'P05' && current !== 'P06' && current !== 'P07' && current !== 'P08' && current !== 'P09' && current !== 'P11' && current !== 'P12' && current !== 'P13' && <button type="button" className="text-link mb-5 flex w-fit items-center gap-1.5" onClick={back}><span className="size-5"><Icon name="back" /></span>Volver</button>}
         {stack.includes('P07') && <div hidden={current !== 'P07'}><HistoryScreen deletedAnalysis={deletedAnalysis} onBack={back} onOpen={(id) => { historyScroll.current = popupScroll.current?.scrollTop ?? 0; setHistoryDetail(null); setSelectedAnalysisId(id); open('P08'); }} onChooseText={() => setStack(['P01'])} /></div>}
         {stack.includes('P08') && selectedAnalysisId && <div hidden={current !== 'P08'}><HistoryDetailScreen key={selectedAnalysisId} id={selectedAnalysisId} onBack={back} onLoaded={setHistoryDetail} onDeletingChange={setDetailDeleting} onBreakdown={(item) => { setHistoryDetail(item); open('P06'); }} onDeleted={(id) => { setDeletedAnalysis({ id }); setHistoryDetail(null); setSelectedAnalysisId(null); back(); }} /></div>}
-        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} notice={selectionNotice} conflict={conflict} onAnalyze={analyze} onAddText={() => startSelection()} onRestart={() => startSelection(true)} onKeep={() => setConflict(null)} onDismissNotice={dismissNotice} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
+        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} notice={selectionNotice} conflict={conflict} onAnalyze={analyze} onAddText={() => startSelection()} onRestart={() => startSelection(true)} onKeep={() => setConflict(null)} onDismissNotice={dismissNotice} onStop={stopSelectionMode} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
           : current === 'P04' ? <AnalysisScreen operation={operation} onHistory={() => open('P07')} onBack={() => setStack(['P01', 'P02'])} onRetry={analyze} />
           : current === 'P05' ? <ResultScreen result={operation?.result} url={selection?.url} text={selection?.text} onBack={back} onBreakdown={() => open('P06')} onStartOver={startOver} clearing={clearing} error={resultError} />
           : current === 'P06' ? <BreakdownScreen result={stack.at(-2) === 'P08' ? historyDetail : operation?.result} onBack={back} />

@@ -39,6 +39,23 @@ async function handleTabUpdate(tabId, change, tab) {
     await chrome.storage.session.set({ [SELECTION_NOTICE]: { kind: 'navigated', domain: pageDomain(source), count } });
   }
 }
+// Con la selección activa en una pestaña, pasar a otra no captura nada: el panel lo explica
+// mientras dure y lo retira al volver.
+async function handleTabActivated(tabId) {
+  const items = await chrome.storage.session.get([SELECTION_TARGET, SELECTION_NOTICE]);
+  const target = items[SELECTION_TARGET];
+  if (target === undefined) return;
+  if (tabId === target) {
+    if (items[SELECTION_NOTICE]?.kind === 'other_tab') await chrome.storage.session.remove(SELECTION_NOTICE);
+    return;
+  }
+  let domain = pageDomain(sourceOf(await readSelection()).url);
+  if (!domain) {
+    try { domain = pageDomain((await chrome.tabs.get(target)).url); } catch { /* Sin permiso o pestaña cerrada. */ }
+  }
+  await chrome.storage.session.set({ [SELECTION_NOTICE]: { kind: 'other_tab', domain } });
+}
+chrome.tabs.onActivated?.addListener((info) => { void handleTabActivated(info.tabId).catch(() => {}); });
 chrome.tabs.onRemoved?.addListener((tabId) => { void endSelectionForTab(tabId).catch(() => {}); });
 chrome.tabs.onUpdated?.addListener((tabId, change, tab) => {
   if (change.status === 'loading' || change.url) void handleTabUpdate(tabId, change, tab).catch(() => {});
@@ -247,9 +264,11 @@ function pageUrl(sender) {
   return typeof candidate === 'string' && /^https?:\/\//.test(candidate) && candidate.length <= 2048 ? candidate : null;
 }
 
-const rejections = {
-  other_page: 'Otra página: no se añadió',
-  duplicate: 'Ese texto ya está marcado',
+// Carteles que la página muestra junto al texto marcado.
+const pageNotices = {
+  other_page: { level: 'error', title: 'No se añadió', text: 'Este texto es de otra página. Solo se analiza una noticia a la vez.' },
+  duplicate: { level: 'error', title: 'No se añadió', text: 'Ese texto ya está marcado.' },
+  mixed: { level: 'warn', title: 'Revisa', text: 'Parece otra nota de esta misma página.' },
 };
 
 // Devuelve el motivo del rechazo o `null` si el fragmento se guardó.
@@ -268,7 +287,7 @@ async function addFragment(text, tab, id, url, article) {
   const keepUrl = kept.length === 0 ? url : previous?.url && url && samePage(previous.url, url) ? previous.url : null;
   const mixedBefore = hasMixedArticles(kept);
   await writeFragments(fragments, keepUrl, 'page', { url: source.url, text: [source.text, text].filter(Boolean).join('\n\n') });
-  if (!mixedBefore && hasMixedArticles(fragments)) notifyTab(tab.id, { type: 'SCANTRUE_NOTICE', text: 'Parecen notas distintas de esta página' });
+  if (!mixedBefore && hasMixedArticles(fragments)) notifyTab(tab.id, { type: 'SCANTRUE_NOTICE', ...pageNotices.mixed });
   return null;
 }
 
@@ -277,8 +296,11 @@ async function saveSelection(text, tab, id, url = null, article = null) {
   const items = await chrome.storage.session.get(SELECTION_TARGET);
   if (items[SELECTION_TARGET] !== tab.id) return 'inactive';
   const reason = await addFragment(text, tab, id, url, article);
-  if (reason) notifyTab(tab.id, { type: 'SCANTRUE_NOTICE', text: rejections[reason] });
-  else await syncTab(tab.id);
+  if (reason) {
+    // El rechazo se avisa en la página y, a la vez, en el panel.
+    notifyTab(tab.id, { type: 'SCANTRUE_NOTICE', ...pageNotices[reason] });
+    await chrome.storage.session.set({ [SELECTION_NOTICE]: { kind: 'rejected', reason, at: Date.now() } });
+  } else await syncTab(tab.id);
   return reason;
 }
 

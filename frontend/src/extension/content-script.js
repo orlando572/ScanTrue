@@ -12,6 +12,10 @@ function createSelectionController() {
   let active = false;
   let bar = null;
   let removeMenu = null;
+  let toast = null;
+  let toastTimer;
+  // Dónde terminó la última selección: ahí aparece el cartel de aviso.
+  let lastPoint = null;
 
   if (highlight && globalThis.CSS?.highlights) CSS.highlights.set(HIGHLIGHT, highlight);
   if (!document.getElementById('scantrue-highlight-style')) {
@@ -58,6 +62,14 @@ function createSelectionController() {
     ranges.delete(id);
   }
 
+  // Punto donde acaba la selección: el del ratón o, con teclado, el final del texto marcado.
+  function selectionPoint(event) {
+    if (event.type === 'mouseup') return { x: event.clientX, y: event.clientY };
+    const selection = window.getSelection();
+    const box = selection?.rangeCount ? selection.getRangeAt(0).getBoundingClientRect() : null;
+    return box && (box.width || box.height) ? { x: box.right, y: box.bottom } : null;
+  }
+
   // Posición del <article> que contiene la selección, para avisar si se marcan notas distintas
   // de una misma página (portadas, directos). `null` si la página no usa <article>.
   function articleIndex() {
@@ -67,18 +79,51 @@ function createSelectionController() {
     return article ? [...document.querySelectorAll('article')].indexOf(article) : null;
   }
 
-  // Aviso breve en la barra (fragmento rechazado, notas distintas).
-  let noticeTimer;
-  function notice(text) {
+  function closeToast() {
+    clearTimeout(toastTimer);
+    toast?.remove();
+    toast = null;
+  }
+
+  // Cartel momentáneo junto al texto marcado (fragmento rechazado o aviso de notas distintas);
+  // la barra parpadea a la vez con el mismo color. `error` en rojo, `warn` en ámbar.
+  function notice({ level, title, text }) {
     if (!bar || typeof text !== 'string') return;
-    bar.notice.textContent = `▲ ${text}`;
-    bar.notice.hidden = false;
-    clearTimeout(noticeTimer);
-    noticeTimer = setTimeout(() => { if (bar) bar.notice.hidden = true; }, 3500);
+    closeToast();
+    const color = level === 'warn' ? '#ffb21e' : '#ff4a3d';
+    const width = Math.min(300, window.innerWidth - 16);
+    const point = lastPoint ?? { x: window.innerWidth / 2 - width / 2, y: window.innerHeight - 190 };
+    toast = document.createElement('div');
+    toast.style.position = 'fixed';
+    toast.style.left = `${Math.max(8, Math.min(point.x + 10, window.innerWidth - width - 8))}px`;
+    toast.style.top = `${point.y + 14 > window.innerHeight - 150 ? Math.max(8, point.y - 96) : point.y + 14}px`;
+    toast.style.zIndex = '2147483647';
+    toast.style.width = `${width}px`;
+    const root = toast.attachShadow({ mode: 'closed' });
+    root.innerHTML = `<style>
+      :host { all: initial; }
+      .toast { box-sizing: border-box; padding: 10px 14px 12px; border: 2px solid ${color}; background: #000; color: #f2f2f5;
+        font: 14px/1.4 "IBM Plex Sans", system-ui, sans-serif; box-shadow: 0 0 22px ${color}66, 0 8px 24px rgba(0, 0, 0, .6);
+        clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+        animation: pop .5s steps(1, end) both; }
+      b { display: block; margin-bottom: 3px; color: ${color}; font: 13px/1.3 "Share Tech Mono", ui-monospace, "Courier New", monospace;
+        letter-spacing: .16em; text-transform: uppercase; }
+      @keyframes pop { 0% { opacity: 0; } 20% { opacity: 1; } 40% { opacity: .3; } 60%, 100% { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+    </style><div class="toast" role="alert"><b></b><span></span></div>`;
+    root.querySelector('b').textContent = `${level === 'warn' ? '▲' : '✕'} ${title ?? 'Aviso'}`;
+    root.querySelector('span').textContent = text;
+    document.documentElement.append(toast);
+    toastTimer = setTimeout(closeToast, 5000);
+    // La barra parpadea tres veces con el color del aviso.
+    bar.frame.style.setProperty('--flash', color);
+    bar.frame.classList.remove('flash');
+    void bar.frame.offsetWidth;
+    bar.frame.classList.add('flash');
   }
 
   function isInsideUi(event) {
-    return event.composedPath().some((node) => node === bar?.host || node === removeMenu);
+    return event.composedPath().some((node) => node === bar?.host || node === removeMenu || node === toast);
   }
 
   function fragmentAt(x, y) {
@@ -102,6 +147,8 @@ function createSelectionController() {
       return;
     }
     closeRemoveMenu();
+    closeToast();
+    lastPoint = selectionPoint(event);
     const id = crypto.randomUUID();
     const article = inField ? null : articleIndex();
     if (!inField) mark(id);
@@ -156,7 +203,8 @@ function createSelectionController() {
       .led { flex: none; width: 7px; height: 7px; background: #e6ff4d; box-shadow: 0 0 6px #e6ff4d; animation: blink 1s steps(1, end) infinite; }
       .label { color: #e6ff4d; text-transform: uppercase; letter-spacing: .14em; }
       .meta, .hint { color: #9a9aa8; }
-      .notice { color: #ffb21e; }
+      .bar.flash { animation: flash .9s steps(1, end) both; }
+      @keyframes flash { 0%, 33%, 66% { border-color: var(--flash); box-shadow: 0 0 18px var(--flash); } 16%, 50%, 83%, 100% { border-color: #9b7cff; box-shadow: none; } }
       .meta b { font-weight: 400; } .meta b.count { color: #f2f2f5; }
       .meta b { color: #ff4a3d; } .meta b.ready { color: #f5e14a; } .meta b.good { color: #3dff9a; } .meta b.full { color: #e2b13c; }
       [hidden] { display: none !important; }
@@ -166,14 +214,13 @@ function createSelectionController() {
       button.primary { border-color: #9b7cff; background: #9b7cff; color: #000; }
       button:focus-visible { outline: 2px solid #e6ff4d; outline-offset: 2px; }
       @keyframes blink { 50% { opacity: .25; } }
-      @media (prefers-reduced-motion: reduce) { .led { animation: none; } }
+      @media (prefers-reduced-motion: reduce) { .led, .bar.flash { animation: none; } .bar.flash { border-color: var(--flash); } }
     </style>
     <div class="bar" role="region" aria-label="ScanTrue: modo selección" title="Clic en un resaltado para quitarlo">
       <span class="led" aria-hidden="true"></span>
       <span class="label">Seleccionando</span>
       <span class="hint" data-hint>· Marca texto en la página para añadirlo</span>
       <span class="meta" data-meta aria-live="polite" hidden>· <b class="count" data-count>0</b> <span data-noun>fragmentos</span> · <b data-words>0</b> palabras</span>
-      <span class="notice" data-notice role="status" hidden></span>
       <button type="button" data-clear title="Quitar todos los fragmentos">Vaciar</button>
       <button type="button" class="primary" data-stop title="Terminar la selección">Terminar</button>
     </div>`;
@@ -183,7 +230,7 @@ function createSelectionController() {
     bar = {
       host, count: root.querySelector('[data-count]'), words: root.querySelector('[data-words]'),
       noun: root.querySelector('[data-noun]'), hint: root.querySelector('[data-hint]'), meta: root.querySelector('[data-meta]'),
-      clear: root.querySelector('[data-clear]'), notice: root.querySelector('[data-notice]'),
+      clear: root.querySelector('[data-clear]'), frame: root.querySelector('.bar'),
     };
     update(0, 0);
   }
@@ -214,7 +261,7 @@ function createSelectionController() {
   function stop() {
     active = false;
     closeRemoveMenu();
-    clearTimeout(noticeTimer);
+    closeToast();
     document.removeEventListener('mouseup', capture, true);
     document.removeEventListener('keyup', capture, true);
     bar?.host.remove();
@@ -226,7 +273,7 @@ function createSelectionController() {
       case 'SCANTRUE_START': start(); break;
       case 'SCANTRUE_STOP': stop(); break;
       case 'SCANTRUE_SYNC': update(message.count, message.words); break;
-      case 'SCANTRUE_NOTICE': notice(message.text); break;
+      case 'SCANTRUE_NOTICE': notice(message); break;
       case 'SCANTRUE_REMOVE': unmark(message.id); break;
       case 'SCANTRUE_CLEAR': for (const id of [...ranges.keys()]) unmark(id); break;
       default: break;

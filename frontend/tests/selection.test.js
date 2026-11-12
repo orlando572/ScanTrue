@@ -25,6 +25,8 @@ function createWorker(tab = { id: 3, url: 'https://ejemplo.test/noticia' }) {
       async sendMessage(tabId, message) { toTabs.push({ tabId, ...message }); },
       onRemoved: { addListener(callback) { tabEvents.removed = callback; } },
       onUpdated: { addListener(callback) { tabEvents.updated = callback; } },
+      onActivated: { addListener(callback) { tabEvents.activated = callback; } },
+      async get() { return tab; },
     },
     scripting: { async executeScript() { injected = true; } },
     sidePanel: { async setPanelBehavior() {} },
@@ -108,7 +110,10 @@ test('rechaza un fragmento marcado en otra página y conserva la fuente', async 
   const { selection } = await worker.send({ type: 'GET_PENDING_SELECTION' });
   assert.equal(selection.text, 'Uno\n\nDos');
   assert.equal(selection.url, 'https://ejemplo.test/noticia');
-  assert.equal(worker.toTabs.at(-1).type, 'SCANTRUE_NOTICE');
+  // Aviso en la página (cartel junto al texto) y en el panel.
+  assert.deepEqual(plain(worker.toTabs.at(-1)), { tabId: 3, type: 'SCANTRUE_NOTICE', level: 'error', title: 'No se añadió', text: 'Este texto es de otra página. Solo se analiza una noticia a la vez.' });
+  assert.equal(worker.values.selectionNotice.kind, 'rejected');
+  assert.equal(worker.values.selectionNotice.reason, 'other_page');
 });
 
 test('con fragmentos de otra página no empieza a seleccionar hasta que se pide empezar de nuevo', async () => {
@@ -148,7 +153,7 @@ test('avisa si los fragmentos caen en bloques article distintos de la misma pág
   assert.equal(worker.values.pendingSelection.mixedArticles, false);
   await worker.send({ type: 'SELECTION_CAPTURED', text: 'Tres', article: 2 }, page);
   assert.equal(worker.values.pendingSelection.mixedArticles, true);
-  assert.ok(worker.toTabs.some((message) => message.type === 'SCANTRUE_NOTICE' && /notas distintas/.test(message.text)));
+  assert.ok(worker.toTabs.some((message) => message.type === 'SCANTRUE_NOTICE' && message.level === 'warn' && /otra nota/.test(message.text)));
 });
 
 test('si la pestaña pasa a otra página con fragmentos, termina el modo y deja un aviso', async () => {
@@ -311,4 +316,20 @@ test('el texto editado conserva la fuente solo si no añade nada a lo marcado', 
   assert.equal(samePage('https://a.test/n?x=1#y', 'https://a.test/n'), true);
   assert.equal(samePage('https://a.test/n', 'https://a.test/m'), false);
   assert.equal(samePage('https://a.test/n', null), false);
+});
+
+test('con la selección activa, pasar a otra pestaña deja un aviso que se retira al volver', async () => {
+  const worker = createWorker();
+  worker.tabEvents.activated({ tabId: 8 });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(worker.values.selectionNotice, undefined);
+
+  await worker.send({ type: 'START_SELECTION' });
+  await worker.send({ type: 'SELECTION_CAPTURED', text: 'Uno' }, page);
+  worker.tabEvents.activated({ tabId: 8 });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.deepEqual(plain(worker.values.selectionNotice), { kind: 'other_tab', domain: 'ejemplo.test' });
+  worker.tabEvents.activated({ tabId: 3 });
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal(worker.values.selectionNotice, undefined);
 });
