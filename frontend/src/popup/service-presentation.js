@@ -4,11 +4,11 @@ const FAIL = '#FF4A3D';
 const PARTIAL = '#FFB21E';
 
 const services = [
-  { key: 'bilstm', name: 'Modelo BiLSTM', short: 'BiLSTM', color: '#38E1FF', read: (data) => data?.modelos?.bilstm },
-  { key: 'mbert', name: 'Modelo BETO', short: 'BETO', color: '#A98BFF', read: (data) => data?.modelos?.mbert },
+  { key: 'bilstm', name: 'Modelo BiLSTM', short: 'BiLSTM', color: '#E6FF4D', read: (data) => data?.modelos?.bilstm },
+  { key: 'mbert', name: 'Modelo BETO', short: 'BETO', color: '#9B7CFF', read: (data) => data?.modelos?.mbert },
   { key: 'cuentas', name: 'Cuentas e historial', short: 'Cuentas', color: '#3DFF9A', read: (data) => data?.supabase_configurado },
   {
-    key: 'cadena', name: 'Registro blockchain', short: 'Cadena', color: '#E6F4FF',
+    key: 'cadena', name: 'Registro blockchain', short: 'Cadena', color: '#F2F2F5',
     read: (data) => {
       const chain = data?.blockchain;
       if (!chain || typeof chain !== 'object') return undefined;

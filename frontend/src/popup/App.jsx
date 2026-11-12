@@ -10,7 +10,10 @@ import AccountScreen from './screens/AccountScreen.jsx';
 import RegisterScreen from './screens/RegisterScreen.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
 import ScreenHeader from './components/ScreenHeader.jsx';
-import { CoreGrid, LedStrip, Radar, SegmentTrack } from './components/HudDecor.jsx';
+import { LedStrip, ScanCore, SegmentTrack } from './components/HudDecor.jsx';
+import { LoaderSweep } from './components/HudLoader.jsx';
+// El mismo fondo interactivo que la web.
+import VectorField from '../../../web/src/components/VectorField.jsx';
 import { countWords, hasSelectionText, meterState, presentFragments } from './selection-presentation.js';
 import { presentServices } from './service-presentation.js';
 import scanTrueMark from './assets/scantrue-mark.svg';
@@ -37,7 +40,7 @@ function Brand({ onHome, disabled }) {
   return <button type="button" className="brand-button" aria-label="ScanTrue, ir al inicio" title="Ir al inicio" onClick={onHome} disabled={disabled}>
     <img src={scanTrueMark} alt="" className="brand-mark" />
     <span aria-hidden="true">
-      <span className="brand-word">SCAN<i>//</i><em>TRUE</em></span>
+      <span className="brand-word">SCAN<i>//</i>TRUE</span>
       <span className="brand-sub">Análisis de noticias</span>
     </span>
   </button>;
@@ -92,7 +95,7 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
 
     <div className={`word-meter word-meter--${meter.level} mt-4`}>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="hud-code hud-code--cyan" aria-hidden="true">Longitud</span>
+        <span className="hud-code hud-code--accent" aria-hidden="true">Longitud</span>
         <span className="hud-readout"><b>{meter.words}</b> palabras</span>
       </div>
       <SegmentTrack value={meter.value} segments={24} marker={meter.marker} />
@@ -105,7 +108,7 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
     <p className="mt-2 text-[11px] leading-4 text-muted">Al analizar, el texto y su resultado se publican en la web de ScanTrue, sin identificarte.</p>
 
     <div className="input-buffer-meta mt-5 items-center">
-      <span className="hud-code hud-code--cyan" aria-hidden="true">Fragmentos · {String(fragments.length).padStart(2, '0')} marcados</span>
+      <span className="hud-code hud-code--accent" aria-hidden="true">Fragmentos · {String(fragments.length).padStart(2, '0')} marcados</span>
       <button type="button" className="clear-link" aria-label="Vaciar la selección" title="Empezar de cero" onClick={onClear} disabled={submitting || !selection.text.trim()}>Vaciar</button>
     </div>
     {fragments.length === 0
@@ -160,10 +163,10 @@ function AnalysisScreen({ operation, onHistory, onBack, onRetry }) {
   }
 
   return <section className="analysis-wait" role="status" aria-live="polite">
-    <Radar active />
+    <ScanCore active />
     <h1 className="screen-title mt-6">Analizando texto</h1>
     <p className={`mt-2 text-[12px] leading-[18px] ${slow ? 'text-amber' : 'text-muted'}`}>{slow ? 'Está tardando más de lo habitual.' : 'Esto puede tardar un momento.'}</p>
-    <CoreGrid />
+    <LoaderSweep />
   </section>;
 }
 
@@ -429,14 +432,20 @@ export default function App() {
     setStack(['P01', 'P11']);
   };
 
-  return <div ref={popupScroll} className={`popup-shell flex flex-col text-ink ${current === 'P01' ? '' : 'min-h-[500px]'}`}>
+  const section = ['P07', 'P08'].includes(current) ? 'history' : current === 'P09' ? 'metrics' : ['P11', 'P12', 'P13'].includes(current) ? 'account' : null;
+
+  return <>
+  {/* Fondo: campo vectorial a plena luz en el inicio y atenuado en las vistas de lectura. */}
+  <VectorField dim={current !== 'P01'} />
+  <div className="scanlines" aria-hidden="true" />
+  <div ref={popupScroll} className={`popup-shell flex flex-col text-ink ${current === 'P01' ? '' : 'min-h-[500px]'}`}>
     <header className="console-header">
       <div className="flex items-center justify-between px-5 py-3">
       <Brand onHome={() => setStack(['P01'])} disabled={detailDeleting || accountSigningOut} />
       <nav aria-label="Navegación principal" className="flex items-center gap-1.5">
-        <button type="button" className="icon-button" aria-label="Historial" title="Historial" onClick={() => open('P07')} disabled={detailDeleting || accountSigningOut}><Icon name="history" /></button>
-        <button type="button" className="icon-button" aria-label="Pruebas del modelo" title="Pruebas del modelo" onClick={() => open('P09')} disabled={detailDeleting || accountSigningOut}><Icon name="metrics" /></button>
-        <button type="button" className="icon-button" aria-label="Cuenta" title="Cuenta" onClick={() => open('P11')} disabled={detailDeleting || accountSigningOut}><Icon name="account" /></button>
+        <button type="button" className="icon-button" aria-label="Historial" title="Historial" aria-current={section === 'history' ? 'page' : undefined} onClick={() => open('P07')} disabled={detailDeleting || accountSigningOut}><Icon name="history" /></button>
+        <button type="button" className="icon-button" aria-label="Pruebas del modelo" title="Pruebas del modelo" aria-current={section === 'metrics' ? 'page' : undefined} onClick={() => open('P09')} disabled={detailDeleting || accountSigningOut}><Icon name="metrics" /></button>
+        <button type="button" className="icon-button" aria-label="Cuenta" title="Cuenta" aria-current={section === 'account' ? 'page' : undefined} onClick={() => open('P11')} disabled={detailDeleting || accountSigningOut}><Icon name="account" /></button>
       </nav>
       </div>
       <LedStrip health={health} code={serviceCodes[health]} label={serviceLabels[health]} services={presentServices(healthData, health)} latency={latency} />
@@ -445,8 +454,11 @@ export default function App() {
         El análisis (P04) y el resultado (P05) tienen animaciones propias. */}
     <main className={`flex flex-1 flex-col px-5 ${current === 'P01' ? 'pb-5 pt-2' : 'pb-6 pt-6'}${current === 'P01' || current === 'P02' ? ' screen-boot' : ''}`}>
       {current === 'P01' ? <>
-        <div className="home-radar"><div className="radar-frame"><Radar /></div></div>
-        <div className="hud-panel">
+        <div className="home-core">
+          <span className="hud-code" aria-hidden="true">Consola de análisis de noticias</span>
+          <ScanCore />
+        </div>
+        <div className="hud-panel hud-panel--accent hud-panel--mark">
           <h1 className="screen-title">¿Dudas de una noticia?</h1>
           <p className="mt-2 text-sm leading-5 text-muted">Marca el titular y unos párrafos de la noticia. Te mostramos si se parece más a una noticia falsa o a una real.</p>
           <p className="mt-2 text-[12px] leading-[18px] text-muted opacity-80">Es una orientación, no una verificación de los hechos.</p>
@@ -472,5 +484,6 @@ export default function App() {
           : <><h1 className="screen-title">{titles[current]}</h1><p className="mt-4 text-sm text-muted">Sección en preparación.</p></>}
       </>}
     </main>
-  </div>;
+  </div>
+  </>;
 }

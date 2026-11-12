@@ -2,7 +2,7 @@
 
 ## Dirección visual
 
-La misma familia que la extensión ([`frontend/docs/SISTEMA_DISENO.md`](../../frontend/docs/SISTEMA_DISENO.md)) —interfaces de ciencia ficción retro de los 80 y 90, paneles técnicos de anime, gráficos vectoriales y HUD de varios colores—, pero **minimalista y con otra paleta**: negro puro, mucho aire y pocos paneles. La extensión es una consola cian sobre azul; la web es un campo vectorial violeta sobre negro.
+La misma familia que la extensión ([`frontend/docs/SISTEMA_DISENO.md`](../../frontend/docs/SISTEMA_DISENO.md)) —interfaces de ciencia ficción retro de los 80 y 90, paneles técnicos de anime, gráficos vectoriales y HUD de varios colores—, **minimalista**: negro puro, mucho aire y pocos paneles. Las dos comparten paleta, tipografía, paneles y el campo vectorial violeta sobre negro; la extensión importa `VectorField` de aquí.
 
 - **Evitar:** tarjetas redondeadas y sombras suaves, degradados de fondo, y cualquier símbolo de «verificado».
 - Las reglas de contenido de la extensión valen igual: «salida para falsa», nunca «certeza» ni «verídica»; siempre la aclaración de que es una orientación.

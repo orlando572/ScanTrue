@@ -17,7 +17,7 @@ function createSelectionController() {
   if (!document.getElementById('scantrue-highlight-style')) {
     const style = document.createElement('style');
     style.id = 'scantrue-highlight-style';
-    style.textContent = `::highlight(${HIGHLIGHT}) { background-color: rgba(56, 225, 255, .32); color: inherit; text-decoration: underline 2px rgb(8, 160, 190); }`;
+    style.textContent = `::highlight(${HIGHLIGHT}) { background-color: rgba(155, 124, 255, .34); color: inherit; text-decoration: underline 2px rgb(124, 92, 235); }`;
     (document.head ?? document.documentElement).append(style);
   }
 
@@ -101,9 +101,8 @@ function createSelectionController() {
     removeMenu.textContent = '✕ Quitar fragmento';
     removeMenu.setAttribute('style', [
       'position:fixed', `left:${Math.min(event.clientX + 8, window.innerWidth - 180)}px`, `top:${Math.max(event.clientY - 40, 8)}px`,
-      'z-index:2147483647', 'padding:6px 10px', 'border:1px solid #ff4a3d', 'background:#0a1220', 'color:#ff4a3d',
+      'z-index:2147483647', 'padding:6px 10px', 'border:1px solid #ff4a3d', 'background:#0a0a0c', 'color:#ff4a3d',
       'font:12px/1.2 "Share Tech Mono",ui-monospace,monospace', 'letter-spacing:.1em', 'text-transform:uppercase', 'cursor:pointer',
-      'box-shadow:0 0 12px rgba(255,74,61,.45)',
     ].join(';'));
     removeMenu.addEventListener('click', () => {
       send({ type: 'REMOVE_FRAGMENT', id }, (response) => { if (response?.ok) unmark(id); });
@@ -130,21 +129,21 @@ function createSelectionController() {
     const root = host.attachShadow({ mode: 'closed' });
     root.innerHTML = `<style>
       :host { all: initial; }
-      .bar { display: flex; align-items: center; gap: 10px; padding: 7px 8px 7px 12px; border: 1px solid #38e1ff;
-        background: rgba(5, 8, 15, .94); color: #e6f4ff; font: 12px/1.3 "Share Tech Mono", ui-monospace, "Courier New", monospace;
-        letter-spacing: .06em; white-space: nowrap; box-shadow: 0 0 14px rgba(56, 225, 255, .3), inset 0 0 10px rgba(56, 225, 255, .1);
-        clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
-      .led { flex: none; width: 7px; height: 7px; background: #ffb21e; box-shadow: 0 0 6px #ffb21e; animation: blink 1s steps(1, end) infinite; }
-      .label { color: #ffb21e; text-transform: uppercase; letter-spacing: .14em; }
-      .meta, .hint { color: #8fa8c4; }
-      .meta b { font-weight: 400; color: #ffb21e; } .meta b.count { color: #e6f4ff; }
+      .bar { display: flex; align-items: center; gap: 10px; padding: 7px 8px 7px 12px; border: 1px solid #9b7cff;
+        background: rgba(0, 0, 0, .94); color: #f2f2f5; font: 12px/1.3 "Share Tech Mono", ui-monospace, "Courier New", monospace;
+        letter-spacing: .06em; white-space: nowrap;
+        clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)); }
+      .led { flex: none; width: 7px; height: 7px; background: #e6ff4d; box-shadow: 0 0 6px #e6ff4d; animation: blink 1s steps(1, end) infinite; }
+      .label { color: #e6ff4d; text-transform: uppercase; letter-spacing: .14em; }
+      .meta, .hint { color: #9a9aa8; }
+      .meta b { font-weight: 400; } .meta b.count { color: #f2f2f5; }
       .meta b { color: #ff4a3d; } .meta b.ready { color: #f5e14a; } .meta b.good { color: #3dff9a; } .meta b.full { color: #e2b13c; }
       [hidden] { display: none !important; }
-      button { padding: 5px 9px; border: 1px solid #3a5878; background: #0f1b2e; color: #e6f4ff; font: inherit;
+      button { padding: 5px 9px; border: 1px solid #3a3a46; background: #131318; color: #f2f2f5; font: inherit;
         letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
-      button:hover { border-color: #38e1ff; }
-      button.primary { border-color: #38e1ff; background: #38e1ff; color: #031018; }
-      button:focus-visible { outline: 2px solid #ffe45c; outline-offset: 2px; }
+      button:hover { border-color: #9b7cff; }
+      button.primary { border-color: #9b7cff; background: #9b7cff; color: #000; }
+      button:focus-visible { outline: 2px solid #e6ff4d; outline-offset: 2px; }
       @keyframes blink { 50% { opacity: .25; } }
       @media (prefers-reduced-motion: reduce) { .led { animation: none; } }
     </style>

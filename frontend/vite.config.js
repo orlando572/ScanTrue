@@ -6,6 +6,8 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   base: './',
   plugins: [react(), tailwindcss()],
+  // El fondo vectorial se importa de web/: una sola copia de React para los dos.
+  resolve: { dedupe: ['react', 'react-dom'] },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

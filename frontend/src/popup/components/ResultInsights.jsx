@@ -36,7 +36,7 @@ export default function ResultInsights({ result, level, text = null, url = null,
     {level && markers.length > 0 && <Spectrum markers={markers} level={level} consensus={consensus} />}
     {reading && <section className="result-reading hud-panel" aria-label="Lectura">
       <div className="result-reading-head">
-        <span className="hud-code hud-code--cyan" aria-hidden="true">Lectura</span>
+        <span className="hud-code hud-code--accent" aria-hidden="true">Lectura</span>
         {reading.words && <span className="result-reading-words">{reading.words}</span>}
       </div>
       {reading.domain && <p className="result-reading-source">
