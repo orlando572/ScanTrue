@@ -78,3 +78,10 @@ class BlockchainSettings:
             deployment_block=int(data["deployment_block"]),
             deployment_block_hash=data["deployment_block_hash"],
         )
+
+
+def web_origins() -> list[str]:
+    """Orígenes de la web (web/) que pueden llamar a la API desde el navegador."""
+    load_dotenv(ENV_FILE, override=False)
+    value = os.getenv("WEB_ORIGINS", "http://127.0.0.1:5174,http://localhost:5174")
+    return [origin.strip().rstrip("/") for origin in value.split(",") if origin.strip()]

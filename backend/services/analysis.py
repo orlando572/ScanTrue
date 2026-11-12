@@ -1,7 +1,7 @@
 """Caso de uso de análisis de texto con los modelos disponibles."""
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import islice
 from typing import Protocol
 
@@ -19,6 +19,8 @@ from backend.schemas.analysis import (
 )
 
 MIN_INPUT_TOKENS = 100
+# Límite del fragmento original que se guarda (columna analisis.texto_original).
+MAX_ORIGINAL_CHARS = 20_000
 logger = logging.getLogger(__name__)
 
 
@@ -42,6 +44,19 @@ class AnalysisOutcome:
     response: AnalysisResponse
     text: str
     truncated: bool
+    # Fragmento original completo (limpio) y fragmentos tal como se marcaron.
+    original_text: str | None = None
+    fragments: list[str] | None = None
+    # Prefijo del texto que leyó cada modelo: cada uno recorta por su cuenta.
+    model_texts: dict[str, str] = field(default_factory=dict)
+
+
+def clean_fragments(fragments: list[str] | None, text: str) -> list[str] | None:
+    """Fragmentos limpios, solo si juntos son el texto enviado (pudo editarse después)."""
+    if not fragments:
+        return None
+    cleaned = [value for value in (clean_news_text(item) for item in fragments) if value]
+    return cleaned if cleaned and " ".join(cleaned) == text else None
 
 
 class AnalysisService:
@@ -80,6 +95,7 @@ class AnalysisService:
         # Los dos recortes son prefijos del mismo texto: se guarda y se envía el más largo y
         # cada predictor recorta dentro de él lo que le corresponde.
         model_input, truncated = self._bilstm_prefix(text)
+        model_texts = {"bilstm": model_input}
         mbert_predictor = self.mbert_predictor
         mbert_prepare_failed = False
         mbert_token_count = None
@@ -88,6 +104,7 @@ class AnalysisService:
                 mbert_input, mbert_truncated, mbert_token_count = self.mbert_text_policy.prepare(
                     text
                 )
+                model_texts["mbert"] = mbert_input
                 if len(mbert_input) > len(model_input):
                     model_input = mbert_input
                 truncated = truncated and mbert_truncated
@@ -194,4 +211,10 @@ class AnalysisService:
         )
         return AnalysisOutcome(
             response=response, text=model_input, truncated=truncated,
+            original_text=text[:MAX_ORIGINAL_CHARS],
+            fragments=clean_fragments(payload.fragmentos, text),
+            model_texts={
+                name: value for name, value in model_texts.items()
+                if results[name].estado == "ok"
+            },
         )

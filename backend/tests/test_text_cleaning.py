@@ -8,7 +8,9 @@ from uuid import uuid4
 from pydantic import ValidationError
 
 from backend.api.routes import analyze as analyze_route
-from backend.repositories.supabase import SELECT_HISTORY_BASE, SupabaseRepository
+from backend.repositories.supabase import (
+    SELECT_HISTORY_BASE, SupabaseDataError, SupabaseRepository,
+)
 from backend.schemas.analysis import AnalysisRequest
 from backend.services.analysis import AnalysisService, InvalidAnalysisInput
 from backend.services.text_cleaning import clean_news_text
@@ -143,9 +145,39 @@ class TextCleaningTests(unittest.TestCase):
             user_id=uuid4(), url=None, text=outcome.text,
             text_hash=sha256(outcome.text.encode()).hexdigest(), response=outcome.response,
         )
-        self.assertEqual(calls[0][0], ('POST', 'rpc/crear_analisis_texto_unico'))
+        self.assertEqual(calls[0][0], ('POST', 'rpc/crear_analisis_con_fragmentos'))
         self.assertNotIn('p_titulo', calls[0][1]['body'])
         self.assertNotIn('titulo', SELECT_HISTORY_BASE)
+
+    def test_repository_stores_fragments_and_falls_back_without_migration_007(self):
+        repository = SupabaseRepository.__new__(SupabaseRepository)
+        calls = []
+
+        def request(method, path, **kwargs):
+            calls.append((path, kwargs['body']))
+            if path.endswith('con_fragmentos') and len(calls) > 1:
+                raise SupabaseDataError(404)
+            return str(uuid4())
+
+        repository._request = request
+        service = AnalysisService(FakePredictor('bilstm'))
+        text = 'dato relevante. ' * 55
+        outcome = service.analyze(AnalysisRequest(texto=text, fragmentos=[text[:160], text[160:]]))
+        values = dict(
+            user_id=uuid4(), url=None, text=outcome.text,
+            text_hash=sha256(outcome.text.encode()).hexdigest(), response=outcome.response,
+            original_text=outcome.original_text, fragments=outcome.fragments,
+            truncated=outcome.truncated, model_texts=outcome.model_texts,
+        )
+        repository.create_analysis(**values)
+        body = calls[0][1]
+        self.assertEqual(len(body['p_fragmentos']), 2)
+        self.assertEqual(' '.join(body['p_fragmentos']), body['p_texto_original'])
+        self.assertEqual(body['p_resultados'][0]['texto_modelo'], outcome.model_texts['bilstm'])
+        # Sin la función nueva (404 de PostgREST) se guarda con la anterior.
+        repository.create_analysis(**values)
+        self.assertEqual(calls[-1][0], 'rpc/crear_analisis_texto_unico')
+        self.assertNotIn('p_fragmentos', calls[-1][1])
 
 
 if __name__ == '__main__':

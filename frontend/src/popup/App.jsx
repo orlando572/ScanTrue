@@ -11,7 +11,7 @@ import RegisterScreen from './screens/RegisterScreen.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
 import ScreenHeader from './components/ScreenHeader.jsx';
 import { CoreGrid, LedStrip, Radar, SegmentTrack } from './components/HudDecor.jsx';
-import { countWords, meterState, presentFragments } from './selection-presentation.js';
+import { countWords, hasSelectionText, meterState, presentFragments } from './selection-presentation.js';
 import { presentServices } from './service-presentation.js';
 import scanTrueMark from './assets/scantrue-mark.svg';
 
@@ -102,6 +102,7 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
     {/* La acción principal va junto al medidor: no hay que bajar hasta el final de la lista. */}
     {error && <p className="hud-alert mt-3 text-[12px] leading-[18px]" role="alert">{error}</p>}
     <button type="button" className="primary-button mt-4" onClick={onAnalyze} disabled={submitting || selecting || !selection.text.trim()}>{submitting ? 'Iniciando análisis…' : 'Analizar'}</button>
+    <p className="mt-2 text-[11px] leading-4 text-muted">Al analizar, el texto y su resultado se publican en la web de ScanTrue, sin identificarte.</p>
 
     <div className="input-buffer-meta mt-5 items-center">
       <span className="hud-code hud-code--cyan" aria-hidden="true">Fragmentos · {String(fragments.length).padStart(2, '0')} marcados</span>
@@ -194,7 +195,7 @@ export default function App() {
   const historyScroll = useRef(null);
   const current = stack.at(-1);
   // Desde el resultado, «Volver» regresa al texto analizado para poder editarlo.
-  const resultStack = () => (selectionRef.current?.text?.trim() ? ['P01', 'P02', 'P05'] : ['P01', 'P05']);
+  const resultStack = () => (hasSelectionText(selectionRef.current) ? ['P01', 'P02', 'P05'] : ['P01', 'P05']);
   selectionRef.current = selection;
 
   useLayoutEffect(() => {
@@ -229,9 +230,10 @@ export default function App() {
       if (foundSelection) setSelection(foundSelection);
       if (pending?.ok) setSelectionMode(pending.selecting === true);
       if (foundOperation) setOperation(foundOperation);
-      if (foundOperation?.status === 'completed') setStack(foundSelection ? ['P01', 'P02', 'P05'] : ['P01', 'P05']);
+      if (foundOperation?.status === 'completed') setStack(hasSelectionText(foundSelection) ? ['P01', 'P02', 'P05'] : ['P01', 'P05']);
       else if (['working', 'error', 'uncertain', 'session_error', 'service_error', 'storage_error'].includes(foundOperation?.status)) setStack(['P01', 'P02', 'P04']);
-      else if (foundSelection) {
+      // Una selección vacía (se vació el texto) no lleva a «Escoger texto»: se abre el inicio.
+      else if (hasSelectionText(foundSelection)) {
         setStack(['P01', 'P02']);
         if (foundOperation?.status === 'validation') setAnalysisError(validationMessage(foundOperation));
       }
@@ -451,7 +453,7 @@ export default function App() {
           <ServiceAlert health={health} onRetry={refreshHealth} />
           <button type="button" className="primary-button mt-5" onClick={startSelection} disabled={selecting}>{selecting ? 'Preparando selección…' : 'Escoger texto'}</button>
           {selectionError && <p className="hud-alert mt-3 text-[12px] leading-[18px]" role="alert">{selectionError}</p>}
-          {selection?.text?.trim() && <button type="button" className="text-link mt-4 w-fit" onClick={() => open('P02')}>Ver texto para analizar</button>}
+          {hasSelectionText(selection) && <button type="button" className="text-link mt-4 w-fit" onClick={() => open('P02')}>Ver texto para analizar</button>}
         </div>
       </> : <>
         {current !== 'P02' && current !== 'P04' && current !== 'P05' && current !== 'P06' && current !== 'P07' && current !== 'P08' && current !== 'P09' && current !== 'P11' && current !== 'P12' && current !== 'P13' && <button type="button" className="text-link mb-5 flex w-fit items-center gap-1.5" onClick={back}><span className="size-5"><Icon name="back" /></span>Volver</button>}

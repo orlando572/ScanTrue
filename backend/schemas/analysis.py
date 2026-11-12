@@ -10,6 +10,11 @@ class AnalysisRequest(BaseModel):
 
     texto: str = Field(description="Texto de la noticia que se analizará")
     url: str | None = Field(default=None, max_length=2048, description="URL opcional de referencia")
+    fragmentos: list[str] | None = Field(
+        default=None,
+        max_length=60,
+        description="Fragmentos marcados, en orden; juntos deben formar el mismo texto.",
+    )
 
 
 class ModelResult(BaseModel):

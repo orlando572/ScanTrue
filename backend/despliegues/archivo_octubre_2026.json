@@ -1,0 +1,15 @@
+{
+  "version": "archivo_octubre_2026",
+  "nombre": "Octubre 2026 · BiLSTM fastText + mBERT (archivado)",
+  "fecha": "2026-10-10",
+  "notas": "Modelos anteriores a la calibración conjunta. No tienen contrato de inferencia: se conservan solo para comparar sus métricas.",
+  "activable": false,
+  "versiones_modelo": {
+    "bilstm": "pequeno_mejorado_fasttext_cc300_s42",
+    "mbert": "mBERT_BiLSTM_main_len512_seed43"
+  },
+  "metricas": {
+    "bilstm": "backend/metrics/archivo_octubre/evaluaciones.json",
+    "mbert": "backend/metrics/archivo_octubre/mbert_evaluaciones.json"
+  }
+}

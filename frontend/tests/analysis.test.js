@@ -206,3 +206,28 @@ test('un fallo inesperado tras el envío no habilita un reenvío automático', a
     globalThis.fetch = originalFetch;
   }
 });
+
+test('Analizar envía los fragmentos marcados por separado', async () => {
+  const originalChrome = globalThis.chrome;
+  const originalFetch = globalThis.fetch;
+  const selection = {
+    text: 'Primer párrafo\n\nSegundo párrafo', url: null, capturedAt: 7,
+    fragments: [{ id: 'a', text: ' Primer párrafo ' }, { id: 'b', text: 'Segundo párrafo' }, { id: 'c', text: '  ' }],
+  };
+  const session = storageArea({ pendingSelection: selection });
+  let body = null;
+  globalThis.chrome = { storage: { session, local: storageArea() } };
+  globalThis.fetch = async (url, options) => {
+    if (url.endsWith('/invitados')) return response(200, { access_token: 'token', refresh_token: 'refresh', expires_in: 3600 });
+    body = JSON.parse(options.body);
+    return response(200, { id: 'resultado-2', resultados: { bilstm: { estado: 'ok' } } });
+  };
+  try {
+    await startAnalysis();
+    for (let attempt = 0; attempt < 50 && body === null; attempt += 1) await new Promise((resolve) => setTimeout(resolve, 5));
+    assert.deepEqual(body, { texto: selection.text, url: null, fragmentos: ['Primer párrafo', 'Segundo párrafo'] });
+  } finally {
+    globalThis.chrome = originalChrome;
+    globalThis.fetch = originalFetch;
+  }
+});

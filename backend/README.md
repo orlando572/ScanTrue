@@ -148,6 +148,32 @@ con `estado_blockchain`, `hash_transaccion`, `verificado` (`true`, `false` o
 confirmadas en Anvil. `GET /salud` muestra si la cadena está configurada y
 conectada.
 
+## Web pública y administración
+
+La web (`web/`, ver [su README](../web/README.md)) usa estas rutas. Todas leen y escriben con la clave secreta desde el backend; las tablas nuevas tienen RLS sin políticas y la API pública nunca devuelve `usuario_id`.
+
+| Ruta | Acceso | Uso |
+| --- | --- | --- |
+| `GET /publico/analisis` | Público | Lista con `q`, `nivel` (1–5), `comparacion`, `desde`, `hasta`, `dominio`, `verificacion`, `orden`, `limit`, `offset`. |
+| `GET /publico/analisis/{id}` | Público | Detalle: fragmentos, texto que leyó cada modelo y `verificacion_web`. |
+| `GET /publico/analisis/{id}/verificacion` | Público | Comprueba el registro en la cadena. |
+| `GET /publico/resumen` | Público | Totales para la portada. |
+| `GET /admin/yo`, `GET /admin/resumen` | Admin | Confirmar el rol; estadísticas del panel. |
+| `GET /admin/casos`, `GET/PATCH /admin/casos/{id}` | Admin | Casos (discrepancias primero) y ocultar de la web. |
+| `PUT/DELETE /admin/casos/{id}/revision` | Admin | Aprobar, corregir o descartar; quitar la revisión. |
+| `GET/POST /admin/datasets`, `GET /admin/datasets/vista-previa`, `GET/DELETE /admin/datasets/{id}`, `GET /admin/datasets/{id}/exportar` | Admin | Versiones de dataset y su CSV. |
+| `GET /admin/modelos`, `POST /admin/modelos/activar`, `POST /admin/modelos/revertir` | Admin | Versiones de modelos. |
+
+- **Administrador:** sesión normal (`POST /sesiones`) de una cuenta con `app_metadata.role = "admin"`. Se crea o asciende con `python -m backend.crear_admin correo@ejemplo.com`.
+- **CORS:** `WEB_ORIGINS` en `backend/.env` (por defecto `http://127.0.0.1:5174,http://localhost:5174`).
+- **Migraciones:** `006_web_publica_admin.sql` y `007_revision_datasets.sql`. Sin la 007, `POST /analisis` sigue guardando con la función anterior, pero la web y el panel no funcionan.
+- **Fragmentos:** `POST /analisis` acepta `fragmentos` (lista opcional). Se guardan el fragmento original (`texto_original`), los fragmentos y el texto recortado que leyó cada modelo (`resultados_modelo.texto_modelo`). `texto` y `hash_texto` no cambian.
+- **Datasets:** `services/datasets.py` retira copias exactas y etiquetas en conflicto, agrupa por página y por evento, y reparte cada grupo entero a entrenamiento o prueba.
+- **Versiones de modelos:** cada versión activable es un manifiesto en `backend/despliegues/*.json` (dos contratos y su combinación). La activa y el historial se guardan en `backend/.local/despliegue_activo.json`. Activar carga los modelos, hace una predicción de prueba y solo entonces sustituye a la versión actual. `GET /metricas` sirve las métricas de la versión activa y `/salud` incluye `despliegue`.
+- **Verificación web (incremento 2):** la tabla `verificaciones_web` y el campo `verificacion_web` ya existen y hoy van vacíos.
+
+Pruebas: `PYTHONPATH=backend/.deps:. bilstm/.venv/bin/python -m unittest backend.tests.test_web_platform`.
+
 ## Arranque de la API
 
 Desde la raíz del repositorio, configura `backend/.env` con la URL del proyecto,

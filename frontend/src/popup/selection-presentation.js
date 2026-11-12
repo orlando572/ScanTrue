@@ -1,6 +1,6 @@
-import { MAX_WORDS, MIN_WORDS, countWords, lengthLevel, normalizeFragments } from '../shared/selection.js';
+import { MAX_WORDS, MIN_WORDS, countWords, hasSelectionText, lengthLevel, normalizeFragments } from '../shared/selection.js';
 
-export { countWords };
+export { countWords, hasSelectionText };
 
 const messages = {
   short: (missing) => `Faltan ${missing} palabras`,

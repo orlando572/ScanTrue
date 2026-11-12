@@ -55,7 +55,7 @@ Las formas de respuesta de esta sección incluyen los campos de la próxima entr
 | `POST /sesiones` | Pública | Cuerpo `{correo, contrasena}`. Para incorporar el historial invitado, añadir `X-Guest-Token: <access_token_del_invitado>`. Devuelve `sesion` y `registros_incorporados`. |
 | `POST /sesiones/renovar` | Pública | Cuerpo `{refresh_token}`. Devuelve una sesión con nuevos tokens. |
 | `POST /sesiones/cerrar` | Bearer | Cierra la sesión actual y responde `{ "cerrada": true }`. |
-| `POST /analisis` | Bearer | Cuerpo `{texto, url}`. Devuelve resultado, `id` y `estado_blockchain: "pendiente"`; no espera la confirmación de Anvil. |
+| `POST /analisis` | Bearer | Cuerpo `{texto, url, fragmentos}` (`fragmentos` es opcional: la lista de fragmentos marcados, para la web). Devuelve resultado, `id` y `estado_blockchain: "pendiente"`; no espera la confirmación de Anvil. |
 | `GET /analisis?limit=20&offset=0` | Bearer | Lista el historial propio con `vista_previa` y `resultado_unificado`, ordenado del más reciente. `limit` admite 1–100; `offset` empieza en 0. |
 | `GET /analisis/{id}` | Bearer | Detalle de un análisis propio, con `texto` completo y `resultado_unificado`. Un ID ajeno o inexistente devuelve 404. |
 | `DELETE /analisis/{id}` | Bearer | Elimina un análisis propio y responde `{ "eliminado": true }`. Un ID ajeno o inexistente devuelve 404. |

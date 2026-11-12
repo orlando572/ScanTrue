@@ -48,6 +48,10 @@ def health(request: Request) -> dict:
             identity and identity.settings.secret_key
         ),
         "blockchain": {"configurada": blockchain is not None, "conectada": chain_available},
+        # Versión de modelos activa (backend/despliegues/); la extensión no la usa.
+        "despliegue": getattr(
+            getattr(request.app.state, "model_versions", None), "current_version", None
+        ),
     }
 
 
@@ -98,6 +102,10 @@ def analyze(
         text=outcome.text,
         text_hash=sha256(outcome.text.encode("utf-8")).hexdigest(),
         response=outcome.response,
+        original_text=outcome.original_text,
+        fragments=outcome.fragments,
+        truncated=outcome.truncated,
+        model_texts=outcome.model_texts,
     )
     return CreatedAnalysis(
         **outcome.response.model_dump(), id=analysis_id,

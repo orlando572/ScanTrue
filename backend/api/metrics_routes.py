@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from backend.schemas.metrics import MetricsResponse
 
@@ -21,6 +21,10 @@ _catalogs = {
 
 
 @router.get("/metricas", response_model=MetricsResponse)
-async def get_metrics(modelo: Literal["bilstm", "mbert"] = "bilstm") -> MetricsResponse:
-    """Devuelve evaluaciones publicadas de la versión seleccionada por modelo."""
-    return _catalogs[modelo]
+async def get_metrics(
+    request: Request, modelo: Literal["bilstm", "mbert"] = "bilstm"
+) -> MetricsResponse:
+    """Devuelve las evaluaciones publicadas de la versión activa de cada modelo."""
+    versions = getattr(request.app.state, "model_versions", None)
+    active = versions.active_metrics(modelo) if versions is not None else None
+    return active or _catalogs[modelo]
