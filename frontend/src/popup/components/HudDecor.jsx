@@ -1,40 +1,73 @@
+import { useEffect, useRef } from 'react';
+
 // Gráficos vectoriales decorativos. Todos son aria-hidden: no aportan información.
 
-const SEGMENTS = 40;
+const IRIS_SEGMENTS = 28;
+// Contorno del ojo y marco del logo (scantrue-mark.svg), ampliados y centrados en 0,0.
+const EYE = 'M-64 0c19-31 41-44 64-44s45 13 64 44c-19 31-41 44-64 44s-45-13-64-44z';
+const FRAME = 'M-44-84H62l22 22V44L44 84H-62l-22-22V-44z';
+// Cuánto se desplaza la mirada (en unidades del dibujo) y cuánto dura tras mover el ratón.
+const LOOK_X = 20;
+const LOOK_Y = 7;
+const TRACK_MS = 2200;
 
-// Constelación del núcleo: [x, y, color, ritmo en segundos], con el centro en 0,0.
-const NODES = [
-  [-46, -30, 'var(--color-accent)', 3.4],
-  [-12, -54, 'var(--color-acid)', 2.6],
-  [38, -40, 'var(--color-accent)', 4.1],
-  [58, 6, 'var(--color-coral)', 3],
-  [26, 46, 'var(--color-accent)', 3.7],
-  [-30, 46, 'var(--color-acid)', 2.9],
-  [-58, 10, 'var(--color-accent)', 4.4],
-];
-const LINKS = [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 0], [0, 5], [2, 4]];
+// Ojo de escaneo: el logo de ScanTrue ampliado y vivo. Marco de esquinas cortadas, contorno
+// del ojo, iris de segmentos recorrido por una luz y pupila ácida con la mira girando.
+// Parpadea, mira a los lados como leyendo y sigue al puntero cuando se mueve sobre el panel;
+// una línea de escaneo lo recorre y de la pupila sale una onda coral. Con `active`
+// (análisis en curso) lee sin parar y no parpadea.
+export function ScanEye({ active = false }) {
+  const root = useRef(null);
 
-// Núcleo de escaneo: la pieza propia de la extensión, hecha con los elementos de la web.
-// Un aro de 40 segmentos (el del dial) recorrido por una luz, una constelación que late,
-// la mira ácida que gira y una onda de radar coral que sale del centro. Con `active`
-// (análisis en curso) todo va más deprisa.
-export function ScanCore({ active = false }) {
-  return <div className={`scan-core${active ? ' scan-core--active' : ''}`} aria-hidden="true">
+  useEffect(() => {
+    const element = root.current;
+    if (active || !element || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined;
+    let timer;
+    const rest = () => {
+      element.classList.remove('scan-eye--tracking');
+      element.style.removeProperty('--gx');
+      element.style.removeProperty('--gy');
+    };
+    const follow = (event) => {
+      const box = element.getBoundingClientRect();
+      const dx = event.clientX - (box.left + box.width / 2);
+      const dy = event.clientY - (box.top + box.height / 2);
+      const reach = Math.max(box.width, 1);
+      element.style.setProperty('--gx', (Math.max(-1, Math.min(1, dx / reach)) * LOOK_X).toFixed(1));
+      element.style.setProperty('--gy', (Math.max(-1, Math.min(1, dy / reach)) * LOOK_Y).toFixed(1));
+      element.classList.add('scan-eye--tracking');
+      clearTimeout(timer);
+      timer = setTimeout(rest, TRACK_MS);
+    };
+    window.addEventListener('pointermove', follow, { passive: true });
+    return () => { window.removeEventListener('pointermove', follow); clearTimeout(timer); rest(); };
+  }, [active]);
+
+  return <div ref={root} className={`scan-eye${active ? ' scan-eye--active' : ''}`} aria-hidden="true">
     <svg viewBox="0 0 200 200" fill="none">
+      <defs><clipPath id="scan-eye-shape"><path d={EYE} /></clipPath></defs>
       <g transform="translate(100 100)">
-        <g>
-          {Array.from({ length: SEGMENTS }, (_, index) => <rect key={index} className="scan-core-seg" style={{ '--i': index }} x="82" y="-2.5" width="14" height="5" transform={`rotate(${-90 + (360 / SEGMENTS) * index})`} />)}
+        <path className="scan-eye-frame" d={FRAME} />
+        <path className="scan-eye-ticks" d="M-78 0h8M70 0h8M0-78v8M0 70v8" />
+        <g className="scan-eye-lids">
+          <g clipPath="url(#scan-eye-shape)">
+            <path className="scan-eye-white" d={EYE} />
+            <g className="scan-eye-look">
+              <g className="scan-eye-gaze">
+                <g>
+                  {Array.from({ length: IRIS_SEGMENTS }, (_, index) => <rect key={index} className="scan-eye-seg" style={{ '--i': index }} x="24" y="-2" width="11" height="4" transform={`rotate(${-90 + (360 / IRIS_SEGMENTS) * index})`} />)}
+                </g>
+                <circle className="scan-eye-pulse" r="34" />
+                <g className="scan-eye-reticle-spin">
+                  <path className="scan-eye-reticle" d="M17 0A17 17 0 0 1-5.25 16.17M-17 0A17 17 0 0 1 5.25-16.17" />
+                </g>
+                <circle className="scan-eye-pupil" r="8" />
+              </g>
+            </g>
+            <path className="scan-eye-scan" d="M-70 0H70" />
+          </g>
+          <path className="scan-eye-outline" d={EYE} />
         </g>
-        <circle className="scan-core-orbit" r="72" />
-        {LINKS.map(([from, to], index) => <line key={index} className="scan-core-link" style={{ '--i': index }} x1={NODES[from][0]} y1={NODES[from][1]} x2={NODES[to][0]} y2={NODES[to][1]} />)}
-        {NODES.map(([x, y, color, rhythm], index) => <rect key={index} className="scan-core-node" style={{ '--i': index, '--c': color, '--d': `${rhythm}s` }} x={x - 2} y={y - 2} width="4" height="4" />)}
-        <circle className="scan-core-pulse" r="72" />
-        <circle className="scan-core-pulse scan-core-pulse--b" r="60" />
-        <path className="scan-core-reticle" d="M24 0h8M-24 0h-8M0 24v8M0-24v-8" />
-        <g className="scan-core-reticle-spin">
-          <path className="scan-core-reticle" d="M16 0A16 16 0 0 1-4.94 15.22M-16 0A16 16 0 0 1 4.94-15.22" />
-        </g>
-        <rect className="scan-core-eye" x="-3" y="-3" width="6" height="6" />
       </g>
     </svg>
   </div>;

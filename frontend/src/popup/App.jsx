@@ -10,7 +10,7 @@ import AccountScreen from './screens/AccountScreen.jsx';
 import RegisterScreen from './screens/RegisterScreen.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
 import ScreenHeader from './components/ScreenHeader.jsx';
-import { LedStrip, ScanCore, SegmentTrack } from './components/HudDecor.jsx';
+import { LedStrip, ScanEye, SegmentTrack } from './components/HudDecor.jsx';
 import { LoaderSweep } from './components/HudLoader.jsx';
 // El mismo fondo interactivo que la web.
 import VectorField from '../../../web/src/components/VectorField.jsx';
@@ -218,7 +218,7 @@ function AnalysisScreen({ operation, onHistory, onBack, onRetry }) {
   }
 
   return <section className="analysis-wait" role="status" aria-live="polite">
-    <ScanCore active />
+    <ScanEye active />
     <h1 className="screen-title mt-6">Analizando texto</h1>
     <p className={`mt-2 text-[12px] leading-[18px] ${slow ? 'text-amber' : 'text-muted'}`}>{slow ? 'Está tardando más de lo habitual.' : 'Esto puede tardar un momento.'}</p>
     <LoaderSweep />
@@ -536,7 +536,7 @@ export default function App() {
       {current === 'P01' ? <>
         <div className="home-core">
           <span className="hud-code" aria-hidden="true">Consola de análisis de noticias</span>
-          <ScanCore />
+          <ScanEye />
         </div>
         <div className="hud-panel hud-panel--accent hud-panel--mark">
           <h1 className="screen-title">¿Dudas de una noticia?</h1>
