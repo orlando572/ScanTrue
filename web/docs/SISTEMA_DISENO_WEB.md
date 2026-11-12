@@ -51,6 +51,7 @@ Las mismas tres familias, empaquetadas con `@fontsource`: **Orbitron** (marca y 
 | Tarjeta de resultado | Izquierda: código, fecha, página de origen y **solo los fragmentos** (`#01`, `#02`…; no hay título). Cada fragmento se corta según cuántos hay, para llenar la tarjeta: 12 líneas con uno, 6 con dos, 4 con tres y 3 con más (en una columna, 4 como máximo). Derecha: porcentaje y nivel, espectro, los tres criterios y estado. El borde toma el color del nivel. |
 | Espectro (`Spectrum`) | Cinco zonas; BETO ▼ encima, BiLSTM ▲ debajo y el combinado como rombo. |
 | Dial (`Dial`) | 40 segmentos en un arco de 270° que se encienden en orden. |
+| Página de origen | En tarjetas y cabeceras, solo el dominio (en ácido, con LED). En el detalle, sobre los fragmentos, la **dirección completa** como enlace, partida en líneas si es larga. |
 | Texto leído | En el detalle, cada modelo despliega el texto que leyó; lo que quedó fuera de su límite va en gris. |
 | Carga (`Loader`) | Rótulo corto con cursor, barra recorrida por una luz y esqueleto; aparece con 150 ms de retraso. |
 

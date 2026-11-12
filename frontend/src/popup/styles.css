@@ -955,6 +955,9 @@ body {
 .result-reading-source a::before { width: 6px; height: 6px; flex: none; background: var(--color-acid); box-shadow: 0 0 6px var(--color-acid); content: ''; }
 .result-reading-source a::after { content: '↗' / ''; color: var(--color-muted); font-size: 11px; }
 .result-reading-source a:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* Dirección completa (P08): se parte en líneas, con el LED y la flecha alineados a la primera. */
+.result-reading-source--full a { display: flex; align-items: baseline; font-size: 12px; line-height: 18px; }
+.result-reading-source--full a::before { align-self: flex-start; margin-top: 6px; }
 .result-reading-source a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 
 /* El fragmento se «escribe» de izquierda a derecha, línea a línea. */

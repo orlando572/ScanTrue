@@ -88,7 +88,7 @@ export default function HistoryDetailScreen({ id, onBack, onBreakdown, onLoaded,
       <div className="selection-preview max-h-[220px] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-5" tabIndex="0" aria-label="Texto analizado">{shown.text ?? 'Texto no disponible'}</div>
       <div className="result-stack mt-4">
         <ResultGaugePanel level={shown.level} percentage={shown.percentage} />
-        <ResultInsights result={item} level={shown.level} text={shown.text} url={item.url} showText={false} />
+        <ResultInsights result={item} level={shown.level} text={shown.text} url={item.url} showText={false} fullUrl />
         {shown.hasBreakdown && <button type="button" className="result-detail" onClick={() => onBreakdown(item)} disabled={deleting}>
           <span>Ver desglose por modelo</span>
           <ChevronIcon />

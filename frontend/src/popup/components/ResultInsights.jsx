@@ -26,8 +26,9 @@ function Spectrum({ markers, level, consensus }) {
 }
 
 // `text` y `url` son el texto analizado y su página; `showText` muestra el fragmento y permite
-// desplegar el texto completo (en P08 el texto ya está a la vista, arriba).
-export default function ResultInsights({ result, level, text = null, url = null, showText = true }) {
+// desplegar el texto completo (en P08 el texto ya está a la vista, arriba). Con `fullUrl` el
+// enlace enseña la dirección completa de la noticia en vez del dominio (detalle del historial).
+export default function ResultInsights({ result, level, text = null, url = null, showText = true, fullUrl = false }) {
   const { markers, consensus, reading, note } = presentInsights(result, text, url);
   const [textOpen, setTextOpen] = useState(false);
   const textPanel = useId();
@@ -39,9 +40,9 @@ export default function ResultInsights({ result, level, text = null, url = null,
         <span className="hud-code hud-code--accent" aria-hidden="true">Lectura</span>
         {reading.words && <span className="result-reading-words">{reading.words}</span>}
       </div>
-      {reading.domain && <p className="result-reading-source">
+      {reading.domain && <p className={`result-reading-source${fullUrl ? ' result-reading-source--full' : ''}`}>
         <span className="sr-only">Página de origen: </span>
-        <a href={reading.url} target="_blank" rel="noreferrer" title={reading.url}>{reading.domain}</a>
+        <a href={reading.url} target="_blank" rel="noreferrer" title={reading.url}>{fullUrl ? reading.url : reading.domain}</a>
       </p>}
       {showText && reading.text && <>
         {textOpen

@@ -190,6 +190,13 @@ select.input { cursor: pointer; }
 .card-meta .code { color: var(--accent); letter-spacing: .12em; }
 .source { display: inline-flex; align-items: center; gap: 6px; color: var(--color-acid); text-decoration: none; }
 a.source:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* Dirección completa de la noticia, en el detalle: se parte en líneas si es larga. */
+.source-url { display: grid; gap: 6px; margin: 0 0 18px; padding-bottom: 16px; border-bottom: 1px dashed var(--color-line-2); }
+.source-url a { display: flex; align-items: baseline; gap: 8px; min-width: 0; color: var(--color-acid); font-family: var(--font-mono); font-size: 13px; text-decoration: none; }
+.source-url a span { min-width: 0; overflow-wrap: anywhere; }
+.source-url a:hover span { text-decoration: underline; text-underline-offset: 3px; }
+.source-url .led { flex: none; align-self: center; }
+.source-url svg { flex: none; align-self: center; width: 13px; height: 13px; color: var(--color-muted); }
 .fragments { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .fragment { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 4px; padding-left: 12px; border-left: 2px solid var(--accent); }
 .fragment .n { font-family: var(--font-mono); font-size: 12px; color: var(--color-coral); }
