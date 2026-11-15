@@ -80,6 +80,36 @@ class BlockchainSettings:
         )
 
 
+@dataclass(frozen=True)
+class LlmSettings:
+    """Servidor del LLM con API tipo OpenAI (llama-server). Sin LLM_BASE_URL no hay LLM."""
+
+    base_url: str
+    model: str
+    api_key: str | None
+    timeout: float
+
+    @classmethod
+    def from_environment(cls) -> "LlmSettings | None":
+        load_dotenv(ENV_FILE, override=False)
+        base_url = os.getenv("LLM_BASE_URL", "").strip().rstrip("/")
+        if not base_url:
+            return None
+        raw_timeout = os.getenv("LLM_TIMEOUT", "").strip() or "120"
+        try:
+            timeout = float(raw_timeout)
+        except ValueError:
+            raise ValueError("LLM_TIMEOUT debe ser un número de segundos.") from None
+        if not 0 < timeout <= 3600:
+            raise ValueError("LLM_TIMEOUT debe estar entre 0 y 3600 segundos.")
+        return cls(
+            base_url=base_url,
+            model=os.getenv("LLM_MODEL", "").strip() or "qwen",
+            api_key=os.getenv("LLM_API_KEY", "").strip() or None,
+            timeout=timeout,
+        )
+
+
 def web_origins() -> list[str]:
     """Orígenes de la web (web/) que pueden llamar a la API desde el navegador."""
     load_dotenv(ENV_FILE, override=False)
