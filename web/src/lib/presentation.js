@@ -32,31 +32,120 @@ const CONCLUSIONS = {
   evidencia_insuficiente: { label: 'Evidencia insuficiente', tone: 'middle' },
 };
 
+// Lo que decidió el juicio de cada afirmación con las fuentes que encontró.
+const CLAIM_VERDICTS = {
+  apoyada: { label: 'Respaldada', tone: 'very-low' },
+  contradicha: { label: 'Contradicha', tone: 'very-high' },
+  fuera_de_contexto: { label: 'Fuera de contexto', tone: 'high' },
+  insuficiente: { label: 'Sin evidencia suficiente', tone: 'middle' },
+};
+const CLAIM_ORIGINS = { base_anterior: 'Verificada antes' };
+
 const VERIFICATION_STATES = {
   pendiente: 'En cola de verificación',
   en_proceso: 'Verificando con fuentes externas',
   fallida: 'No se pudo verificar',
 };
 
-// Tercer criterio: mientras no llegue del backend se muestra como «aún no disponible».
+// Qué le pasa a un caso que todavía no tiene conclusión.
+const VERIFICATION_NOTES = {
+  pendiente: 'Está en la cola y se contrastará con fuentes externas cuando le toque.',
+  en_proceso: 'Se está contrastando con fuentes externas ahora mismo.',
+  fallida: 'No se pudo contrastar este texto con fuentes externas. La salida de los dos modelos sigue siendo válida.',
+};
+
+// Causas guardadas en `ultimo_error` (solo las ve el administrador).
+const FAILURE_REASONS = {
+  llm_no_disponible: 'El servidor del LLM no respondió',
+  tiempo_agotado: 'El LLM tardó demasiado',
+  no_autorizado: 'El LLM rechazó la clave de API',
+  salida_invalida: 'El LLM respondió algo que no se pudo usar',
+  busqueda_fallida: 'La búsqueda web falló',
+  busqueda_no_autorizada: 'La búsqueda web rechazó la clave de API',
+  busqueda_cupo_agotado: 'Se agotó el cupo de la búsqueda web',
+  analisis_no_encontrado: 'El análisis ya no existe',
+  intentos_agotados: 'Se agotaron los intentos',
+  error_interno: 'Error interno del servidor',
+};
+
+const text = (value) => (typeof value === 'string' && value.trim() ? value.trim() : null);
+const httpUrl = (value) => (typeof value === 'string' && /^https?:\/\//.test(value) ? value : null);
+
+function presentClaim(item, index) {
+  if (typeof item === 'string') return text(item) ? { id: index + 1, text: item.trim(), url: httpUrl(item), verdict: null, origin: null, sourceIds: [] } : null;
+  const label = text(item?.texto) ?? text(item?.afirmacion) ?? httpUrl(item?.url);
+  if (!label) return null;
+  return {
+    id: Number.isInteger(item?.id) ? item.id : index + 1,
+    text: label,
+    url: httpUrl(item?.url),
+    verdict: CLAIM_VERDICTS[item?.veredicto] ? { key: item.veredicto, ...CLAIM_VERDICTS[item.veredicto] } : null,
+    origin: CLAIM_ORIGINS[item?.origen] ?? null,
+    sourceIds: (Array.isArray(item?.fuente_ids) ? item.fuente_ids : []).filter(Number.isInteger),
+  };
+}
+
+function presentSource(item, index) {
+  if (typeof item === 'string') return text(item) ? { id: index + 1, text: item.trim(), url: httpUrl(item), domain: null, quote: null, consulted: null } : null;
+  const url = httpUrl(item?.url);
+  const label = text(item?.titulo) ?? text(item?.texto) ?? url;
+  if (!label) return null;
+  return {
+    id: Number.isInteger(item?.id) ? item.id : index + 1,
+    text: label,
+    url,
+    domain: text(item?.dominio),
+    quote: text(item?.extracto),
+    consulted: item?.consultada_en ? formatDate(item.consultada_en) : null,
+  };
+}
+
+// Tercer criterio: la verificación con fuentes externas (incremento 2).
 export function presentVerification(verification) {
   if (!verification) {
-    return { state: 'none', label: 'Aún no disponible', tone: null, summary: null, sources: [], claims: [] };
+    return { state: 'none', label: 'Aún no disponible', tone: null, summary: null, note: null, sources: [], claims: [] };
   }
   const conclusion = verification.estado === 'completada' ? CONCLUSIONS[verification.conclusion] : null;
-  const list = (items) => (Array.isArray(items) ? items : []).map((item) => {
-    if (typeof item === 'string') return { text: item, url: /^https?:\/\//.test(item) ? item : null };
-    const url = typeof item?.url === 'string' && /^https?:\/\//.test(item.url) ? item.url : null;
-    const text = item?.titulo ?? item?.texto ?? item?.afirmacion ?? url;
-    return typeof text === 'string' && text.trim() ? { text: text.trim(), url } : null;
-  }).filter(Boolean);
+  const list = (items, present) => (Array.isArray(items) ? items : []).map(present).filter(Boolean);
   return {
     state: conclusion ? 'done' : verification.estado === 'fallida' ? 'failed' : 'working',
     label: conclusion?.label ?? VERIFICATION_STATES[verification.estado] ?? 'En cola de verificación',
     tone: conclusion?.tone ?? null,
-    summary: typeof verification.resumen === 'string' && verification.resumen.trim() ? verification.resumen.trim() : null,
-    sources: list(verification.fuentes),
-    claims: list(verification.afirmaciones),
+    summary: text(verification.resumen),
+    note: conclusion ? null : VERIFICATION_NOTES[verification.estado] ?? VERIFICATION_NOTES.pendiente,
+    sources: list(verification.fuentes, presentSource),
+    claims: list(verification.afirmaciones, presentClaim),
+  };
+}
+
+// Seguimiento de un caso para el administrador: intentos, causa de la falla y si se puede reintentar.
+export function presentTracking(verification, tracking) {
+  if (!verification) return null;
+  const started = Date.parse(tracking?.iniciado_en ?? '');
+  const finished = Date.parse(tracking?.terminado_en ?? '');
+  return {
+    attempts: Number.isInteger(tracking?.intentos) ? tracking.intentos : 0,
+    reason: tracking?.ultimo_error ? FAILURE_REASONS[tracking.ultimo_error] ?? tracking.ultimo_error : null,
+    next: tracking?.proximo_intento && verification.estado === 'pendiente' ? formatDate(tracking.proximo_intento) : null,
+    version: text(tracking?.version_prompts),
+    copied: Boolean(tracking?.copiada_de),
+    seconds: Number.isFinite(started) && Number.isFinite(finished) && finished > started ? Math.round((finished - started) / 1000) : null,
+    canRetry: verification.estado === 'fallida' || verification.estado === 'pendiente',
+  };
+}
+
+// Estado de la cola y del trabajador para el tablero del panel.
+export function presentQueue(status) {
+  const llm = status?.llm ?? {};
+  return {
+    worker: !status?.habilitada
+      ? { state: 'off', label: 'Apagado' }
+      : status.en_pausa ? { state: 'paused', label: 'En pausa' } : { state: 'running', label: 'Activo' },
+    llm: !llm.configurado
+      ? { state: 'off', label: 'Sin configurar' }
+      : llm.disponible ? { state: 'ok', label: 'Responde' } : { state: 'down', label: 'No responde' },
+    average: typeof status?.duracion_media_segundos === 'number' ? `${Math.round(status.duracion_media_segundos)} s` : '—',
+    waiting: (status?.pendientes ?? 0) + (status?.en_proceso ?? 0),
   };
 }
 

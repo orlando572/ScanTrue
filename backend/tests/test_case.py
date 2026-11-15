@@ -90,6 +90,12 @@ class SummaryTests(unittest.TestCase):
         self.assertTrue(text.endswith("contradicha por fuentes."))
         self.assertIn("1 afirmación ", template_summary("respaldada", [r("apoyada")]))
 
+    def test_la_plantilla_concuerda_en_plural(self):
+        text = template_summary("respaldada", [r("apoyada"), r("apoyada"), r("apoyada")])
+        self.assertIn("3 respaldadas por fuentes", text)
+        text = template_summary("fuera_de_contexto", [r("fuera_de_contexto"), r("fuera_de_contexto"), r("insuficiente")])
+        self.assertIn("2 confirmadas, pero en otro contexto, 1 sin evidencia suficiente", text)
+
     def test_sin_afirmaciones(self):
         self.assertIn("No se encontraron afirmaciones", template_summary("evidencia_insuficiente", []))
         self.assertIn("ninguna se pudo contrastar", template_summary("evidencia_insuficiente", [], rejected=2))

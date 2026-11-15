@@ -378,6 +378,12 @@ Cada fase termina con algo que se puede ejecutar y comprobar. El tamaño es rela
 - Endpoints de administración de 4.7; vista de estado, botón de reintento y pausa.
 - Revisar en la web pública y en el panel: lista con filtro `verificacion`, detalle con afirmaciones y fuentes, conteo en la portada, estados `pendiente`/`en_proceso`/`fallida`.
 - **Se cierra cuando:** los cuatro estados y las cuatro conclusiones se ven bien en la web con datos reales y el filtro por conclusión devuelve los casos correctos.
+- **Estado (15 nov 2026):** cumplido. Detalle en [WEB_Y_PANEL.md](WEB_Y_PANEL.md):
+  - Backend (27 pruebas nuevas, 316 en total): `GET /admin/verificacion`, `POST /admin/casos/{id}/verificacion/reintentar`, `POST /admin/verificacion/pausar` y `/reanudar`, filtro `verificacion` en `/admin/casos` (conclusiones y estados de la cola) y `llm` en `GET /salud` sin cambiar `ok`/`degradado`. Sin migración nueva.
+  - Web (7 pruebas nuevas, 16 en total): bloque de la cola con pausa y reanudar en el tablero del panel, etiqueta del estado en la lista de casos, seguimiento y botón de reintento en el detalle, y el panel «Verificación web» con el veredicto de cada afirmación y las fuentes con su cita (ancho completo).
+  - Con datos reales del Supabase de desarrollo, el LLM y el navegador (escritorio y móvil): los filtros por conclusión y por estado devuelven exactamente los casos de la tabla; se vieron las cuatro conclusiones y los estados `pendiente`, `en_proceso` y `fallida`; pausar y reanudar funcionan; reintentar un caso fallido lo llevó solo hasta `completada`. Para ver todas las conclusiones se sembraron cinco casos marcados `prueba-fase-6` con afirmaciones y fuentes reales de la Fase 5; `respaldada` y `fuera_de_contexto` casi no salen del LLM con la regla actual.
+  - Desviaciones: `seguimiento_verificacion` y el filtro por estado en el panel (el plan no los nombra; sin ellos no se ve la causa de una falla), y reintentar también adelanta un caso `pendiente`. Se corrigió además el plural del resumen de plantilla de la Fase 5.
+  - Queda: la pausa no persiste al reiniciar la API; los textos de la portada y `web/README.md` siguen diciendo que la verificación es «próximamente» (se cambian al encenderla, Fases 7 y 8); el panel no se probó con una cuenta de administrador real (se usó una cuenta de prueba solo en el proceso de prueba).
 
 ### Fase 7 — Evaluación y ajuste (L)
 

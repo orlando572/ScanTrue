@@ -34,6 +34,8 @@ ORDERS = {
 VERIFICATION_CONCLUSIONS = (
     "respaldada", "contradicha", "fuera_de_contexto", "evidencia_insuficiente",
 )
+# Estados de la cola que el panel puede filtrar (completada ya se ve por su conclusión).
+VERIFICATION_STATES = ("pendiente", "en_proceso", "fallida")
 REVIEW_DECISIONS = ("aprobado", "corregido", "descartado")
 
 Params = list[tuple[str, str | int]]
@@ -48,7 +50,8 @@ class AnalysisFilters:
     hasta: date | None = None
     dominio: str | None = None
     oculto: bool | None = None
-    # «sin_verificar» o una conclusión de la verificación web (incremento 2).
+    # «sin_verificar», una conclusión de la verificación web (incremento 2) o, solo en el panel,
+    # un estado de la cola: «pendiente», «en_proceso» o «fallida».
     verificacion: str | None = None
     # «pendiente», «revisado» o una decisión concreta (solo el panel).
     revision: str | None = None
@@ -99,6 +102,8 @@ def filter_params(filters: AnalysisFilters) -> Params:
         params.append(("verificaciones_web", "is.null"))
     elif filters.verificacion in VERIFICATION_CONCLUSIONS:
         params.append(("verificaciones_web.conclusion", f"eq.{filters.verificacion}"))
+    elif filters.verificacion in VERIFICATION_STATES:
+        params.append(("verificaciones_web.estado", f"eq.{filters.verificacion}"))
     if filters.revision == "pendiente":
         params.append(("revisiones", "is.null"))
     elif filters.revision in REVIEW_DECISIONS:

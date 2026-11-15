@@ -15,13 +15,22 @@ export const AGREEMENTS = [
   { value: 'no_disponible', label: 'Un solo modelo' },
 ];
 
-// Tercer criterio (incremento 2): el filtro ya funciona; hoy todos están «sin verificar».
+// Tercer criterio (incremento 2): «sin verificar» es un análisis sin fila en la cola; los demás
+// son las cuatro conclusiones.
 export const VERIFICATIONS = [
   { value: 'sin_verificar', label: 'Sin verificar' },
   { value: 'respaldada', label: 'Respaldada' },
   { value: 'contradicha', label: 'Contradicha' },
   { value: 'fuera_de_contexto', label: 'Fuera de contexto' },
   { value: 'evidencia_insuficiente', label: 'Evidencia insuficiente' },
+];
+
+// El panel también filtra por el estado de la cola de los casos que aún no tienen conclusión.
+export const ADMIN_VERIFICATIONS = [
+  ...VERIFICATIONS,
+  { value: 'pendiente', label: 'En cola' },
+  { value: 'en_proceso', label: 'Verificando' },
+  { value: 'fallida', label: 'Fallida' },
 ];
 
 export const PUBLIC_ORDERS = [
@@ -62,7 +71,7 @@ const PUBLIC_FIELDS = {
 
 const ADMIN_FIELDS = {
   ...PUBLIC_FIELDS,
-  verificacion: undefined,
+  verificacion: { allowed: values(ADMIN_VERIFICATIONS) },
   revision: { allowed: values(REVIEW_STATES) },
   visibilidad: { allowed: values(VISIBILITIES) },
   orden: { allowed: values(ADMIN_ORDERS), fallback: 'prioridad' },

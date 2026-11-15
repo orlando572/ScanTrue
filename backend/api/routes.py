@@ -26,6 +26,8 @@ def health(request: Request) -> dict:
     identity = getattr(request.app.state, "identity_service", None)
     blockchain = getattr(request.app.state, "blockchain_client", None)
     available = service is not None
+    probe = getattr(request.app.state, "llm_probe", None)
+    llm = probe.status() if probe is not None else None
     chain_available = False
     if blockchain is not None:
         try:
@@ -49,6 +51,11 @@ def health(request: Request) -> dict:
             identity and identity.settings.secret_key
         ),
         "blockchain": {"configurada": blockchain is not None, "conectada": chain_available},
+        # LLM de la verificación web (incremento 2): un LLM caído no degrada el análisis rápido.
+        "llm": {
+            "configurado": llm.configurado if llm else False,
+            "disponible": llm.disponible if llm else False,
+        },
         # Versión de modelos activa (backend/despliegues/); la extensión no la usa.
         "despliegue": getattr(
             getattr(request.app.state, "model_versions", None), "current_version", None

@@ -20,6 +20,7 @@ from backend.blockchain.worker import BlockchainWorker
 from backend.core.config import (
     AnalysisSettings,
     BlockchainSettings,
+    LlmSettings,
     SupabaseSettings,
     VerificationSettings,
     web_origins,
@@ -31,6 +32,7 @@ from backend.services.identity import (
     InvalidSessionError,
     SupabaseAuthUnavailable,
 )
+from backend.services.llm_status import LlmProbe
 from backend.services.model_versions import ModelVersionManager
 from backend.services.verification.case import build_case_verifier
 from backend.services.verification.worker import VerificationWorker
@@ -58,6 +60,12 @@ async def lifespan(app: FastAPI):
         worker_task = asyncio.create_task(
             BlockchainWorker(repository, app.state.blockchain_client).run()
         )
+    # Estado del LLM para /salud y el panel (incremento 2); sin LLM_BASE_URL queda «no configurado».
+    try:
+        app.state.llm_probe = LlmProbe(LlmSettings.from_environment())
+    except ValueError:
+        logger.exception("La configuración del LLM no es válida")
+        app.state.llm_probe = LlmProbe(None)
     # Cola de verificación web (incremento 2): apagada salvo VERIFICATION_ENABLED=true.
     try:
         verification_settings = VerificationSettings.from_environment()

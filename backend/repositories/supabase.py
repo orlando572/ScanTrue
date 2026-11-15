@@ -1,7 +1,8 @@
 """Acceso a PostgREST usando el JWT de cada usuario para respetar RLS."""
 
 from collections.abc import Sequence
-from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
 import re
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from backend.core.config import SupabaseSettings
 from backend.repositories.filters import (
     REVIEW_DECISIONS,
     VERIFICATION_CONCLUSIONS,
+    VERIFICATION_STATES,
     AnalysisFilters,
     Params,
     embed,
@@ -27,6 +29,7 @@ from backend.schemas.admin import (
     DatasetItem,
     DatasetVersion,
     Review,
+    VerificationTracking,
 )
 from backend.schemas.analysis import AnalysisResponse, ModelResult, UnifiedResult
 from backend.schemas.history import HistoryListRecord, HistoryRecord
@@ -54,6 +57,14 @@ WEB_COLUMNS = (
     "resultados_modelo(modelo,version,clase,probabilidad_falsa,tokens_leidos,texto_modelo)"
 )
 VERIFICATION_COLUMNS = "estado,conclusion,resumen,afirmaciones,fuentes,modelo_llm,actualizado_en"
+# Solo el panel ve intentos, causa de la falla y tiempos de la verificación.
+TRACKING_COLUMNS = (
+    "intentos", "ultimo_error", "proximo_intento", "copiada_de", "iniciado_en", "terminado_en",
+    "version_prompts",
+)
+ADMIN_VERIFICATION_COLUMNS = f"{VERIFICATION_COLUMNS},{','.join(TRACKING_COLUMNS)}"
+# Casos completados que entran en la duración media (los últimos, sin copias de otro análisis).
+DURATION_SAMPLE = 200
 REVIEW_COLUMNS = "decision,etiqueta_final,nota,evidencia,grupo_evento,fecha"
 # En las listas los fragmentos van abreviados; el detalle los devuelve completos.
 LIST_FRAGMENT_LENGTH = 700
@@ -66,8 +77,11 @@ PAGE_ROWS = 1000
 
 def web_select(filters: AnalysisFilters | None = None, *, admin: bool = False) -> str:
     """Columnas de la web; un filtro sobre una tabla hija exige que la fila exista."""
-    verification = filters is not None and filters.verificacion in VERIFICATION_CONCLUSIONS
-    parts = [WEB_COLUMNS, embed("verificaciones_web", VERIFICATION_COLUMNS, required=verification)]
+    verification = filters is not None and filters.verificacion in (
+        *VERIFICATION_CONCLUSIONS, *VERIFICATION_STATES
+    )
+    columns = ADMIN_VERIFICATION_COLUMNS if admin else VERIFICATION_COLUMNS
+    parts = [WEB_COLUMNS, embed("verificaciones_web", columns, required=verification)]
     if admin:
         review = filters is not None and filters.revision in (*REVIEW_DECISIONS, "revisado")
         parts.append(embed("revisiones", REVIEW_COLUMNS, required=review))
@@ -406,6 +420,75 @@ class SupabaseRepository:
         )
         return value if isinstance(value, str) else None
 
+    def verification_stats(self) -> dict:
+        """Casos por estado de la cola y duración media (segundos) de los últimos completados.
+
+        Son cinco consultas a PostgREST que no dependen unas de otras: se hacen a la vez para que el
+        panel (que las pide cada 10 s) no espere la suma de todas.
+        """
+        states = ("pendiente", "en_proceso", "fallida", "completada")
+
+        def count(state: str) -> int:
+            _, total = self._request_page(
+                "verificaciones_web",
+                [("select", "analisis_id"), ("estado", f"eq.{state}"), ("limit", 1)],
+            )
+            return total or 0
+
+        def durations() -> list[dict]:
+            # Sin las copias de otro análisis: ellas no pasaron por el trabajo de verificar.
+            return self._request(
+                "GET", "verificaciones_web", admin=True,
+                params=[
+                    ("select", "iniciado_en,terminado_en"),
+                    ("estado", "eq.completada"),
+                    ("copiada_de", "is.null"),
+                    ("iniciado_en", "not.is.null"),
+                    ("terminado_en", "not.is.null"),
+                    ("order", "terminado_en.desc"),
+                    ("limit", DURATION_SAMPLE),
+                ],
+            ) or []
+
+        with ThreadPoolExecutor(max_workers=len(states) + 1) as pool:
+            counts = {state: pool.submit(count, state) for state in states}
+            rows = pool.submit(durations)
+            counts = {state: future.result() for state, future in counts.items()}
+            rows = rows.result()
+        seconds = [
+            (datetime.fromisoformat(row["terminado_en"]) - datetime.fromisoformat(row["iniciado_en"])).total_seconds()
+            for row in rows
+        ]
+        seconds = [value for value in seconds if value > 0]
+        return {**counts, "duracion_media_segundos": round(sum(seconds) / len(seconds), 1) if seconds else None}
+
+    def retry_verification(self, analysis_id: UUID) -> str:
+        """Devuelve una verificación fallida (o en espera) a la cola para que se intente ya.
+
+        Responde `sin_verificacion` si el caso no tiene fila, `reintentada` si la devolvió a la
+        cola, o el estado actual si no se puede (`en_proceso` o `completada`).
+        """
+        rows = self._request(
+            "GET", "verificaciones_web", admin=True,
+            params={"select": "estado", "analisis_id": f"eq.{analysis_id}", "limit": 1},
+        )
+        if not rows:
+            return "sin_verificacion"
+        now = datetime.now(timezone.utc).isoformat()
+        # El filtro por estado hace atómico el cambio: si el trabajador la reservó entretanto, no se toca.
+        body = {"fallida": {"estado": "pendiente", "intentos": 0, "ultimo_error": None,
+                            "iniciado_en": None, "terminado_en": None},
+                "pendiente": {}}.get(rows[0]["estado"])
+        if body is None:
+            return rows[0]["estado"]
+        changed = self._request(
+            "PATCH", "verificaciones_web", admin=True,
+            params={"analisis_id": f"eq.{analysis_id}", "estado": f"eq.{rows[0]['estado']}", "select": "analisis_id"},
+            body={**body, "proximo_intento": now, "actualizado_en": now},
+            prefer="return=representation",
+        )
+        return "reintentada" if changed else "en_proceso"
+
     # ── Base de afirmaciones ya verificadas (incremento 2; migración 009) ──
 
     def find_verified_claims(
@@ -512,7 +595,14 @@ class SupabaseRepository:
         unified = row.get("resultado_unificado") or {}
         probability = unified.get("probabilidad_falsa")
         review = _single(row.get("revisiones"))
+        verification = _single(row.get("verificaciones_web"))
         return {
+            "seguimiento_verificacion": (
+                VerificationTracking(
+                    **{k: verification[k] for k in TRACKING_COLUMNS if verification.get(k) is not None}
+                )
+                if verification else None
+            ),
             "oculto": bool(row.get("oculto")),
             "etiqueta_modelo": (
                 None if probability is None else "falsa" if probability >= 0.5 else "real"

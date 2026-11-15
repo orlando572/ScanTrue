@@ -38,6 +38,13 @@ VERDICT_LABELS = {
     "fuera_de_contexto": "confirmada, pero en otro contexto",
     "insuficiente": "sin evidencia suficiente",
 }
+# Para la plantilla del resumen, cuando son varias afirmaciones («3 respaldadas por fuentes»).
+VERDICT_PLURALS = {
+    "apoyada": "respaldadas por fuentes",
+    "contradicha": "contradichas por fuentes",
+    "fuera_de_contexto": "confirmadas, pero en otro contexto",
+    "insuficiente": "sin evidencia suficiente",
+}
 
 
 @dataclass(frozen=True)
@@ -84,7 +91,7 @@ def template_summary(conclusion: str, results: Sequence[ClaimResult], rejected: 
     counts = {key: 0 for key in VERDICT_LABELS}
     for result in results:
         counts[effective_verdict(result)] += 1
-    parts = [f"{n} {VERDICT_LABELS[key]}" for key, n in counts.items() if n]
+    parts = [f"{n} {VERDICT_LABELS[key] if n == 1 else VERDICT_PLURALS[key]}" for key, n in counts.items() if n]
     noun = "afirmación" if len(results) == 1 else "afirmaciones"
     return (
         f"Se comprobaron {len(results)} {noun} del texto con fuentes externas: {', '.join(parts)}. "

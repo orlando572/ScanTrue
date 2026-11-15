@@ -46,6 +46,9 @@ export default function Home({ health }) {
           <div className="counter"><span className="label">Últimos 7 días</span><b><CountUp value={data ? data.ultimos_7_dias : null} /></b></div>
           <div className="counter"><span className="label">Modelos que coinciden</span><b>{data && pairs > 0 ? <><CountUp value={share(data.comparacion.coinciden, pairs)} /> %</> : '—'}</b></div>
           <div className="counter"><span className="label">Páginas de origen</span><b><CountUp value={data ? data.dominios.length : null} /></b></div>
+          {data?.verificaciones_web > 0 && (
+            <div className="counter"><span className="label">Verificados con fuentes</span><b><CountUp value={data.verificaciones_web} /></b></div>
+          )}
         </div>
       </section>
 

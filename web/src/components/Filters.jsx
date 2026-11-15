@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  ADMIN_ORDERS, AGREEMENTS, LEVELS, PUBLIC_ORDERS, REVIEW_STATES, VERIFICATIONS, VISIBILITIES,
+  ADMIN_ORDERS, ADMIN_VERIFICATIONS, AGREEMENTS, LEVELS, PUBLIC_ORDERS, REVIEW_STATES, VERIFICATIONS, VISIBILITIES,
   activeCount, emptyFilters,
 } from '../lib/filters.js';
 import { useDebounced } from '../lib/hooks.js';
@@ -67,9 +67,11 @@ export default function Filters({ filters, onChange, domains = [], scope = 'publ
 
       <div className="filter-grid">
         <Select label="Acuerdo entre modelos" value={filters.comparacion} options={AGREEMENTS} all="Todos" onChange={(value) => set('comparacion', value)} />
-        {admin
-          ? <Select label="Revisión" value={filters.revision} options={REVIEW_STATES} all="Todos" onChange={(value) => set('revision', value)} />
-          : <Select label="Verificación web" value={filters.verificacion} options={VERIFICATIONS} all="Todas" onChange={(value) => set('verificacion', value)} />}
+        {admin && <Select label="Revisión" value={filters.revision} options={REVIEW_STATES} all="Todos" onChange={(value) => set('revision', value)} />}
+        <Select
+          label="Verificación web" value={filters.verificacion} all="Todas"
+          options={admin ? ADMIN_VERIFICATIONS : VERIFICATIONS} onChange={(value) => set('verificacion', value)}
+        />
         <Select label="Página de origen" value={filters.dominio} options={domainOptions} all="Todas" onChange={(value) => set('dominio', value)} />
         {admin && <Select label="Visibilidad" value={filters.visibilidad} options={VISIBILITIES} all="Todos" onChange={(value) => set('visibilidad', value)} />}
         <label className="field">

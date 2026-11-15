@@ -6,7 +6,7 @@ import { Empty, ErrorState, Loader } from '../../components/ui.jsx';
 import { adminApi, query } from '../../lib/api.js';
 import { activeCount, emptyFilters, readFilters, toApiQuery, writeFilters } from '../../lib/filters.js';
 import { useLoad } from '../../lib/hooks.js';
-import { formatDate, presentAnalysis } from '../../lib/presentation.js';
+import { formatDate, presentAnalysis, presentTracking } from '../../lib/presentation.js';
 import { ModelPanel, WebPanel } from '../ResultDetail.jsx';
 
 const PAGE = 20;
@@ -21,6 +21,13 @@ function ReviewTag({ review }) {
   return <span className={`tag ${state.tag}`}>{state.label}{review?.etiqueta_final ? ` · ${review.etiqueta_final}` : ''}</span>;
 }
 
+// Estado de la verificación web de un caso, como etiqueta de la lista.
+function VerificationTag({ view }) {
+  if (view.verification.state === 'none') return null;
+  const tag = { done: 'tag--acid', failed: 'tag--fail', working: '' }[view.verification.state];
+  return <span className={`tag ${tag}`}>Verif.: {view.verification.label}</span>;
+}
+
 function CaseRow({ item, current, onSelect }) {
   const view = presentAnalysis(item);
   return (
@@ -30,6 +37,7 @@ function CaseRow({ item, current, onSelect }) {
           <span className="preview">{view.fragments[0]?.text ?? 'Sin texto'}</span>
           <span className="chips" style={{ marginTop: 8 }}>
             <ReviewTag review={item.revision} />
+            <VerificationTag view={view} />
             {item.comparacion === 'discrepan' && <span className="tag tag--warn">Discrepan</span>}
             {item.oculto && <span className="tag tag--fail">Oculto</span>}
           </span>
@@ -43,6 +51,29 @@ function CaseRow({ item, current, onSelect }) {
   );
 }
 
+// Lo que solo ve el administrador de la verificación web: intentos, causa de la falla y reintento.
+function VerificationAdmin({ verification, tracking, busy, error, onRetry }) {
+  const view = presentTracking(verification, tracking);
+  if (!view) return null;
+  return (
+    <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--color-line)' }}>
+      <dl className="kv">
+        <dt>Intentos</dt><dd>{view.attempts}</dd>
+        {view.reason && <><dt>Causa</dt><dd>{view.reason}</dd></>}
+        {view.next && <><dt>Próximo intento</dt><dd>{view.next}</dd></>}
+        {view.seconds != null && <><dt>Duración</dt><dd>{view.seconds} s{view.copied ? ' · copiada de otro análisis' : ''}</dd></>}
+        {view.version && <><dt>Instrucciones</dt><dd>{view.version}</dd></>}
+      </dl>
+      {view.canRetry && (
+        <button type="button" className="btn btn--ghost btn--small" style={{ marginTop: 12 }} disabled={busy} onClick={onRetry}>
+          {busy ? 'Enviando…' : verification.estado === 'fallida' ? 'Reintentar la verificación' : 'Intentar ahora'}
+        </button>
+      )}
+      {error && <p className="alert" style={{ margin: '10px 0 0' }} role="alert">{error.message}</p>}
+    </div>
+  );
+}
+
 // Detalle de un caso con el formulario de revisión (incremento 3).
 function CaseDetail({ id, onChange, onDecided }) {
   const { data, error, loading, reload, setData } = useLoad((signal) => adminApi(`/admin/casos/${id}`, { signal }), [id]);
@@ -50,6 +81,7 @@ function CaseDetail({ id, onChange, onDecided }) {
   const [evidence, setEvidence] = useState('');
   const [event, setEvent] = useState('');
   const [action, setAction] = useState({ busy: false, error: null });
+  const [retry, setRetry] = useState({ busy: false, error: null });
   const decideRef = useRef(null);
 
   useEffect(() => {
@@ -57,7 +89,19 @@ function CaseDetail({ id, onChange, onDecided }) {
     setEvidence((data?.revision?.evidencia ?? []).join('\n'));
     setEvent(data?.revision?.grupo_evento ?? '');
     setAction({ busy: false, error: null });
+    setRetry({ busy: false, error: null });
   }, [data?.id, data?.revision?.fecha]);
+
+  async function retryVerification() {
+    if (retry.busy) return;
+    setRetry({ busy: true, error: null });
+    try {
+      const updated = await adminApi(`/admin/casos/${id}/verificacion/reintentar`, { method: 'POST' });
+      setData(updated);
+      onChange(updated);
+      setRetry({ busy: false, error: null });
+    } catch (failure) { setRetry({ busy: false, error: failure }); }
+  }
 
   async function run(request, decided = false) {
     if (action.busy) return;
@@ -182,7 +226,15 @@ function CaseDetail({ id, onChange, onDecided }) {
         {view.models.map((item) => (
           <ModelPanel key={item.key} model={item} output={data.resultados?.[item.key]} original={original} />
         ))}
-        <WebPanel verification={view.verification} />
+        <WebPanel
+          verification={view.verification}
+          footer={(
+            <VerificationAdmin
+              verification={data.verificacion_web} tracking={data.seguimiento_verificacion}
+              busy={retry.busy} error={retry.error} onRetry={retryVerification}
+            />
+          )}
+        />
       </div>
     </div>
   );
@@ -248,7 +300,13 @@ export default function Cases() {
 
   // Tras revisar o cambiar la visibilidad, la fila de la lista refleja el caso actualizado.
   const update = (updated) => setItems((previous) => previous.map((item) => (
-    item.id === updated.id ? { ...item, revision: updated.revision, oculto: updated.oculto } : item
+    item.id === updated.id ? {
+      ...item,
+      revision: updated.revision,
+      oculto: updated.oculto,
+      verificacion_web: updated.verificacion_web,
+      seguimiento_verificacion: updated.seguimiento_verificacion,
+    } : item
   )));
 
   const change = (next) => setSearchParams(writeFilters(next, 'admin'), { replace: true });

@@ -57,16 +57,30 @@ class VisibilityUpdate(BaseModel):
     oculto: bool
 
 
+class VerificationTracking(BaseModel):
+    """Lo que solo ve el administrador de la verificación de un caso: intentos y causa de la falla."""
+
+    intentos: int = 0
+    ultimo_error: str | None = None
+    proximo_intento: datetime | None = None
+    copiada_de: UUID | None = None
+    iniciado_en: datetime | None = None
+    terminado_en: datetime | None = None
+    version_prompts: str | None = None
+
+
 class AdminCase(PublicAnalysis):
     oculto: bool = False
     etiqueta_modelo: Label | None = None
     revision: Review | None = None
+    seguimiento_verificacion: VerificationTracking | None = None
 
 
 class AdminCaseDetail(PublicAnalysisDetail):
     oculto: bool = False
     etiqueta_modelo: Label | None = None
     revision: Review | None = None
+    seguimiento_verificacion: VerificationTracking | None = None
 
 
 class AdminCasePage(BaseModel):
@@ -192,3 +206,27 @@ class ActivationRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     version: str = Field(min_length=1, max_length=160)
+
+
+# ── Verificación web (incremento 2): estado de la cola ──────────────
+
+
+class LlmStatus(BaseModel):
+    configurado: bool = False
+    disponible: bool = False
+
+
+class VerificationStatus(BaseModel):
+    """Estado de la cola y del trabajador de verificación (docs/llm/PLAN_INCREMENTO_2.md, 4.7)."""
+
+    habilitada: bool = Field(description="Hay un trabajador de verificación corriendo en este servidor.")
+    en_pausa: bool = Field(description="El trabajador no reclama casos nuevos (la cola se conserva).")
+    llm: LlmStatus
+    pendientes: int = 0
+    en_proceso: int = 0
+    fallidas: int = 0
+    completadas: int = 0
+    duracion_media_segundos: float | None = Field(
+        default=None, description="Media de los últimos casos completados con búsqueda propia."
+    )
+
