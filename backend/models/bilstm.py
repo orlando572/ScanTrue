@@ -76,7 +76,7 @@ def predict_logits(
 
 
 class BilstmPredictor:
-    """Modelo listo para recibir textos sin recargar el checkpoint por petición."""
+    """Modelo listo para recibir textos"""
 
     def __init__(
         self,

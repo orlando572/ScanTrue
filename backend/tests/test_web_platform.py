@@ -403,6 +403,12 @@ class ModelVersionTests(unittest.TestCase):
                 metrics = deployment.load_metrics(model)
                 self.assertEqual(metrics.version, deployment.model_versions[model])
 
+    def test_la_version_archivada_de_octubre_nombra_mbert(self):
+        deployments = {d.version: d for d in ModelVersionManager(state_file=self.state).deployments()}
+        self.assertEqual(deployments["archivo_octubre_2026"].model_names, {"mbert": "mBERT"})
+        # En la de producción el hueco «mbert» es BETO: no lleva nombre propio.
+        self.assertEqual(ModelVersionManager(state_file=self.state).default().model_names, {})
+
 
 if __name__ == "__main__":
     unittest.main()

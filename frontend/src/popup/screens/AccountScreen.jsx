@@ -5,12 +5,12 @@ import HudLoader from '../components/HudLoader.jsx';
 
 function AccountIcon() {
   return <div className="account-art" aria-hidden="true"><svg viewBox="0 0 112 112" fill="none" stroke="currentColor" strokeLinecap="square">
-    <circle cx="56" cy="56" r="52" stroke="#1E3A5C" />
-    <circle className="account-art-ring" cx="56" cy="56" r="46" stroke="#38E1FF" strokeOpacity=".7" strokeDasharray="18 10 4 10" />
-    <path d="M56 0v10M56 102v10M0 56h10M102 56h10" stroke="#FFB21E" strokeWidth="1.5" />
+    <circle cx="56" cy="56" r="52" stroke="#3A3A46" />
+    <circle className="account-art-ring" cx="56" cy="56" r="46" stroke="#9B7CFF" strokeOpacity=".8" strokeDasharray="18 10 4 10" />
+    <path d="M56 0v10M56 102v10M0 56h10M102 56h10" stroke="#E6FF4D" strokeWidth="1.5" />
     <path d="M56 26l11 11-11 11-11-11z" strokeWidth="2.2" />
     <path d="M34 82v-8l10-10h24l10 10v8" strokeWidth="2.2" />
-    <path d="M30 30h8M30 30v8M82 30h-8M82 30v8M30 86h8M30 86v-8M82 86h-8M82 86v-8" stroke="#FF3D7F" strokeWidth="1.5" />
+    <path d="M30 30h8M30 30v8M82 30h-8M82 30v8M30 86h8M30 86v-8M82 86h-8M82 86v-8" stroke="#FF6A3D" strokeWidth="1.5" />
   </svg></div>;
 }
 

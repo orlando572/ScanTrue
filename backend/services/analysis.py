@@ -19,7 +19,6 @@ from backend.schemas.analysis import (
 )
 
 MIN_INPUT_TOKENS = 100
-# Límite del fragmento original que se guarda (columna analisis.texto_original).
 MAX_ORIGINAL_CHARS = 20_000
 logger = logging.getLogger(__name__)
 

@@ -10,8 +10,12 @@ import AccountScreen from './screens/AccountScreen.jsx';
 import RegisterScreen from './screens/RegisterScreen.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
 import ScreenHeader from './components/ScreenHeader.jsx';
-import { CoreGrid, LedStrip, Radar, SegmentTrack } from './components/HudDecor.jsx';
+import { LedStrip, ScanEye, SegmentTrack } from './components/HudDecor.jsx';
+import { LoaderSweep } from './components/HudLoader.jsx';
+// El mismo fondo interactivo que la web.
+import VectorField from '../../../web/src/components/VectorField.jsx';
 import { countWords, hasSelectionText, meterState, presentFragments } from './selection-presentation.js';
+import { keepsSource, sourceOf } from '../shared/selection.js';
 import { presentServices } from './service-presentation.js';
 import scanTrueMark from './assets/scantrue-mark.svg';
 
@@ -20,6 +24,8 @@ const inPanel = typeof document !== 'undefined' && document.body.classList.conta
 
 // Tiempo que se muestran los avisos que se cierran solos (la barra de cuenta atrás usa el mismo valor).
 const NOTICE_MS = 6000;
+// Tiempo que se muestra en el panel el aviso de un fragmento rechazado.
+const REJECTED_MS = 6000;
 
 const titles = { P01: 'Inicio', P02: 'Texto para analizar', P04: 'Analizando texto', P05: 'Resultado del análisis', P06: 'Desglose por modelo', P07: 'Historial de análisis', P08: 'Análisis anterior', P09: 'Pruebas del modelo', P11: 'Cuenta', P12: 'Crear cuenta', P13: 'Iniciar sesión' };
 
@@ -37,7 +43,7 @@ function Brand({ onHome, disabled }) {
   return <button type="button" className="brand-button" aria-label="ScanTrue, ir al inicio" title="Ir al inicio" onClick={onHome} disabled={disabled}>
     <img src={scanTrueMark} alt="" className="brand-mark" />
     <span aria-hidden="true">
-      <span className="brand-word">SCAN<i>//</i><em>TRUE</em></span>
+      <span className="brand-word">SCAN<i>//</i>TRUE</span>
       <span className="brand-sub">Análisis de noticias</span>
     </span>
   </button>;
@@ -62,6 +68,52 @@ function ServiceAlert({ health, onRetry }) {
   </div>;
 }
 
+// Hay fragmentos de otra página: no se mezclan. Se elige entre empezar de nuevo aquí o conservarlos.
+// Alerta llamativa del panel: banda de advertencia, borde grueso y destello al aparecer.
+// Al mostrarse, el panel se desplaza hasta ella. `timedMs` la cierra sola con cuenta atrás.
+function Alarm({ title, tone = 'coral', timedMs, children }) {
+  const element = useRef(null);
+  useEffect(() => { element.current?.scrollIntoView?.({ block: 'nearest' }); }, []);
+  return <div ref={element} className={`hud-panel hud-panel--alarm${tone === 'amber' ? ' hud-panel--alarm-amber' : ''}${timedMs ? ' notice-timed' : ''} mt-4`} style={timedMs ? { '--notice-ms': `${timedMs}ms` } : undefined} role="alert">
+    <div className="hazard-band" aria-hidden="true" />
+    <p className="alarm-title"><span aria-hidden="true">▲ </span>{title}</p>
+    {children}
+    {timedMs ? <span className="notice-timer" aria-hidden="true" /> : null}
+  </div>;
+}
+
+function ConflictAlert({ conflict, busy, onRestart, onKeep }) {
+  if (!conflict) return null;
+  const from = conflict.domain ? ` de ${conflict.domain}` : ' de otra página';
+  return <Alarm title="Esta es otra página">
+    <p className="mt-2 text-sm leading-5 text-ink">Tienes {conflict.count} {conflict.count === 1 ? 'fragmento' : 'fragmentos'}{from}. Solo se analiza una noticia a la vez.</p>
+    <button type="button" className="primary-button mt-3" onClick={onRestart} disabled={busy}>Empezar de nuevo aquí</button>
+    <button type="button" className="secondary-button mt-2" onClick={onKeep} disabled={busy}>Conservar lo que tengo</button>
+  </Alarm>;
+}
+
+const rejectionTexts = {
+  other_page: 'Ese texto es de otra página. Solo se analiza una noticia a la vez.',
+  duplicate: 'Ese texto ya estaba marcado.',
+};
+
+// Avisos de la selección que llegan del servicio: la pestaña cambió de página, se rechazó un
+// fragmento (se cierra solo) o se está mirando otra pestaña con el modo activo.
+function SelectionNotice({ notice, selectionMode, onDismiss, onStop }) {
+  if (notice?.kind === 'navigated') return <Alarm title="Cambiaste de página">
+    <p className="mt-2 text-sm leading-5 text-ink">La selección terminó. {notice.count === 1 ? 'Tu fragmento' : `Tus ${notice.count} fragmentos`}{notice.domain ? ` de ${notice.domain}` : ''} {notice.count === 1 ? 'sigue' : 'siguen'} aquí: puedes analizarlos o vaciar para empezar con otra noticia.</p>
+    <button type="button" className="secondary-button mt-3" onClick={onDismiss}>Entendido</button>
+  </Alarm>;
+  if (notice?.kind === 'rejected') return <Alarm key={notice.at} title="No se añadió" timedMs={REJECTED_MS}>
+    <p className="mt-2 text-sm leading-5 text-ink">{rejectionTexts[notice.reason] ?? 'Ese texto no se pudo añadir.'}</p>
+  </Alarm>;
+  if (notice?.kind === 'other_tab' && selectionMode) return <Alarm title="Estás en otra pestaña" tone="amber">
+    <p className="mt-2 text-sm leading-5 text-ink">La selección sigue en la otra pestaña{notice.domain ? ` (${notice.domain})` : ''}. Vuelve a ella, o termina la selección para analizar esta página.</p>
+    <button type="button" className="secondary-button mt-3" onClick={onStop}>Terminar selección</button>
+  </Alarm>;
+  return null;
+}
+
 function selectionDomain(url) {
   try {
     const parsed = new URL(url);
@@ -80,7 +132,7 @@ function RemoveIcon() {
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M6 6l12 12M18 6 6 18" /></svg>;
 }
 
-function SelectionScreen({ selection, error, selecting, selectionMode, submitting, onAnalyze, onAddText, onEdit, onBack, onRemoveFragment, onClear }) {
+function SelectionScreen({ selection, error, selecting, selectionMode, submitting, notice, conflict, onAnalyze, onAddText, onRestart, onKeep, onDismissNotice, onStop, onEdit, onBack, onRemoveFragment, onClear }) {
   const domain = selectionDomain(selection.url);
   const fragments = presentFragments(selection);
   const meter = meterState(countWords(selection.text));
@@ -88,11 +140,17 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
     <ScreenHeader title="Texto para analizar" onBack={onBack}>
       {selectionMode && <span className="live-chip mt-2" role="status"><span aria-hidden="true">Seleccionando</span><span className="sr-only">Modo selección activo en la página</span></span>}
     </ScreenHeader>
-    {domain && <p className="hud-readout mt-4">Origen: <b>{domain}</b></p>}
+    {domain
+      ? <p className="hud-readout mt-4">Origen: <b>{domain}</b></p>
+      : hasSelectionText(selection) && <p className="hud-readout mt-4">Sin página de origen: hay texto escrito o pegado.</p>}
+    {/* Las alertas van arriba, bajo el título: es lo primero que se ve. */}
+    <ConflictAlert conflict={conflict} busy={selecting || submitting} onRestart={onRestart} onKeep={onKeep} />
+    <SelectionNotice notice={notice} selectionMode={selectionMode} onDismiss={onDismissNotice} onStop={onStop} />
+    {selection.mixedArticles && <p className="alarm-note mt-4" role="status"><span aria-hidden="true">▲ </span>Parecen notas distintas de esta página. Revisa que todo sea de la misma noticia.</p>}
 
     <div className={`word-meter word-meter--${meter.level} mt-4`}>
       <div className="flex items-baseline justify-between gap-2">
-        <span className="hud-code hud-code--cyan" aria-hidden="true">Longitud</span>
+        <span className="hud-code hud-code--accent" aria-hidden="true">Longitud</span>
         <span className="hud-readout"><b>{meter.words}</b> palabras</span>
       </div>
       <SegmentTrack value={meter.value} segments={24} marker={meter.marker} />
@@ -105,7 +163,7 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
     <p className="mt-2 text-[11px] leading-4 text-muted">Al analizar, el texto y su resultado se publican en la web de ScanTrue, sin identificarte.</p>
 
     <div className="input-buffer-meta mt-5 items-center">
-      <span className="hud-code hud-code--cyan" aria-hidden="true">Fragmentos · {String(fragments.length).padStart(2, '0')} marcados</span>
+      <span className="hud-code hud-code--accent" aria-hidden="true">Fragmentos · {String(fragments.length).padStart(2, '0')} marcados</span>
       <button type="button" className="clear-link" aria-label="Vaciar la selección" title="Empezar de cero" onClick={onClear} disabled={submitting || !selection.text.trim()}>Vaciar</button>
     </div>
     {fragments.length === 0
@@ -123,7 +181,7 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
       </div>
     </details>
 
-    {!selectionMode && <button type="button" className="secondary-button mt-5" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : 'Seleccionar más texto'}</button>}
+    {!selectionMode && !conflict && <button type="button" className="secondary-button mt-5" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : 'Seleccionar más texto'}</button>}
   </>;
 }
 
@@ -160,10 +218,10 @@ function AnalysisScreen({ operation, onHistory, onBack, onRetry }) {
   }
 
   return <section className="analysis-wait" role="status" aria-live="polite">
-    <Radar active />
+    <ScanEye active />
     <h1 className="screen-title mt-6">Analizando texto</h1>
     <p className={`mt-2 text-[12px] leading-[18px] ${slow ? 'text-amber' : 'text-muted'}`}>{slow ? 'Está tardando más de lo habitual.' : 'Esto puede tardar un momento.'}</p>
-    <CoreGrid />
+    <LoaderSweep />
   </section>;
 }
 
@@ -178,6 +236,9 @@ export default function App() {
   const [analysisError, setAnalysisError] = useState('');
   const [selecting, setSelecting] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
+  // Fragmentos de otra página al intentar seleccionar, y aviso de que la pestaña cambió de página.
+  const [conflict, setConflict] = useState(null);
+  const [selectionNotice, setSelectionNotice] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [resultError, setResultError] = useState('');
@@ -228,7 +289,7 @@ export default function App() {
       const foundSelection = pending?.ok && typeof pending.selection?.text === 'string' ? pending.selection : null;
       const foundOperation = active?.ok ? active.operation : null;
       if (foundSelection) setSelection(foundSelection);
-      if (pending?.ok) setSelectionMode(pending.selecting === true);
+      if (pending?.ok) { setSelectionMode(pending.selecting === true); setSelectionNotice(pending.notice ?? null); }
       if (foundOperation) setOperation(foundOperation);
       if (foundOperation?.status === 'completed') setStack(hasSelectionText(foundSelection) ? ['P01', 'P02', 'P05'] : ['P01', 'P05']);
       else if (['working', 'error', 'uncertain', 'session_error', 'service_error', 'storage_error'].includes(foundOperation?.status)) setStack(['P01', 'P02', 'P04']);
@@ -243,6 +304,7 @@ export default function App() {
     const handleChange = (changes, area) => {
       if (area !== 'session') return;
       if ('selectionTargetTabId' in changes) setSelectionMode(changes.selectionTargetTabId.newValue !== undefined);
+      if ('selectionNotice' in changes) setSelectionNotice(changes.selectionNotice.newValue ?? null);
       const pendingChange = changes.pendingSelection?.newValue;
       // Si se borra del almacenamiento, la App no conserva una copia vieja.
       if ('pendingSelection' in changes && !pendingChange) setSelection((previous) => previous && { text: '', fragments: [], url: null });
@@ -295,8 +357,12 @@ export default function App() {
   };
   const back = () => setStack((items) => items.length > 1 ? items.slice(0, -1) : items);
   const editSelection = (text) => {
-    // Editar el texto capturado no cambia la página de origen; vaciarlo, sí.
-    const draft = { ...selectionRef.current, text, fragments: text.trim() ? [{ id: 'manual', text }] : [], url: text.trim() ? selectionRef.current?.url ?? null : null, capturedAt: Date.now(), updatedBy: 'popup' };
+    // Recortar el texto marcado conserva la página de origen; añadir texto que no estaba en
+    // ella la quita (vuelve si se deshace el cambio). Vaciarlo borra también la página marcada.
+    const filled = text.trim() !== '';
+    const source = filled ? sourceOf(selectionRef.current) : null;
+    const url = source?.url && keepsSource(source.text, text) ? source.url : null;
+    const draft = { ...selectionRef.current, text, fragments: filled ? [{ id: 'manual', text }] : [], url, source, mixedArticles: false, capturedAt: Date.now(), updatedBy: 'popup' };
     selectionRef.current = draft;
     setSelection(draft);
     setSelectionError('');
@@ -316,7 +382,17 @@ export default function App() {
     try { await draftWrite.current; }
     catch { throw new Error('No pudimos guardar los cambios del texto.'); }
   };
-  const startSelection = async () => {
+  const dismissNotice = () => {
+    setSelectionNotice(null);
+    void chrome.storage?.session?.remove('selectionNotice')?.catch?.(() => {});
+  };
+  // El aviso de fragmento rechazado se retira solo.
+  useEffect(() => {
+    if (selectionNotice?.kind !== 'rejected') return;
+    const timer = setTimeout(dismissNotice, REJECTED_MS);
+    return () => clearTimeout(timer);
+  }, [selectionNotice?.kind, selectionNotice?.at]);
+  const startSelection = async (restart = false) => {
     setSelectionError('');
     setAnalysisError('');
     setSelecting(true);
@@ -325,8 +401,12 @@ export default function App() {
       const granted = await chrome.permissions?.request?.({ origins: ['http://*/*', 'https://*/*'] }) ?? true;
       if (!granted) { setSelectionError('ScanTrue necesita permiso para leer la página y marcar el texto. Pulsa «Escoger texto» y acepta el permiso.'); return; }
       if (current === 'P02' && selection) await persistSelection();
-      const response = await sendExtensionMessage({ type: 'START_SELECTION' });
+      const response = await sendExtensionMessage({ type: 'START_SELECTION', restart });
+      if (response?.conflict) { setConflict(response.conflict); return; }
+      setConflict(null);
       if (!response?.ok) { setSelectionError(response?.error ?? 'No se puede seleccionar texto en esta pestaña.'); return; }
+      // Al empezar de nuevo, el servicio ya vació los fragmentos de la otra página.
+      if (restart) { selectionRef.current = null; setSelection(null); }
       if (!inPanel) { window.close(); return; }
       // En el panel lateral la App sigue visible: se muestra la lista en vivo.
       setSelectionMode(true);
@@ -350,6 +430,7 @@ export default function App() {
       const response = await sendExtensionMessage({ type: 'CLEAR_FRAGMENTS' });
       if (!response?.ok) throw new Error();
       setSelection({ text: '', fragments: [], url: null });
+      setConflict(null);
     } catch { setSelectionError('No pudimos vaciar la selección. Inténtalo de nuevo.'); }
   };
   const stopSelectionMode = async () => {
@@ -364,6 +445,8 @@ export default function App() {
     analysisLock.current = true;
     setSubmitting(true);
     setAnalysisError('');
+    setConflict(null);
+    dismissNotice();
     try {
       await persistSelection();
       if (selectionMode) await stopSelectionMode();
@@ -429,14 +512,20 @@ export default function App() {
     setStack(['P01', 'P11']);
   };
 
-  return <div ref={popupScroll} className={`popup-shell flex flex-col text-ink ${current === 'P01' ? '' : 'min-h-[500px]'}`}>
+  const section = ['P07', 'P08'].includes(current) ? 'history' : current === 'P09' ? 'metrics' : ['P11', 'P12', 'P13'].includes(current) ? 'account' : null;
+
+  return <>
+  {/* Fondo: campo vectorial a plena luz en el inicio y atenuado en las vistas de lectura. */}
+  <VectorField dim={current !== 'P01'} />
+  <div className="scanlines" aria-hidden="true" />
+  <div ref={popupScroll} className={`popup-shell flex flex-col text-ink ${current === 'P01' ? '' : 'min-h-[500px]'}`}>
     <header className="console-header">
       <div className="flex items-center justify-between px-5 py-3">
       <Brand onHome={() => setStack(['P01'])} disabled={detailDeleting || accountSigningOut} />
       <nav aria-label="Navegación principal" className="flex items-center gap-1.5">
-        <button type="button" className="icon-button" aria-label="Historial" title="Historial" onClick={() => open('P07')} disabled={detailDeleting || accountSigningOut}><Icon name="history" /></button>
-        <button type="button" className="icon-button" aria-label="Pruebas del modelo" title="Pruebas del modelo" onClick={() => open('P09')} disabled={detailDeleting || accountSigningOut}><Icon name="metrics" /></button>
-        <button type="button" className="icon-button" aria-label="Cuenta" title="Cuenta" onClick={() => open('P11')} disabled={detailDeleting || accountSigningOut}><Icon name="account" /></button>
+        <button type="button" className="icon-button" aria-label="Historial" title="Historial" aria-current={section === 'history' ? 'page' : undefined} onClick={() => open('P07')} disabled={detailDeleting || accountSigningOut}><Icon name="history" /></button>
+        <button type="button" className="icon-button" aria-label="Pruebas del modelo" title="Pruebas del modelo" aria-current={section === 'metrics' ? 'page' : undefined} onClick={() => open('P09')} disabled={detailDeleting || accountSigningOut}><Icon name="metrics" /></button>
+        <button type="button" className="icon-button" aria-label="Cuenta" title="Cuenta" aria-current={section === 'account' ? 'page' : undefined} onClick={() => open('P11')} disabled={detailDeleting || accountSigningOut}><Icon name="account" /></button>
       </nav>
       </div>
       <LedStrip health={health} code={serviceCodes[health]} label={serviceLabels[health]} services={presentServices(healthData, health)} latency={latency} />
@@ -445,13 +534,17 @@ export default function App() {
         El análisis (P04) y el resultado (P05) tienen animaciones propias. */}
     <main className={`flex flex-1 flex-col px-5 ${current === 'P01' ? 'pb-5 pt-2' : 'pb-6 pt-6'}${current === 'P01' || current === 'P02' ? ' screen-boot' : ''}`}>
       {current === 'P01' ? <>
-        <div className="home-radar"><div className="radar-frame"><Radar /></div></div>
-        <div className="hud-panel">
+        <div className="home-core">
+          <span className="hud-code" aria-hidden="true">Consola de análisis de noticias</span>
+          <ScanEye />
+        </div>
+        <div className="hud-panel hud-panel--accent hud-panel--mark">
           <h1 className="screen-title">¿Dudas de una noticia?</h1>
           <p className="mt-2 text-sm leading-5 text-muted">Marca el titular y unos párrafos de la noticia. Te mostramos si se parece más a una noticia falsa o a una real.</p>
           <p className="mt-2 text-[12px] leading-[18px] text-muted opacity-80">Es una orientación, no una verificación de los hechos.</p>
           <ServiceAlert health={health} onRetry={refreshHealth} />
-          <button type="button" className="primary-button mt-5" onClick={startSelection} disabled={selecting}>{selecting ? 'Preparando selección…' : 'Escoger texto'}</button>
+          <button type="button" className="primary-button mt-5" onClick={() => startSelection()} disabled={selecting}>{selecting ? 'Preparando selección…' : 'Escoger texto'}</button>
+          <ConflictAlert conflict={conflict} busy={selecting} onRestart={() => startSelection(true)} onKeep={() => { setConflict(null); open('P02'); }} />
           {selectionError && <p className="hud-alert mt-3 text-[12px] leading-[18px]" role="alert">{selectionError}</p>}
           {hasSelectionText(selection) && <button type="button" className="text-link mt-4 w-fit" onClick={() => open('P02')}>Ver texto para analizar</button>}
         </div>
@@ -459,7 +552,7 @@ export default function App() {
         {current !== 'P02' && current !== 'P04' && current !== 'P05' && current !== 'P06' && current !== 'P07' && current !== 'P08' && current !== 'P09' && current !== 'P11' && current !== 'P12' && current !== 'P13' && <button type="button" className="text-link mb-5 flex w-fit items-center gap-1.5" onClick={back}><span className="size-5"><Icon name="back" /></span>Volver</button>}
         {stack.includes('P07') && <div hidden={current !== 'P07'}><HistoryScreen deletedAnalysis={deletedAnalysis} onBack={back} onOpen={(id) => { historyScroll.current = popupScroll.current?.scrollTop ?? 0; setHistoryDetail(null); setSelectedAnalysisId(id); open('P08'); }} onChooseText={() => setStack(['P01'])} /></div>}
         {stack.includes('P08') && selectedAnalysisId && <div hidden={current !== 'P08'}><HistoryDetailScreen key={selectedAnalysisId} id={selectedAnalysisId} onBack={back} onLoaded={setHistoryDetail} onDeletingChange={setDetailDeleting} onBreakdown={(item) => { setHistoryDetail(item); open('P06'); }} onDeleted={(id) => { setDeletedAnalysis({ id }); setHistoryDetail(null); setSelectedAnalysisId(null); back(); }} /></div>}
-        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} onAnalyze={analyze} onAddText={startSelection} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
+        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} notice={selectionNotice} conflict={conflict} onAnalyze={analyze} onAddText={() => startSelection()} onRestart={() => startSelection(true)} onKeep={() => setConflict(null)} onDismissNotice={dismissNotice} onStop={stopSelectionMode} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
           : current === 'P04' ? <AnalysisScreen operation={operation} onHistory={() => open('P07')} onBack={() => setStack(['P01', 'P02'])} onRetry={analyze} />
           : current === 'P05' ? <ResultScreen result={operation?.result} url={selection?.url} text={selection?.text} onBack={back} onBreakdown={() => open('P06')} onStartOver={startOver} clearing={clearing} error={resultError} />
           : current === 'P06' ? <BreakdownScreen result={stack.at(-2) === 'P08' ? historyDetail : operation?.result} onBack={back} />
@@ -472,5 +565,6 @@ export default function App() {
           : <><h1 className="screen-title">{titles[current]}</h1><p className="mt-4 text-sm text-muted">Sección en preparación.</p></>}
       </>}
     </main>
-  </div>;
+  </div>
+  </>;
 }

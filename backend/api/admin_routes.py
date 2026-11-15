@@ -300,6 +300,7 @@ def _models(manager: ModelVersionManager, repository: SupabaseRepository) -> Mod
                 modelos=[
                     DeploymentModel(
                         modelo=name,
+                        nombre=deployment.model_names.get(name),
                         version=deployment.model_versions.get(name),
                         casos=usage.get((name, deployment.model_versions.get(name)), 0),
                         metricas=deployment.load_metrics(name),

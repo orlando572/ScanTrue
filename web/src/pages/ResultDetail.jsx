@@ -188,12 +188,18 @@ export default function ResultDetail() {
               <h2 className="h-panel" style={{ margin: 0 }}>
                 {view.fragments.length === 1 ? 'Fragmento analizado' : `${view.fragments.length} fragmentos analizados`}
               </h2>
-              {view.url && (
-                <a className="text-link" href={view.url} target="_blank" rel="noopener noreferrer nofollow">
-                  Abrir la página <span style={{ display: 'inline-block', width: 12, verticalAlign: '-1px' }}><Icon name="external" /></span>
-                </a>
-              )}
             </div>
+            {/* En el detalle se ve la dirección completa de la noticia, no solo el sitio. */}
+            {view.url && (
+              <p className="source-url">
+                <span className="label">Página de origen</span>
+                <a href={view.url} target="_blank" rel="noopener noreferrer nofollow">
+                  <i className="led" style={{ '--led': 'var(--color-acid)' }} />
+                  <span>{view.url}</span>
+                  <Icon name="external" />
+                </a>
+              </p>
+            )}
             <Fragments fragments={view.fragments} />
           </section>
 

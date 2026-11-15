@@ -81,7 +81,7 @@ export default function HistoryScreen({ deletedAnalysis, onBack, onOpen, onChoos
       <button type="button" className="primary-button mt-6" onClick={onChooseText}>Escoger texto</button>
     </div>}
     {status === 'ready' && items.length > 0 && <>
-      <div className="mt-5 mb-2 flex justify-between" aria-hidden="true"><span className="hud-code hud-code--cyan">Registro de operaciones</span><span className="hud-code">{String(items.length).padStart(3, '0')} entradas</span></div>
+      <div className="mt-5 mb-2 flex justify-between" aria-hidden="true"><span className="hud-code hud-code--accent">Registro de operaciones</span><span className="hud-code">{String(items.length).padStart(3, '0')} entradas</span></div>
       <ul className="history-log">{items.map((item, index) => <HistoryRow key={item.id} item={item} index={index} onOpen={onOpen} />)}</ul>
       {moreStatus === 'error' && <p className="hud-alert mt-4 text-sm leading-5" role="alert">{error}</p>}
       {hasMore && <button type="button" className="secondary-button mt-5" onClick={() => loadPage(nextOffset)} disabled={moreStatus === 'loading'}>{moreStatus === 'loading' ? <><LoaderSweep className="hud-loader-sweep--button" /><span className="sr-only">Cargando más análisis</span></> : moreStatus === 'error' ? 'Intentar de nuevo' : 'Cargar más'}</button>}

@@ -33,8 +33,7 @@ export default function Home({ health }) {
         <span className="label label--accent">Consola pública de análisis de noticias</span>
         <h1>SCAN<span>//</span>TRUE</h1>
         <p className="hero-lead">
-          Dos modelos de lenguaje leen fragmentos de una noticia y muestran si se parece más a una
-          noticia falsa o a una real.
+          Dos modelos de lenguaje leen fragmentos de una noticia y muestran si puede ser una noticia falsa o a una real.
         </p>
         <p className="hero-note">Es una orientación, no una verificación de los hechos.</p>
         <div className="hero-actions">

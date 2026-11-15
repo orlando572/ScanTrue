@@ -20,6 +20,10 @@ function Evaluation({ evaluation, color }) {
   );
 }
 
+// Nombre del modelo en una versión: el hueco «mbert» es BETO en producción, pero en la versión
+// archivada de octubre era mBERT; la API lo indica en `nombre`.
+const modelName = (model, key) => model?.nombre ?? CRITERIA[key].name;
+
 // Un modelo dentro de una versión: su versión, cuántos análisis la usaron y sus pruebas.
 function ModelBlock({ model }) {
   const criterion = CRITERIA[model.modelo];
@@ -29,7 +33,7 @@ function ModelBlock({ model }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <CriterionIcon name={model.modelo} />
         <div style={{ minWidth: 0 }}>
-          <h4 className="h-panel" style={{ margin: 0, color: criterion.color }}>{criterion.name}</h4>
+          <h4 className="h-panel" style={{ margin: 0, color: criterion.color }}>{modelName(model, model.modelo)}</h4>
           <span className="label" style={{ overflowWrap: 'anywhere' }}>{model.version ?? 'sin versión'} · {model.casos} análisis</span>
         </div>
       </div>
@@ -74,7 +78,7 @@ function VersionCard({ version, busy, onActivate }) {
       {version.notas && <p className="muted" style={{ margin: '12px 0 0' }}>{version.notas}</p>}
       {version.pesos && (
         <p className="label" style={{ margin: '12px 0 0' }}>
-          Resultado combinado: BETO {percent(version.pesos.mbert)} · BiLSTM {percent(version.pesos.bilstm)}
+          Resultado combinado: {modelName(version.modelos.find((entry) => entry.modelo === 'mbert'), 'mbert')} {percent(version.pesos.mbert)} · BiLSTM {percent(version.pesos.bilstm)}
           {version.temperaturas ? ` · temperaturas ${version.temperaturas.mbert} y ${version.temperaturas.bilstm}` : ''}
         </p>
       )}
@@ -115,12 +119,14 @@ function Compare({ versions }) {
           <tbody>
             {['bilstm', 'mbert'].map((name) => (
               <tr key={name}>
-                <td style={{ color: CRITERIA[name].color, whiteSpace: 'nowrap' }}>{CRITERIA[name].name}</td>
+                {/* El nombre va en cada celda: puede cambiar de una versión a otra (BETO / mBERT). */}
+                <td style={{ color: CRITERIA[name].color, whiteSpace: 'nowrap' }}>{name === 'mbert' ? 'BETO / mBERT' : CRITERIA[name].name}</td>
                 {columns.map((item, index) => {
                   const model = item.modelos.find((entry) => entry.modelo === name);
                   const metrics = model?.metricas ? presentMetrics(model.metricas) : null;
                   return (
                     <td key={index}>
+                      <strong className="mono" style={{ display: 'block', fontWeight: 400, color: CRITERIA[name].color }}>{modelName(model, name)}</strong>
                       <span className="label" style={{ overflowWrap: 'anywhere' }}>{model?.version ?? '—'}</span>
                       {metrics ? metrics.featured.map((evaluation) => (
                         <p key={evaluation.key} className="mono" style={{ margin: '6px 0 0' }}>

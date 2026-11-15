@@ -156,6 +156,7 @@ class DatasetDetail(DatasetVersion):
 
 class DeploymentModel(BaseModel):
     modelo: Literal["bilstm", "mbert"]
+    nombre: str | None = Field(default=None, description="Nombre propio del modelo en esta versión, si no es el habitual.")
     version: str | None = None
     casos: int = Field(default=0, description="Análisis guardados con esta versión.")
     metricas: MetricsResponse | None = None
