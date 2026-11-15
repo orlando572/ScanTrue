@@ -163,7 +163,7 @@ Archivos nuevos, con la misma organización de `backend/services/` y `backend/re
 
 **Paso 1 — Extraer afirmaciones.** El LLM recibe el texto original y devuelve, con esquema forzado, hasta N afirmaciones **verificables** (hechos, cifras, atribuciones, fechas, lugares). Cada una debe poder entenderse sola (se reescribe sin pronombres ni referencias al texto). Las opiniones y los juicios de valor se descartan. Tope de afirmaciones por caso: propuesto 5 (a ajustar en la Fase 5). Si no hay ninguna verificable, el caso termina como `evidencia_insuficiente` con un resumen que lo explica.
 
-**Paso 2 — Base de verificaciones anteriores.** Para cada afirmación: búsqueda exacta por hash y, si no hay, por similitud (`pg_trgm`) con un umbral fijado antes de medir. Solo se reutiliza si no ha expirado. Una coincidencia aproximada se marca `origen: base_anterior` y se muestra como tal. **D5:** una afirmación ya verificada se reutiliza durante **30 días**, y solo **7 días** si su veredicto fue `insuficiente` (puede aparecer información nueva). El umbral de similitud se fija antes de medir, en la Fase 3.
+**Paso 2 — Base de verificaciones anteriores.** Para cada afirmación: búsqueda **exacta** por hash del texto normalizado (minúsculas, sin tildes ni puntuación). Solo se reutiliza si no ha expirado, y se marca `origen: base_anterior` y se muestra como tal. **D5:** una afirmación ya verificada se reutiliza durante **30 días**, y solo **7 días** si su veredicto fue `insuficiente` (puede aparecer información nueva). El plan preveía además una búsqueda por similitud (`pg_trgm`) con un umbral; **la Fase 3 la midió y ningún umbral separa una paráfrasis de un cambio de un solo dato** (por ejemplo «Florida» por «Texas»), así que el usuario decidió reutilizar solo la coincidencia exacta. Ver [BASE_AFIRMACIONES.md](BASE_AFIRMACIONES.md).
 
 **Paso 3 — Búsqueda web (hecha por el backend).** El LLM propone 1–2 consultas por afirmación; el backend las ejecuta con un `SearchProvider` y se queda con los mejores resultados. Se descargan solo las páginas elegidas, se extrae el texto y se seleccionan los pasajes más cercanos a la afirmación.
 
@@ -220,7 +220,7 @@ Panel: en el detalle del caso se muestra la verificación con el componente exis
 | D2 | Servidor del LLM | **`llama-server`** (llama.cpp), modelo GGUF; Ollama descartado | Comprobar la compilación o el binario con la 5060 en la Fase 0 |
 | D3 | Búsqueda web | **API comercial** detrás de `SearchProvider`; SearXNG y raspado descartados | Cuál API: se prueban dos en la Fase 4 |
 | D4 | Conclusión del caso | **Regla determinista** de 4.5; el LLM solo redacta el resumen | Definir «afirmación central» y `fuera_de_contexto` con la evaluación (Fase 7) |
-| D5 | Base de verificaciones anteriores | Reutilización **30 días**, **7 días** si fue `insuficiente` | Umbral de similitud, fijado antes de medir (Fase 3) |
+| D5 | Base de verificaciones anteriores | Reutilización **30 días**, **7 días** si fue `insuficiente`. **Solo coincidencia exacta**: sin umbral de similitud (Fase 3, [BASE_AFIRMACIONES.md](BASE_AFIRMACIONES.md)) | — |
 | D6 | Cobertura | **Todos** los análisis, con orden: discrepancias, nivel alto, resto | — |
 | D7 | Sitios de verificación en la búsqueda | **Permitidos** en producción; excluidos al evaluar, midiendo el efecto aparte | — |
 | D8 | Ubicación del LLM | **Equipo aparte por red**, con `LLM_BASE_URL` y clave de API | Cómo se conectan los dos equipos (red local u otra). La llamada con clave se comprobó solo en `127.0.0.1` |
@@ -340,9 +340,10 @@ Cada fase termina con algo que se puede ejecutar y comprobar. El tamaño es rela
 ### Fase 3 — Extracción y base de verificaciones anteriores (M)
 
 - Instrucciones de extracción versionadas; validación y reescritura de afirmaciones.
-- **Ya adelantado (15 nov 2026):** `backend/services/verification/prompts.py` (`extraccion-v1`) y `claims.py` (`extract_claims`, con la comprobación determinista de cifras y nombres). Falta la tabla `afirmaciones_verificadas` y la consulta a la base. Lo medido y lo que no se arregló (atribuciones, listas vacías en noticias falsas) está en [MEDICIONES_LLM.md](MEDICIONES_LLM.md), 3.5.
-- Tabla `afirmaciones_verificadas`, consulta exacta y por similitud, guardado al terminar.
+- **Ya adelantado (15 nov 2026):** `backend/services/verification/prompts.py` (`extraccion-v1`) y `claims.py` (`extract_claims`, con la comprobación determinista de cifras y nombres). Lo medido y lo que no se arregló (atribuciones, listas vacías en noticias falsas) está en [MEDICIONES_LLM.md](MEDICIONES_LLM.md), 3.5.
+- Tabla `afirmaciones_verificadas` (migración 008), funciones de búsqueda y guardado (migración 009) y `known_claims.py`: consulta por coincidencia exacta y guardado al terminar. Se descartan también las afirmaciones que dependen del texto («esta noticia», «dicho país»).
 - **Se cierra cuando:** para un conjunto de textos de prueba se obtienen afirmaciones verificables razonables (revisadas a mano) y una afirmación repetida se reutiliza de la base.
+- **Estado (15 nov 2026):** cumplido en el Supabase de desarrollo (migración 009 aplicada), con una desviación del plan: **solo coincidencia exacta**, sin búsqueda por similitud. Se midió con 128 paráfrasis y 148 + 164 cambios de un solo dato: con 0,80 solo se reutiliza el 2 % de las paráfrasis y pasan 42 y 45 cambios de un dato; con 0,95 pasan 1 y 3 y se reutiliza el 0 %. 23 comprobaciones contra la base y 31 pruebas nuevas. Detalle, ejemplos y el anexo de afirmaciones para revisar: [BASE_AFIRMACIONES.md](BASE_AFIRMACIONES.md). La revisión «a mano» de las afirmaciones la hice yo sobre 7 textos; falta la de una persona del equipo.
 
 ### Fase 4 — Búsqueda, descarga y juicio (L)
 

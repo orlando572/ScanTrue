@@ -5,6 +5,10 @@ trae, o añade un nombre o un lugar que no aparece. Como una afirmación con un 
 llevaría la búsqueda y el juicio por mal camino, se comprueba de forma determinista que cada
 cifra y cada nombre propio de la afirmación estén en el texto, y las que no cumplen se descartan.
 
+Además se descartan las afirmaciones que dependen del texto («el texto», «esta noticia», «dicho
+país», «las comunidades mencionadas»): se verifican solas, sin el resto de la noticia, y una
+referencia así no se puede buscar ni comparar con otras afirmaciones.
+
 Limitaciones conocidas (docs/llm/MEDICIONES_LLM.md):
 - Una cifra escrita con letras («doce») en el texto y con dígitos en la afirmación se descarta
   por error, y lo mismo una deducción acertada como «Colombia» a partir de «Barranquilla».
@@ -25,6 +29,12 @@ CAPITALIZED = re.compile(r"[A-ZÁÉÍÓÚÑÜ][\wáéíóúñü-]{2,}")
 WORD = re.compile(r"[\wáéíóúñü]+")
 # Salida típica medida: 209–371 tokens con 5 afirmaciones.
 EXTRACTION_MAX_TOKENS = 600
+# Referencias al texto de origen. «dicho que» (de «decir») no cuenta; «dicho país» sí.
+TEXT_REFERENCE = re.compile(
+    r"\b(?:el texto|la noticia|esta noticia|este art[ií]culo|el art[ií]culo|mencionad[oa]s?"
+    r"|dich[oa]s?(?!\s+que\b)\s+\w+)",
+    re.IGNORECASE,
+)
 
 
 def fold(text: str) -> str:
@@ -61,10 +71,16 @@ def unsupported_names(claim: str, source: str) -> list[str]:
     return missing
 
 
+def text_reference(claim: str) -> str | None:
+    """La referencia al texto de origen que contiene la afirmación, si la hay."""
+    match = TEXT_REFERENCE.search(claim)
+    return match.group(0) if match else None
+
+
 @dataclass(frozen=True)
 class RejectedClaim:
     texto: str
-    motivo: str  # "cifra_ausente" o "nombre_ausente"
+    motivo: str  # "cifra_ausente", "nombre_ausente" o "depende_del_texto"
     detalle: list[str] = field(default_factory=list)
 
 
@@ -90,6 +106,8 @@ def check_claims(extraction: ClaimExtraction, source: str) -> ExtractionResult:
             rejected.append(RejectedClaim(claim.texto, "cifra_ausente", numbers))
         elif names:
             rejected.append(RejectedClaim(claim.texto, "nombre_ausente", names))
+        elif reference := text_reference(claim.texto):
+            rejected.append(RejectedClaim(claim.texto, "depende_del_texto", [reference]))
         else:
             kept.append(claim.texto)
     return ExtractionResult(

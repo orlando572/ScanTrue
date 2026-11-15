@@ -87,6 +87,16 @@ class CheckClaimsTests(unittest.TestCase):
         result = check_claims(extraction("España pagó 70 millones."), TEXTO)
         self.assertEqual(result.rechazadas[0].motivo, "cifra_ausente")
 
+    def test_descarta_las_que_dependen_del_texto(self):
+        result = check_claims(extraction(
+            "Los vecinos de las comunidades mencionadas pidieron un calendario.",
+            "El presidente Pedro Sánchez ha dicho que habló en Valencia.",
+        ), TEXTO)
+        self.assertEqual([c.texto for c in result.afirmaciones],
+                         ["El presidente Pedro Sánchez ha dicho que habló en Valencia."])
+        self.assertEqual([(r.motivo, r.detalle) for r in result.rechazadas],
+                         [("depende_del_texto", ["mencionadas"])])
+
     def test_lista_vacia_sigue_vacia_y_sin_rechazadas(self):
         result = check_claims(ClaimExtraction(afirmaciones=[]), TEXTO)
         self.assertEqual((result.afirmaciones, result.rechazadas), ([], []))

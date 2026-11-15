@@ -398,6 +398,54 @@ class SupabaseRepository:
         )
         return value if isinstance(value, str) else None
 
+    # ── Base de afirmaciones ya verificadas (incremento 2; migración 009) ──
+
+    def find_verified_claims(
+        self, claim_hash: str, normalized: str, threshold: float | None, limit: int = 5
+    ) -> list[dict]:
+        """Exacta por hash o, si `threshold` no es None, hasta `limit` parecidas; solo vigentes.
+
+        Sin umbral se envía 2,0: ninguna similitud lo alcanza (la máxima es 1), así que la base
+        devuelve solo la coincidencia exacta. Un null no serviría: la función lo trataría como 0,3.
+        """
+        value = self._request(
+            "POST", "rpc/buscar_afirmacion_verificada", admin=True,
+            body={
+                "p_hash_texto": claim_hash,
+                "p_texto_normalizado": normalized,
+                "p_umbral": 2.0 if threshold is None else threshold,
+                "p_limite": limit,
+            },
+        )
+        return value or []
+
+    def save_verified_claim(
+        self,
+        *,
+        text: str,
+        normalized: str,
+        claim_hash: str,
+        verdict: str,
+        sources: list,
+        model: str | None,
+        prompt_version: str | None,
+        analysis_id: UUID | None,
+    ) -> UUID:
+        value = self._request(
+            "POST", "rpc/guardar_afirmacion_verificada", admin=True,
+            body={
+                "p_texto": text,
+                "p_texto_normalizado": normalized,
+                "p_hash_texto": claim_hash,
+                "p_veredicto": verdict,
+                "p_fuentes": sources,
+                "p_modelo_llm": model,
+                "p_version_prompts": prompt_version,
+                "p_analisis_origen": str(analysis_id) if analysis_id else None,
+            },
+        )
+        return UUID(value)
+
     # ── Web pública ─────────────────────────────────────────────────
 
     @staticmethod
