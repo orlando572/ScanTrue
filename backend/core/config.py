@@ -119,6 +119,8 @@ class VerificationSettings:
     max_attempts: int
     # Fecha de corte (D9): el barrido solo encola análisis posteriores. Sin ella no hay barrido.
     since: datetime | None
+    # Tiempo máximo de un caso; al agotarse, las afirmaciones que faltan quedan «insuficiente».
+    case_seconds: float = 300.0
 
     @classmethod
     def from_environment(cls) -> "VerificationSettings":
@@ -142,7 +144,8 @@ class VerificationSettings:
                 ) from None
             if since.tzinfo is None:
                 raise ValueError("VERIFICATION_DESDE debe incluir la zona horaria.")
-        return cls(enabled=enabled, max_attempts=max_attempts, since=since)
+        case_seconds = _bounded_number("VERIFICATION_CASE_SECONDS", cls.case_seconds, 30, 1800, float)
+        return cls(enabled=enabled, max_attempts=max_attempts, since=since, case_seconds=case_seconds)
 
 
 SEARCH_PROVIDERS = ("brave", "tavily")

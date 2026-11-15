@@ -320,6 +320,14 @@ class SupabaseRepository:
 
     # ── Cola de verificación web (incremento 2; migración 008) ─────
 
+    def analysis_text(self, analysis_id: UUID) -> str | None:
+        """El texto del análisis (solo el backend con la clave de servicio); None si ya no existe."""
+        rows = self._request(
+            "GET", "analisis", admin=True,
+            params={"select": "texto", "id": f"eq.{analysis_id}", "limit": 1},
+        )
+        return rows[0].get("texto") if rows else None
+
     def enqueue_verification(self, analysis_id: UUID) -> bool:
         """Crea la fila `pendiente`; no hace nada si ya existe. True si la creó."""
         value = self._request(

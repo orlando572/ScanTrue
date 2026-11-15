@@ -32,6 +32,7 @@ from backend.services.identity import (
     SupabaseAuthUnavailable,
 )
 from backend.services.model_versions import ModelVersionManager
+from backend.services.verification.case import build_case_verifier
 from backend.services.verification.worker import VerificationWorker
 
 logger = logging.getLogger(__name__)
@@ -65,11 +66,14 @@ async def lifespan(app: FastAPI):
         verification_settings = None
     app.state.verification_settings = verification_settings
     verification_task = None
+    app.state.verification_worker = None
     if verification_settings and verification_settings.enabled:
         if repository and settings.secret_key:
-            verification_task = asyncio.create_task(
-                VerificationWorker(repository, verification_settings).run()
-            )
+            verifier = build_case_verifier(repository, verification_settings)
+            if verifier is not None:
+                worker = VerificationWorker(repository, verification_settings, process=verifier)
+                app.state.verification_worker = worker  # el panel (Fase 6) lo pausa y reanuda
+                verification_task = asyncio.create_task(worker.run())
         else:
             logger.error("VERIFICATION_ENABLED requiere SUPABASE_SECRET_KEY; la cola no arranca")
     # La versión activa de los modelos se carga una vez (backend/despliegues/); BETO

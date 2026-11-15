@@ -119,6 +119,7 @@ class SettingsTests(unittest.TestCase):
 
 class WorkerTests(unittest.TestCase):
     def worker(self, repository, **kwargs):
+        kwargs.setdefault("process", placeholder_process)
         return VerificationWorker(repository, SETTINGS, **kwargs)
 
     def test_sin_casos_no_hace_nada_mas(self):
@@ -192,14 +193,14 @@ class WorkerTests(unittest.TestCase):
         self.assertEqual(repo.calls, [])
         since = datetime(2026, 11, 15, tzinfo=timezone.utc)
         repo = FakeRepository()
-        worker = VerificationWorker(repo, VerificationSettings(True, 3, since))
+        worker = VerificationWorker(repo, VerificationSettings(True, 3, since), process=placeholder_process)
         self.assertEqual(worker.sweep(), 2)
         self.assertEqual(repo.calls, [("sweep", since)])
 
     def test_el_bucle_barre_y_reclama_hasta_cancelarse(self):
         repo = FakeRepository(claimed=None)
         since = datetime.now(timezone.utc) - timedelta(days=1)
-        worker = VerificationWorker(repo, VerificationSettings(True, 3, since))
+        worker = VerificationWorker(repo, VerificationSettings(True, 3, since), process=placeholder_process)
 
         async def cancel(_seconds):
             raise asyncio.CancelledError

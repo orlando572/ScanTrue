@@ -69,6 +69,8 @@ class ClaimVerification:
     paginas_fallidas: dict[str, int] = field(default_factory=dict)  # código de FetchError -> cuántas
     pasajes: int = 0
     segundos: float = 0.0
+    # Se acabó el tiempo de la afirmación antes de reunir toda la evidencia: el resultado no es definitivo.
+    incompleta: bool = False
     version_prompts: str = f"{QUERY_PROMPT_VERSION}+{JUDGE_PROMPT_VERSION}"
 
 
@@ -128,8 +130,10 @@ def verify_claim(
 
     results: list[SearchResult] = []
     failures: list[SearchError] = []
+    cut = False
     for query in queries:
         if clock() > deadline:
+            cut = True
             break
         try:
             results.extend(search.search(query, max_results=limits.results_per_query, exclude_domains=exclude_domains))
@@ -142,6 +146,7 @@ def verify_claim(
     failed: Counter = Counter()
     for result in select_results(results, limits, exclude_domains):
         if clock() > deadline:
+            cut = True
             break
         try:
             page = fetcher.fetch(result.url)
@@ -168,6 +173,7 @@ def verify_claim(
         paginas_fallidas=dict(failed),
         pasajes=len(passages),
         segundos=round(clock() - started, 2),
+        incompleta=cut,
     )
 
 

@@ -153,6 +153,7 @@ Archivos nuevos, con la misma organización de `backend/services/` y `backend/re
 | `services/verification/fetch.py` | Descarga y extracción del texto de una página, con las defensas de 4.6. |
 | `services/verification/passages.py`, `pipeline.py` | Selección de pasajes y el recorrido de una afirmación (`verify_claim`: consultas → búsqueda → descarga → pasajes → juicio). Añadidos en la Fase 4. |
 | `services/verification/judge.py` | Juicio por afirmación y regla de conclusión. |
+| `services/verification/conclusion.py`, `case.py` | Regla de conclusión y resumen (Paso 5) y el recorrido de un caso completo. Añadidos en la Fase 5. |
 | `services/verification/untrusted.py`, `text.py` | Filtro de frases que parecen órdenes al modelo (4.6) y utilidades de texto. Añadidos en la Fase 4. |
 | `services/verification/worker.py` | Bucle del trabajador: reclamar, procesar, guardar, reintentar. Se lanza en `lifespan` de `backend/app.py` como el de blockchain. |
 | Cambios en `repositories/supabase.py` | Encolar, reclamar, completar, marcar fallida, consultar y guardar en `afirmaciones_verificadas`. |
@@ -188,7 +189,7 @@ Archivos nuevos, con la misma organización de `backend/services/` y `backend/re
 | hay afirmaciones `apoyada` pero fechas, lugar o contexto de las fuentes no coinciden con lo que dice el texto | `fuera_de_contexto` |
 | en cualquier otro caso (sin evidencia, sin afirmaciones o evidencia mezclada) | `evidencia_insuficiente` |
 
-El LLM redacta solo el `resumen` (breve, en español, que cite las afirmaciones). Qué es «afirmación central» y cómo se detecta `fuera_de_contexto` se afinan con la evaluación. **D4:** la regla determinista queda decidida; el LLM no decide la conclusión.
+El LLM redacta solo el `resumen` (breve, en español, que cite las afirmaciones); si falla o escribe algo no válido (un enlace, o calificar la fiabilidad de las fuentes) se usa una plantilla. Qué es «afirmación central» y cómo se detecta `fuera_de_contexto` se afinan con la evaluación. **D4:** la regla determinista queda decidida; el LLM no decide la conclusión. **Fase 5:** implementada como `conclusion-v1`; con 4 casos reales, una sola afirmación mal juzgada decidió la conclusión en 2 de 3 casos normales, así que su ajuste (fuentes distintas, centrales, `fuera_de_contexto`) es lo primero que mide la Fase 7: [CONCLUSION_Y_TRABAJADOR.md](CONCLUSION_Y_TRABAJADOR.md), sección 6.
 
 ### 4.6. Seguridad y límites
 
@@ -230,7 +231,7 @@ Panel: en el detalle del caso se muestra la verificación con el componente exis
 
 | D9 | Análisis anteriores a la migración | **Solo los nuevos**; los existentes quedan `sin_verificar` | — |
 | D10 | Mismo texto analizado varias veces | **Reutilizar** la verificación vigente con el mismo `hash_texto` | — |
-| D11 | Reintentos | **3 intentos** con espera creciente; luego `fallida` | Valores exactos de la espera (por ejemplo 1, 5 y 15 minutos), a ajustar en la Fase 5 |
+| D11 | Reintentos | **3 intentos** con espera creciente de **1, 5 y 15 minutos**; luego `fallida` con su causa (confirmado en la Fase 5) | — |
 | D12 | Base de datos de desarrollo | **Proyecto Supabase de desarrollo aparte**; el de Orlando solo recibe 008 cuando esté probada | Crear el proyecto en la Fase 0 |
 
 | D13 | Estructura de la evaluación | **Ajuste + prueba final**, esta última abierta una sola vez | — |
@@ -365,6 +366,12 @@ Cada fase termina con algo que se puede ejecutar y comprobar. El tamaño es rela
 - Regla de conclusión (D4), redacción del resumen, límites por caso, reintentos (3, con espera creciente) y pérdida controlada (`fallida` con causa).
 - Trabajador conectado al `lifespan` de la API, con `VERIFICATION_ENABLED` y pausa.
 - **Se cierra cuando:** un análisis nuevo llega a `completada` por sí solo en el equipo de desarrollo y un fallo del LLM o de internet lo deja `fallida` o reintentando, sin afectar a la API.
+- **Estado (15 nov 2026):** cumplido, con un límite importante de calidad. Código y pruebas hechos (`conclusion.py`, `case.py`, trabajador con pausa, arranque en el `lifespan`; 34 pruebas nuevas, 289 en el backend). Detalle en [CONCLUSION_Y_TRABAJADOR.md](CONCLUSION_Y_TRABAJADOR.md):
+  - Recorrido real por la API (Supabase de desarrollo, LLM y Tavily): 4 análisis creados desde `POST /analisis` llegaron solos a `completada` al primer intento, 30 a 40 s por caso con 3 o 4 afirmaciones buscadas (6 s si ya estaban en la base); la API respondió en menos de 1 s mientras tanto. Con el LLM caído, `POST /analisis` y `/salud` respondieron con normalidad y el caso quedó `pendiente` con `llm_no_disponible` y su espera.
+  - **Calidad:** de los 3 casos normales, la conclusión acertó 1 y falló 2 (una cierta dada por `contradicha` por un error tipográfico de una fuente; una noticia inventada dada por `contradicha` porque la extracción dejó una afirmación sin decir de qué se trata y el juez la contradijo con otra noticia). Con la regla del plan una sola afirmación mal juzgada decide el caso. No se cambió la regla: el usuario decidió dejar su ajuste a la evaluación de la Fase 7 (el documento lista 5 ajustes candidatos).
+  - Reintentos: se mantienen las esperas de 1, 5 y 15 minutos (D11). La reserva (600 s) cubre el caso más largo (300 s) con margen.
+  - Una orden escondida en el texto se quitó antes de extraer y no cambió el resultado.
+  - La pausa existe en el trabajador (en memoria); el interruptor del panel es de la Fase 6.
 
 ### Fase 6 — Web y panel (S–M)
 

@@ -52,3 +52,11 @@ class ClaimJudgment(BaseModel):
     veredicto: Verdict
     pasajes: list[Annotated[int, Field(ge=1, le=20)]] = Field(max_length=MAX_CITED_PASSAGES)
     cita: str = Field(max_length=400)
+
+
+class CaseSummary(BaseModel):
+    """Paso 5: resumen breve del resultado. La conclusión ya está decidida; el modelo solo la explica."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    resumen: str = Field(min_length=40, max_length=600)

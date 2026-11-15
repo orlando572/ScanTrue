@@ -1,10 +1,13 @@
 """Trabajador de la cola de verificación (incremento 2).
 
 Sigue el diseño del trabajador de blockchain: reclama un caso con `for update skip locked`,
-lo procesa y guarda el resultado. En la Fase 2 el procesamiento es un resultado fijo de prueba
-que solo comprueba que la cola funciona; las fases 3 a 5 lo sustituyen por la verificación real
-(`process` es el punto de cambio). Mientras tanto, no enciendas VERIFICATION_ENABLED en un
-entorno cuyos resultados vea el público: los casos terminarían «completada» sin verificar nada.
+lo procesa y guarda el resultado; si falla, lo devuelve a la cola con espera creciente o lo deja
+`fallida` con su causa (D11). `process` es la verificación real (`case.CaseVerifier`); el resultado
+fijo `placeholder_process` de la Fase 2 solo sirve para probar la cola.
+
+Se puede **pausar** sin perder la cola (docs/llm/PLAN_INCREMENTO_2.md, 4.7): en pausa no reclama
+casos nuevos; el que esté en proceso termina. La pausa vive en memoria: al reiniciar la API el
+trabajador vuelve a correr si VERIFICATION_ENABLED sigue encendido.
 """
 
 import asyncio
@@ -21,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 # La reserva debe durar más que un caso: si el proceso se cae, vence y otro retoma el caso.
 RESERVATION_SECONDS = 600
+# Lo que puede pasarse un caso del tiempo fijado: la afirmación en curso, el resumen y el guardado.
+RESERVATION_MARGIN_SECONDS = 150
 # Espera tras el 1.º, 2.º y 3.º intento fallido (D11); se ajustan en la Fase 5.
 RETRY_WAITS = (60, 300, 900)
 SWEEP_EVERY_SECONDS = 60
@@ -88,7 +93,7 @@ class VerificationWorker:
         repository: QueueRepository,
         settings: VerificationSettings,
         *,
-        process: Callable[[UUID], VerificationOutcome] = placeholder_process,
+        process: Callable[[UUID], VerificationOutcome],
         reservation_seconds: int = RESERVATION_SECONDS,
         waits: tuple[int, ...] = RETRY_WAITS,
     ) -> None:
@@ -97,9 +102,26 @@ class VerificationWorker:
         self.process = process
         self.reservation_seconds = reservation_seconds
         self.waits = waits
+        self.paused = False
+        # Si la reserva vence antes que el caso, otro intento lo tomaría mientras este sigue trabajando.
+        if reservation_seconds < settings.case_seconds + RESERVATION_MARGIN_SECONDS:
+            logger.warning(
+                "La reserva (%d s) es corta para un caso de hasta %d s: se recomienda al menos %d s",
+                reservation_seconds, settings.case_seconds, settings.case_seconds + RESERVATION_MARGIN_SECONDS,
+            )
+
+    def pause(self) -> None:
+        self.paused = True
+        logger.warning("Verificación en pausa: no se reclamarán casos nuevos")
+
+    def resume(self) -> None:
+        self.paused = False
+        logger.warning("Verificación reanudada")
 
     def process_one(self) -> bool:
-        """Atiende un caso. False si no había ninguno listo."""
+        """Atiende un caso. False si no había ninguno listo (o si está en pausa)."""
+        if self.paused:
+            return False
         analysis_id = self.repository.claim_verification(
             self.settings.max_attempts, self.reservation_seconds
         )
