@@ -145,6 +145,81 @@ class VerificationSettings:
         return cls(enabled=enabled, max_attempts=max_attempts, since=since)
 
 
+SEARCH_PROVIDERS = ("brave", "tavily")
+
+
+@dataclass(frozen=True)
+class SearchSettings:
+    """Proveedor de búsqueda web (D3). Sin SEARCH_PROVIDER y SEARCH_API_KEY no hay búsqueda."""
+
+    provider: str
+    api_key: str
+    timeout: float
+
+    @classmethod
+    def from_environment(cls) -> "SearchSettings | None":
+        load_dotenv(ENV_FILE, override=False)
+        provider = os.getenv("SEARCH_PROVIDER", "").strip().lower()
+        api_key = os.getenv("SEARCH_API_KEY", "").strip()
+        if not provider or not api_key:
+            return None
+        if provider not in SEARCH_PROVIDERS:
+            raise ValueError(f"SEARCH_PROVIDER debe ser uno de: {', '.join(SEARCH_PROVIDERS)}.")
+        raw_timeout = os.getenv("SEARCH_TIMEOUT", "").strip() or "15"
+        try:
+            timeout = float(raw_timeout)
+        except ValueError:
+            raise ValueError("SEARCH_TIMEOUT debe ser un número de segundos.") from None
+        if not 0 < timeout <= 120:
+            raise ValueError("SEARCH_TIMEOUT debe estar entre 0 y 120 segundos.")
+        return cls(provider=provider, api_key=api_key, timeout=timeout)
+
+
+def _bounded_number(name: str, default: float, low: float, high: float, kind=int):
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return default
+    try:
+        value = kind(raw)
+    except ValueError:
+        raise ValueError(f"{name} debe ser un número.") from None
+    if not low <= value <= high:
+        raise ValueError(f"{name} debe estar entre {low:g} y {high:g}.")
+    return value
+
+
+@dataclass(frozen=True)
+class EvidenceLimits:
+    """Límites de la búsqueda de evidencia por afirmación (docs/llm/PLAN_INCREMENTO_2.md, 4.6).
+
+    Al agotarse el tiempo o los cupos, la afirmación se juzga con la evidencia reunida hasta ese
+    momento: nunca se queda colgada.
+    """
+
+    queries_per_claim: int = 2
+    results_per_query: int = 5
+    pages_per_claim: int = 4
+    per_domain: int = 2
+    passages_per_claim: int = 6
+    passages_per_page: int = 3
+    page_bytes: int = 1_500_000
+    page_seconds: float = 15.0
+    claim_seconds: float = 120.0
+    max_redirects: int = 3
+
+    @classmethod
+    def from_environment(cls) -> "EvidenceLimits":
+        load_dotenv(ENV_FILE, override=False)
+        defaults = cls()
+        return cls(
+            queries_per_claim=_bounded_number("VERIFICATION_MAX_QUERIES", defaults.queries_per_claim, 1, 2),
+            pages_per_claim=_bounded_number("VERIFICATION_MAX_PAGES", defaults.pages_per_claim, 1, 10),
+            page_bytes=_bounded_number("VERIFICATION_PAGE_BYTES", defaults.page_bytes, 50_000, 10_000_000),
+            page_seconds=_bounded_number("VERIFICATION_PAGE_SECONDS", defaults.page_seconds, 1, 120, float),
+            claim_seconds=_bounded_number("VERIFICATION_CLAIM_SECONDS", defaults.claim_seconds, 10, 900, float),
+        )
+
+
 def web_origins() -> list[str]:
     """Orígenes de la web (web/) que pueden llamar a la API desde el navegador."""
     load_dotenv(ENV_FILE, override=False)
