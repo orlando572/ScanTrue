@@ -21,6 +21,7 @@ from backend.core.config import (
     AnalysisSettings,
     BlockchainSettings,
     SupabaseSettings,
+    VerificationSettings,
     web_origins,
 )
 from backend.repositories.supabase import SupabaseDataError, SupabaseRepository
@@ -31,6 +32,7 @@ from backend.services.identity import (
     SupabaseAuthUnavailable,
 )
 from backend.services.model_versions import ModelVersionManager
+from backend.services.verification.worker import VerificationWorker
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +57,21 @@ async def lifespan(app: FastAPI):
         worker_task = asyncio.create_task(
             BlockchainWorker(repository, app.state.blockchain_client).run()
         )
+    # Cola de verificación web (incremento 2): apagada salvo VERIFICATION_ENABLED=true.
+    try:
+        verification_settings = VerificationSettings.from_environment()
+    except ValueError:
+        logger.exception("La configuración de la verificación no es válida; queda apagada")
+        verification_settings = None
+    app.state.verification_settings = verification_settings
+    verification_task = None
+    if verification_settings and verification_settings.enabled:
+        if repository and settings.secret_key:
+            verification_task = asyncio.create_task(
+                VerificationWorker(repository, verification_settings).run()
+            )
+        else:
+            logger.error("VERIFICATION_ENABLED requiere SUPABASE_SECRET_KEY; la cola no arranca")
     # La versión activa de los modelos se carga una vez (backend/despliegues/); BETO
     # puede faltar sin detener el servicio. El panel puede cambiarla sin reiniciar.
     def swap_service(service) -> None:
@@ -73,10 +90,11 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        if worker_task:
-            worker_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await worker_task
+        for task in (worker_task, verification_task):
+            if task:
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
 
 
 app = FastAPI(

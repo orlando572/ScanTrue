@@ -1,6 +1,7 @@
 """Configuración local; las credenciales se leen sin guardarlas en Git."""
 
 from dataclasses import dataclass
+from datetime import datetime
 import json
 import logging
 import os
@@ -108,6 +109,40 @@ class LlmSettings:
             api_key=os.getenv("LLM_API_KEY", "").strip() or None,
             timeout=timeout,
         )
+
+
+@dataclass(frozen=True)
+class VerificationSettings:
+    """Cola de verificación web (incremento 2). Apagada salvo VERIFICATION_ENABLED=true."""
+
+    enabled: bool
+    max_attempts: int
+    # Fecha de corte (D9): el barrido solo encola análisis posteriores. Sin ella no hay barrido.
+    since: datetime | None
+
+    @classmethod
+    def from_environment(cls) -> "VerificationSettings":
+        load_dotenv(ENV_FILE, override=False)
+        enabled = os.getenv("VERIFICATION_ENABLED", "").strip().lower() in {"1", "true", "yes", "si", "sí"}
+        raw_attempts = os.getenv("VERIFICATION_MAX_ATTEMPTS", "").strip() or "3"
+        try:
+            max_attempts = int(raw_attempts)
+        except ValueError:
+            raise ValueError("VERIFICATION_MAX_ATTEMPTS debe ser un número entero.") from None
+        if not 1 <= max_attempts <= 10:
+            raise ValueError("VERIFICATION_MAX_ATTEMPTS debe estar entre 1 y 10.")
+        raw_since = os.getenv("VERIFICATION_DESDE", "").strip()
+        since = None
+        if raw_since:
+            try:
+                since = datetime.fromisoformat(raw_since)
+            except ValueError:
+                raise ValueError(
+                    "VERIFICATION_DESDE debe ser una fecha ISO 8601, por ejemplo 2026-11-15T09:00:00-05:00."
+                ) from None
+            if since.tzinfo is None:
+                raise ValueError("VERIFICATION_DESDE debe incluir la zona horaria.")
+        return cls(enabled=enabled, max_attempts=max_attempts, since=since)
 
 
 def web_origins() -> list[str]:

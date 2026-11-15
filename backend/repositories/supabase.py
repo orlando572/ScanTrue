@@ -1,5 +1,6 @@
 """Acceso a PostgREST usando el JWT de cada usuario para respetar RLS."""
 
+from collections.abc import Sequence
 from datetime import datetime
 import re
 from uuid import UUID
@@ -316,6 +317,86 @@ class SupabaseRepository:
                 "ultimo_error_blockchain": error,
             },
         )
+
+    # ── Cola de verificación web (incremento 2; migración 008) ─────
+
+    def enqueue_verification(self, analysis_id: UUID) -> bool:
+        """Crea la fila `pendiente`; no hace nada si ya existe. True si la creó."""
+        value = self._request(
+            "POST", "rpc/encolar_verificacion", admin=True,
+            body={"p_analisis_id": str(analysis_id)},
+        )
+        return bool(value)
+
+    def enqueue_pending_verifications(self, since: datetime, limit: int = 100) -> int:
+        """Encola los análisis sin fila posteriores a `since`; devuelve cuántos."""
+        value = self._request(
+            "POST", "rpc/encolar_verificaciones_pendientes", admin=True,
+            body={"p_desde": since.isoformat(), "p_limite": limit},
+        )
+        return int(value or 0)
+
+    def claim_verification(self, max_attempts: int, reservation_seconds: int) -> UUID | None:
+        """Reserva el siguiente caso (discrepancias, nivel alto, antiguos) o devuelve None."""
+        value = self._request(
+            "POST", "rpc/reclamar_verificacion_web", admin=True,
+            body={"p_max_intentos": max_attempts, "p_reserva_segundos": reservation_seconds},
+        )
+        return UUID(value) if value else None
+
+    def copy_verification(self, analysis_id: UUID) -> bool:
+        """Copia la verificación vigente de otro análisis con el mismo texto, si la hay."""
+        value = self._request(
+            "POST", "rpc/copiar_verificacion_web", admin=True,
+            body={"p_analisis_id": str(analysis_id)},
+        )
+        return bool(value)
+
+    def complete_verification(
+        self,
+        analysis_id: UUID,
+        *,
+        conclusion: str,
+        summary: str | None,
+        claims: list,
+        sources: list,
+        model: str | None,
+        prompt_version: str | None,
+    ) -> bool:
+        """Guarda el resultado. False si el caso ya no estaba en proceso."""
+        value = self._request(
+            "POST", "rpc/completar_verificacion_web", admin=True,
+            body={
+                "p_analisis_id": str(analysis_id),
+                "p_conclusion": conclusion,
+                "p_resumen": summary,
+                "p_afirmaciones": claims,
+                "p_fuentes": sources,
+                "p_modelo_llm": model,
+                "p_version_prompts": prompt_version,
+            },
+        )
+        return bool(value)
+
+    def fail_verification(
+        self,
+        analysis_id: UUID,
+        error: str,
+        *,
+        max_attempts: int,
+        waits: Sequence[int],
+    ) -> str | None:
+        """Vuelve a la cola con espera creciente o la deja `fallida`; devuelve el estado nuevo."""
+        value = self._request(
+            "POST", "rpc/fallar_verificacion_web", admin=True,
+            body={
+                "p_analisis_id": str(analysis_id),
+                "p_error": error,
+                "p_max_intentos": max_attempts,
+                "p_esperas": list(waits),
+            },
+        )
+        return value if isinstance(value, str) else None
 
     # ── Web pública ─────────────────────────────────────────────────
 

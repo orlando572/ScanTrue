@@ -108,7 +108,7 @@ Sigue el estilo de 006/007: función `security invoker`, `search_path` vacío, R
 | `intentos integer not null default 0` | Contar reintentos. |
 | `proximo_intento timestamptz not null default now()` | Espera entre reintentos y vencimiento de la reserva. |
 | `ultimo_error text` | Causa de la última falla (`llm_no_disponible`, `busqueda_fallida`, `salida_invalida`, `tiempo_agotado`). |
-| `copiada_de uuid references public.analisis(id) on delete set null` | Si el caso reutilizó la verificación de otro análisis con el mismo texto (D10), cuál fue. |
+| `copiada_de uuid` | Si el caso reutilizó la verificación de otro análisis con el mismo texto (D10), cuál fue. **Sin clave foránea a propósito:** una segunda relación entre `analisis` y `verificaciones_web` hace ambigua la incrustación de PostgREST (PGRST201) y rompe la web pública y el panel. |
 | `version_prompts text` | Con qué versión de instrucciones se generó (para comparar en la evaluación). |
 | `iniciado_en`, `terminado_en timestamptz` | Medir duración por caso. |
 | Índice parcial por `(proximo_intento, analisis_id)` donde `estado in ('pendiente','en_proceso')` | Cola eficiente. |
@@ -331,6 +331,11 @@ Cada fase termina con algo que se puede ejecutar y comprobar. El tamaño es rela
 - Repositorio: encolar, reclamar (con el orden de D6), copiar, completar, fallar y reintentar; `POST /analisis` encola sin hacerlo fallar; barrido de análisis sin fila posteriores a `VERIFICATION_DESDE` (D9).
 - Trabajador vacío que solo mueve el estado (`pendiente → en_proceso → completada` con un resultado fijo de prueba).
 - **Se cierra cuando:** crear un análisis desde la extensión deja una fila `pendiente` que el trabajador recoge una sola vez (comprobado con dos procesos a la vez), y que tras un corte vuelve a la cola al vencer la reserva.
+- **Estado (15 nov 2026):** cumplido en el Supabase de desarrollo. La migración `008` se aplicó, se revirtió y se volvió a aplicar; 43 comprobaciones contra la base (orden de D6, reserva vencida, 3 intentos, falla con espera creciente, copia con su vigencia, barrido y 12 casos con dos procesos a la vez, 6 para cada uno, sin repetir ninguno) y un recorrido por la API (`POST /analisis` → `pendiente` → `en_proceso` → `completada` con 1 intento; el mismo texto se copia). Hay 26 pruebas nuevas en `backend/tests/test_verification_queue.py`. Detalles a tener en cuenta:
+  - La prueba por la API cazó un fallo de la primera versión de la 008: una clave foránea en `copiada_de` rompía la web pública (PGRST201). Está corregida y tiene su prueba.
+  - La cola y el encolado están apagados salvo `VERIFICATION_ENABLED=true`. El resultado que guarda el trabajador es un texto fijo de prueba, marcado `prueba-fase-2`: no se debe encender donde el público vea los resultados hasta las fases 3 a 5.
+  - La reserva dura 600 s y las esperas entre reintentos (60, 300 y 900 s) son provisionales; se ajustan en la Fase 5.
+  - Antes de aplicar la 008 en el proyecto de Orlando hay que coordinarlo con él.
 
 ### Fase 3 — Extracción y base de verificaciones anteriores (M)
 
