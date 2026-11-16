@@ -4,14 +4,16 @@ Uso: PYTHONPATH=backend/.deps:. bilstm/.venv/bin/python -m unittest backend.test
 """
 
 from datetime import date, datetime, timezone
+from hashlib import sha256
+import io
 import json
 import logging
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
-from hashlib import sha256
 from uuid import uuid4
+import zipfile
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -26,11 +28,15 @@ from backend.repositories.supabase import SupabaseRepository, web_select
 from backend.schemas.admin import AdminCaseDetail, AdminCasePage
 from backend.schemas.analysis import AnalysisRequest
 from backend.schemas.public import PublicAnalysis, PublicAnalysisDetail, PublicAnalysisPage
-from backend.services.analysis import clean_fragments
 from backend.schemas.admin import DatasetItem
-from backend.services.datasets import build_dataset, export_csv
-from datos_comunes.cruces import IndiceComun
+from backend.services.analysis import clean_fragments
+from backend.services.datasets import (
+    LegacyVersionError, build_dataset, build_manifest, export_csv, export_standard_zip,
+)
 from backend.services.model_versions import ModelVersionError, ModelVersionManager
+from datos_comunes.comun import leer
+from datos_comunes.cruces import IndiceComun
+from datos_comunes.estandar import COLUMNAS_BASE
 
 NOW = datetime(2026, 11, 12, 12, 0, tzinfo=timezone.utc)
 ROW = {
@@ -401,6 +407,38 @@ class DatasetTests(unittest.TestCase):
         self.assertEqual({(i.texto, i.particion) for i in first.items},
                          {(i.texto, i.particion) for i in second.items})
         self.assertTrue(50 <= first.summary.por_particion["prueba"] <= 110)
+
+    def test_exportacion_estandar_la_lee_comun(self):
+        rows = [reviewed(news(f"falsa {index}", sentences=20), "falsa") for index in range(6)]
+        rows += [reviewed(news(f"real {index}"), "real") for index in range(6)]
+        build = build_dataset(rows, 0.2)
+        manifest = build_manifest(build)
+        self.assertEqual(manifest["columnas"], list(COLUMNAS_BASE))
+        self.assertTrue(all(manifest["codigo"].values()))
+        # Como si volviera de la base: JSON de ida y vuelta.
+        stored = [DatasetItem(**item.model_dump(mode="json")) for item in reversed(build.items)]
+        content = export_standard_zip({"id": uuid4(), "nombre": "v", "manifiesto": manifest}, stored)
+        with tempfile.TemporaryDirectory() as folder, zipfile.ZipFile(io.BytesIO(content)) as archive:
+            archive.extractall(folder)
+            exported = json.loads((Path(folder) / "manifest.json").read_text("utf-8"))
+            self.assertEqual(set(exported["verificacion"].values()), {"ok"})
+            train = leer("fragmentos_entrenamiento.csv", Path(folder))
+            test = leer("fragmentos_prueba.csv", Path(folder))
+            self.assertEqual(tuple(train.columns), COLUMNAS_BASE)
+            self.assertEqual(len(train) + len(test), len(build.items))
+            self.assertFalse(set(train.grupo) & set(test.grupo))
+            self.assertEqual(set(test.pliegue), {"prueba_panel"})
+            self.assertEqual(set(train.fuente), {"panel"})
+            weights = train.groupby("id_articulo").peso.sum()
+            self.assertTrue(((weights - 1).abs() < 1e-5).all())
+            self.assertEqual(set(test.etiqueta_falsa), {0, 1})
+            self.assertTrue((Path(folder) / "procedencia.csv").is_file())
+
+    def test_version_anterior_al_estandar_no_se_exporta_para_entrenar(self):
+        legacy = DatasetItem(texto="Texto entero.", hash_texto="a" * 64, etiqueta="real",
+                             particion="entrenamiento", grupo="g", decision="aprobado")
+        with self.assertRaises(LegacyVersionError):
+            export_standard_zip({"id": uuid4(), "nombre": "v", "manifiesto": {}}, [legacy])
 
     def test_csv_con_procedencia(self):
         text = 'El ministro dijo "basta", y coma. ' + news("el ministro")

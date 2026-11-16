@@ -150,6 +150,9 @@ class DatasetVersion(BaseModel):
     descripcion: str | None = None
     fecha: datetime
     resumen: DatasetSummary
+    manifiesto: dict = Field(
+        default_factory=dict,
+        description="Archivos con su SHA-256, parámetros del estándar y código que la construyó.")
 
 
 class DatasetItem(BaseModel):
@@ -165,9 +168,10 @@ class DatasetItem(BaseModel):
     decision: Literal["aprobado", "corregido"]
     procedencia: dict = Field(default_factory=dict)
     evidencia: list = Field(default_factory=list)
-    # Columnas del estándar (datos_comunes/estandar.py). Hasta la migración 008 se guardan
-    # en `procedencia.fragmento` y se leen de ahí.
+    # Columnas del estándar (datos_comunes/estandar.py). Las versiones creadas antes de la
+    # migración 008 las tienen en `procedencia.fragmento`; las anteriores al estándar, vacías.
     id_fragmento: str | None = None
+    fuente: str | None = None
     peso: float | None = None
     tokens_bilstm: int | None = None
 
@@ -179,6 +183,8 @@ class DatasetItem(BaseModel):
             for name in ("id_fragmento", "peso", "tokens_bilstm"):
                 if data.get(name) is None and fragment.get(name) is not None:
                     data = {**data, name: fragment[name]}
+            if data.get("fuente") is None and fragment:
+                data = {**data, "fuente": (data.get("procedencia") or {}).get("fuente")}
         return data
 
 

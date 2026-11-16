@@ -26,7 +26,7 @@ Los modelos de producción están en `datasets/bilstm_produccion/modelo/` y `dat
 ## Base de datos 🗄️
 
 1. Crea un proyecto en Supabase y habilita los proveedores **Anonymous** y **Email** en Authentication.
-2. Ejecuta en orden las migraciones `backend/db/migrations/001_identity_history.sql` a `007_revision_datasets.sql` en el SQL Editor de Supabase.
+2. Ejecuta en orden las migraciones `backend/db/migrations/001_identity_history.sql` a `008_estandar_datasets.sql` en el SQL Editor de Supabase.
 3. Copia `backend/.env.example` a `backend/.env` y completa `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` y `SUPABASE_SECRET_KEY`. Mantén las claves fuera de Git.
 
 ## Ejecutar localmente 🚀

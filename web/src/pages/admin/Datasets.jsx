@@ -201,12 +201,24 @@ function Version({ version, open, onToggle, onDeleted }) {
     const file = await adminDownload(`/admin/datasets/${version.id}/exportar`);
     save(file.blob, file.name);
   });
-  // El manifiesto describe la versión sin los textos: nombre, fecha, reglas y recuentos.
+  // ZIP con el formato de comun_v1 (fragmentos por partición, procedencia y manifest.json).
+  const standard = () => run('zip', async () => {
+    const file = await adminDownload(`/admin/datasets/${version.id}/exportar${query({ formato: 'estandar' })}`);
+    save(file.blob, file.name);
+  });
+  // Las versiones anteriores al estándar (una fila por noticia) no tienen fragmentos.
+  const hasManifest = Boolean(version.manifiesto?.archivos);
+  const hasStandard = hasManifest || (version.resumen?.fragmentos ?? 0) > 0;
+  // El manifiesto describe la versión sin los textos: archivos con SHA-256, reglas, código y recuentos.
   const manifest = () => save(
     new Blob([JSON.stringify({
       id: version.id, nombre: version.nombre, descripcion: version.descripcion, fecha: version.fecha,
-      resumen: version.resumen,
-      reglas: 'Solo casos aprobados o corregidos; sin copias exactas ni etiquetas en conflicto; cada grupo (misma página o evento) va entero a una partición.',
+      ...(hasManifest ? version.manifiesto : {
+        resumen: version.resumen,
+        reglas: hasStandard
+          ? 'Versión con fragmentos creada antes del manifiesto: sin SHA-256 guardados.'
+          : 'Versión anterior al estándar: una fila por noticia, sin fragmentos.',
+      }),
     }, null, 2)], { type: 'application/json' }),
     `scantrue_${version.nombre.replace(/[^\w.-]+/g, '_')}_manifiesto.json`,
   );
@@ -221,12 +233,16 @@ function Version({ version, open, onToggle, onDeleted }) {
       <div className="version-head">
         <div style={{ minWidth: 0 }}>
           <h3 className="h-panel" style={{ margin: 0, color: 'var(--color-acid)' }}>{version.nombre}</h3>
-          <span className="label">{formatDate(version.fecha)} · {summary.casos} casos · {summary.por_etiqueta?.falsa ?? 0} falsas · {summary.por_etiqueta?.real ?? 0} reales</span>
+          <span className="label">{formatDate(version.fecha)} · {summary.casos} noticias{hasStandard ? ` · ${summary.fragmentos} fragmentos` : ' · anterior al estándar'} · {summary.por_etiqueta?.falsa ?? 0} falsas · {summary.por_etiqueta?.real ?? 0} reales</span>
           {version.descripcion && <p className="muted" style={{ margin: '8px 0 0' }}>{version.descripcion}</p>}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           <button type="button" className="btn btn--small" onClick={csv} disabled={state.busy !== null}>
             <span style={{ width: 14 }}><Icon name="download" /></span>{state.busy === 'csv' ? 'Preparando…' : 'CSV'}
+          </button>
+          <button type="button" className="btn btn--small" onClick={standard} disabled={state.busy !== null || !hasStandard}
+            title={hasStandard ? 'Fragmentos con las columnas de comun_v1, procedencia y manifest.json' : 'Versión anterior al estándar: crea una nueva para exportarla para entrenar'}>
+            <span style={{ width: 14 }}><Icon name="download" /></span>{state.busy === 'zip' ? 'Preparando…' : 'Para entrenar (.zip)'}
           </button>
           <button type="button" className="btn btn--ghost btn--small" onClick={manifest}>Manifiesto</button>
           <button type="button" className="btn btn--ghost btn--small" aria-expanded={open} onClick={onToggle}>{open ? 'Cerrar' : 'Ver casos'}</button>
