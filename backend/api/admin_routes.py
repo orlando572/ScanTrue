@@ -28,7 +28,7 @@ from backend.schemas.admin import (
     ReviewRequest,
     VisibilityUpdate,
 )
-from backend.services.datasets import build_dataset, export_csv
+from backend.services.datasets import build_dataset, comun_index, export_csv
 from backend.services.model_versions import MODELS, ModelVersionError, ModelVersionManager
 
 
@@ -173,7 +173,7 @@ def preview_dataset(
     repository: SupabaseRepository = Depends(service_repository),
 ) -> DatasetSummary:
     """Qué entraría hoy en una versión nueva, sin guardarla."""
-    return build_dataset(repository.reviewed_cases(), fraccion_prueba).summary
+    return build_dataset(repository.reviewed_cases(), fraccion_prueba, comun_index()).summary
 
 
 @router.post("/datasets", response_model=DatasetVersion, status_code=201)
@@ -182,7 +182,7 @@ def create_dataset(
     user=Depends(admin_user),
     repository: SupabaseRepository = Depends(service_repository),
 ) -> DatasetVersion:
-    build = build_dataset(repository.reviewed_cases(), payload.fraccion_prueba)
+    build = build_dataset(repository.reviewed_cases(), payload.fraccion_prueba, comun_index())
     if not build.items:
         raise HTTPException(
             status_code=409,

@@ -23,6 +23,7 @@ const EXCLUDED = {
   sin_fin_de_oracion: 'sin ninguna oración terminada en punto',
   menos_de_100_tokens: 'menos de 100 palabras en oraciones completas',
   oraciones_demasiado_largas: 'oraciones de más de 200 palabras',
+  cruce_prueba_congelada: 'ya está en la prueba congelada de comun_v1',
 };
 const CUTS = {
   tope_noticia: 'cortadas al tope de palabras por noticia',
@@ -40,22 +41,25 @@ function Summary({ summary }) {
   const standard = summary.estandar ?? {};
   const excluded = Object.entries(summary.excluidas ?? {}).filter(([, count]) => count);
   const cuts = Object.entries(summary.recortes ?? {}).filter(([, count]) => count);
+  const crosses = summary.cruces_comun ?? {};
   return (
     <>
       <div className="tiles">
         <div className="tile"><span className="label">Casos</span><b style={{ color: 'var(--color-acid)' }}>{summary.casos}</b><small>de {summary.candidatos} aprobados o corregidos</small></div>
         <div className="tile"><span className="label">Duplicados retirados</span><b>{summary.duplicados_retirados}</b><small>copias exactas del mismo texto</small></div>
         <div className="tile"><span className="label">Conflictos retirados</span><b style={{ color: summary.conflictos_retirados ? 'var(--color-false)' : undefined }}>{summary.conflictos_retirados}</b><small>mismo texto con etiquetas contrarias</small></div>
-        <div className="tile"><span className="label">Fuera por el estándar</span><b style={{ color: sum(summary.excluidas) ? 'var(--color-false)' : undefined }}>{sum(summary.excluidas)}</b><small>idioma, longitud u oraciones incompletas</small></div>
+        <div className="tile"><span className="label">Fuera por el estándar</span><b style={{ color: sum(summary.excluidas) ? 'var(--color-false)' : undefined }}>{sum(summary.excluidas)}</b><small>idioma, longitud, oraciones incompletas o prueba congelada</small></div>
         <div className="tile"><span className="label">Fragmentos</span><b>{summary.fragmentos ?? 0}</b><small>{standard.min_tokens ?? 100}–{standard.max_tokens_fragmento ?? 200} palabras, terminados en punto</small></div>
-        <div className="tile"><span className="label">Grupos</span><b>{summary.grupos}</b><small>{summary.grupos_con_varios} con varios casos (misma página o evento)</small></div>
+        <div className="tile"><span className="label">Grupos</span><b>{summary.grupos}</b><small>{summary.grupos_con_varios} con varios casos (misma página, evento o casi duplicado)</small></div>
       </div>
-      {(excluded.length > 0 || cuts.length > 0) && (
-        <ul className="muted" style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 14 }}>
-          {excluded.map(([key, count]) => <li key={key}>{count} fuera: {EXCLUDED[key] ?? key}</li>)}
-          {cuts.map(([key, count]) => <li key={key}>{count} {CUTS[key] ?? key}</li>)}
-        </ul>
-      )}
+      <ul className="muted" style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 14 }}>
+        {excluded.map(([key, count]) => <li key={key}>{count} fuera: {EXCLUDED[key] ?? key}</li>)}
+        {cuts.map(([key, count]) => <li key={key}>{count} {CUTS[key] ?? key}</li>)}
+        {summary.uniones_casi_duplicado > 0 && <li>{summary.uniones_casi_duplicado} unidas a otra por ser casi la misma noticia</li>}
+        {crosses.comprobado
+          ? <li>Comparadas con los {crosses.fragmentos_indice} fragmentos de comun_v1: {crosses.en_desarrollo_a_entrenamiento ?? 0} ya estaban en su desarrollo y van a entrenamiento</li>
+          : <li>No se pudo comparar con comun_v1 (falta datasets/comun_v1): revisa los cruces antes de entrenar</li>}
+      </ul>
       <div className="table-wrap" style={{ marginTop: 16 }}>
         <table className="data">
           <thead><tr><th>Partición</th><th>Falsas</th><th>Reales</th><th>Noticias</th><th>Fragmentos</th></tr></thead>
@@ -73,7 +77,7 @@ function Summary({ summary }) {
         </table>
       </div>
       <p className="label" style={{ margin: '12px 0 0' }}>
-        Cada grupo va entero a una partición · prueba ≈ {percent(summary.fraccion_prueba)} de los grupos
+        Cada grupo va entero a una partición · prueba ≈ {percent(summary.fraccion_prueba)} de las noticias de cada clase
         {standard.tope_noticia ? ` · máximo ${standard.tope_noticia} palabras por noticia` : ''}
       </p>
     </>

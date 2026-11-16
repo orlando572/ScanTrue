@@ -117,8 +117,8 @@ class DatasetSummary(BaseModel):
     conflictos_retirados: int = 0
     excluidas: dict[str, int] = Field(
         default_factory=dict,
-        description="Noticias fuera por el estándar: no_espanol, sin_fin_de_oracion, "
-                    "menos_de_100_tokens, oraciones_demasiado_largas.")
+        description="Noticias fuera: no_espanol, sin_fin_de_oracion, menos_de_100_tokens, "
+                    "oraciones_demasiado_largas, cruce_prueba_congelada.")
     recortes: dict[str, int] = Field(
         default_factory=dict,
         description="Noticias recortadas: tope_noticia, inicio_incompleto, final_incompleto, "
@@ -126,6 +126,12 @@ class DatasetSummary(BaseModel):
     filas_cambiadas_por_patron: dict[str, int] = Field(default_factory=dict)
     grupos: int = 0
     grupos_con_varios: int = 0
+    uniones_casi_duplicado: int = Field(
+        default=0, description="Grupos unidos por casi duplicado (tejas de 5 palabras).")
+    cruces_comun: dict = Field(
+        default_factory=dict,
+        description="Cruces con comun_v1: retirados por estar en su prueba congelada y "
+                    "enviados a entrenamiento por estar en su desarrollo.")
     por_etiqueta: dict[str, int] = Field(default_factory=dict)
     por_particion: dict[str, int] = Field(default_factory=dict)
     por_decision: dict[str, int] = Field(default_factory=dict)

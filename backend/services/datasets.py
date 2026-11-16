@@ -4,10 +4,15 @@ Reglas de calidad:
 - Solo entran casos aprobados o corregidos por el administrador.
 - Copias exactas (misma huella de texto): queda una; si sus etiquetas se contradicen,
   se retiran todas.
-- Copias de la misma página y casos del mismo evento forman un grupo, y cada grupo va
-  entero a entrenamiento o a prueba: nada relacionado cruza entre particiones.
-- La partición sale de la clave del grupo, así que un grupo cae en el mismo lado en
-  todas las versiones.
+- Copias de la misma página, casos del mismo evento y casi duplicados (tejas de 5
+  palabras, la regla de comun_v1) forman un grupo, y cada grupo va entero a entrenamiento
+  o a prueba: nada relacionado cruza entre particiones.
+- Cruce con comun_v1: una noticia que ya está en su prueba congelada se retira (si no,
+  la evaluación final dejaría de ser limpia); una que está en su desarrollo va siempre a
+  entrenamiento, para que la prueba del panel no repita lo que los modelos ya vieron.
+- La prueba se elige por clase (falsa/real), ordenando los grupos por un sorteo fijo que
+  sale de su clave: los mismos casos dan siempre la misma partición. La validación
+  interna no se guarda: la separa `datos_comunes/comun.py` al entrenar, como en comun_v1.
 - Cada noticia pasa por el estándar de `datos_comunes/estandar.py` (el de comun_v1):
   limpieza, solo español, tope de 400 tokens y fragmentos de 100–200 tokens hechos de
   oraciones completas, con peso 1/n. Cada elemento de la versión es un fragmento.
@@ -16,16 +21,32 @@ Reglas de calidad:
 from collections import Counter, defaultdict
 import csv
 from dataclasses import dataclass
+from functools import lru_cache
 from hashlib import sha256
 import io
+import logging
+from pathlib import Path
 from statistics import mean, median
 
 from backend.repositories.filters import public_url
 from backend.schemas.admin import DatasetItem, DatasetSummary
 from datos_comunes import estandar
+from datos_comunes.cruces import IndiceComun, parecidas, tejas
 from datos_comunes.grupos import UnionFind, fingerprint
 
 FUENTE = "panel"
+COMUN_V1 = Path(__file__).resolve().parents[2] / "datasets" / "comun_v1"
+logger = logging.getLogger(__name__)
+
+
+@lru_cache(maxsize=1)
+def comun_index() -> IndiceComun | None:
+    """Índice de comun_v1 (se carga una vez); None si la carpeta no está."""
+    try:
+        return IndiceComun.cargar(COMUN_V1)
+    except Exception:
+        logger.exception("No se pudo leer comun_v1 para buscar cruces")
+        return None
 
 EXPORT_COLUMNS = (
     "id", "particion", "etiqueta", "texto", "grupo", "decision", "dominio", "url",
@@ -91,9 +112,36 @@ def _candidate(row: dict) -> dict | None:
     }
 
 
-def _partition(group: str, test_fraction: float) -> str:
-    bucket = int(sha256(group.encode("utf-8")).hexdigest()[:8], 16) / 0xFFFFFFFF
-    return "prueba" if bucket < test_fraction else "entrenamiento"
+def _bucket(key: str) -> float:
+    """Sorteo fijo en [0, 1) a partir de la clave del grupo."""
+    return int(sha256(key.encode("utf-8")).hexdigest()[:8], 16) / 0x100000000
+
+
+def _test_groups(groups: dict[str, dict], test_fraction: float) -> set[str]:
+    """Grupos de prueba: ~`test_fraction` de las noticias de cada clase.
+
+    Como `comun.separar_interna`: se recorren los grupos de cada clase en orden de sorteo
+    y entra el que no pase la meta en más de medio grupo. Si una clase tiene al menos
+    1/fracción grupos y no entró ninguno (grupos grandes), entra el primero del sorteo.
+    """
+    strata: dict[str, list[str]] = defaultdict(list)
+    for key, info in groups.items():
+        if not info["forzado"]:
+            strata[info["clase"]].append(key)
+    chosen: set[str] = set()
+    for keys in strata.values():
+        keys.sort(key=lambda key: (_bucket(groups[key]["clave"]), key))
+        target = test_fraction * sum(groups[key]["n"] for key in keys)
+        total = 0
+        for key in keys:
+            size = groups[key]["n"]
+            if total + size / 2 > target:
+                continue
+            chosen.add(key)
+            total += size
+        if total == 0 and keys and len(keys) * test_fraction >= 1:
+            chosen.add(keys[0])
+    return chosen
 
 
 def _stats(values: list[int]) -> dict[str, float]:
@@ -103,7 +151,10 @@ def _stats(values: list[int]) -> dict[str, float]:
             "max": max(values)}
 
 
-def build_dataset(rows: list[dict], test_fraction: float = 0.2) -> DatasetBuild:
+def build_dataset(
+    rows: list[dict], test_fraction: float = 0.2, comun: IndiceComun | None = None,
+) -> DatasetBuild:
+    """`comun`: índice de comun_v1 para los cruces (None = no se comprueban)."""
     candidates = [item for item in (_candidate(row) for row in rows) if item]
 
     # 1. Copias exactas: se conserva la revisión más reciente (las filas llegan por fecha).
@@ -133,34 +184,71 @@ def build_dataset(rows: list[dict], test_fraction: float = 0.2) -> DatasetBuild:
         cuts.update(set(news.recortes))
         kept.append({**item, "noticia": news})
 
-    # 3. Grupos: misma página o mismo evento marcado por el administrador.
+    # 3. Cruces con comun_v1: fuera lo que está en su prueba congelada.
+    in_development = 0
+    if comun is not None:
+        still: list[dict] = []
+        for item in kept:
+            found = comun.cruces(item["texto"])
+            if any(cruce.congelada for cruce in found):
+                excluded["cruce_prueba_congelada"] += 1
+                continue
+            item["comun"] = sorted({cruce.grupo for cruce in found})
+            in_development += bool(found)
+            still.append(item)
+        kept = still
+
+    # 4. Grupos: misma página, mismo evento, casi duplicados o mismo grupo de comun_v1.
     union = UnionFind(len(kept))
     seen: dict[str, int] = {}
+    shingles = [tejas(item["texto"]) for item in kept]
+    near_pairs = 0
+    by_shingle: dict[int, list[int]] = defaultdict(list)
     for index, item in enumerate(kept):
         keys = [f"texto:{item['huella']}"]
         if item["url"]:
             keys.append(f"url:{item['url'].casefold().rstrip('/')}")
         if item["evento"]:
             keys.append(f"evento:{item['evento']}")
+        keys.extend(f"comun:{group}" for group in item.get("comun") or [])
         for key in keys:
             if key in seen:
                 union.union(index, seen[key])
             else:
                 seen[key] = index
+        others = {other for shingle in shingles[index] for other in by_shingle[shingle]}
+        for other in sorted(others):
+            if parecidas(shingles[index], shingles[other]):
+                if union.find(index) != union.find(other):
+                    near_pairs += 1
+                union.union(index, other)
+        for shingle in shingles[index]:
+            by_shingle[shingle].append(index)
     members: dict[int, list[int]] = defaultdict(list)
     for index in range(len(kept)):
         members[union.find(index)].append(index)
 
-    # 4. Cada grupo completo (con todos sus fragmentos) va a una sola partición.
-    items: list[DatasetItem] = []
-    partition_of: dict[str, str] = {}
+    groups: dict[str, dict] = {}
     for indexes in members.values():
-        group = "g_" + sha256(
+        key = "g_" + sha256(
             "|".join(sorted(kept[index]["huella"] for index in indexes)).encode("utf-8")
         ).hexdigest()[:12]
-        # La clave de reparto es la huella más pequeña: estable aunque el grupo crezca.
-        partition = _partition(min(kept[index]["huella"] for index in indexes), test_fraction)
-        for index in indexes:
+        groups[key] = {
+            "indices": indexes,
+            # La clave del sorteo es la huella más pequeña: estable aunque el grupo crezca.
+            "clave": min(kept[index]["huella"] for index in indexes),
+            "clase": Counter(kept[index]["etiqueta"] for index in indexes).most_common(1)[0][0],
+            "n": len(indexes),
+            "forzado": any(kept[index].get("comun") for index in indexes),
+        }
+    test = _test_groups(groups, test_fraction)
+
+    # 5. Cada grupo completo (con todos sus fragmentos) va a una sola partición.
+    items: list[DatasetItem] = []
+    partition_of: dict[str, str] = {}
+    for group, info in groups.items():
+        partition = "prueba" if group in test else "entrenamiento"
+        for index in info["indices"]:
             item = kept[index]
             news = item["noticia"]
             partition_of[item["analisis_id"]] = partition
@@ -194,6 +282,7 @@ def build_dataset(rows: list[dict], test_fraction: float = 0.2) -> DatasetBuild:
                             "fuente": FUENTE,
                             "hash_noticia": item["hash_texto"],
                             "recortes": news.recortes,
+                            "grupos_comun_v1": item.get("comun") or [],
                             "fragmento": fragment,
                         },
                         evidencia=item["evidencia"],
@@ -219,8 +308,15 @@ def build_dataset(rows: list[dict], test_fraction: float = 0.2) -> DatasetBuild:
         excluidas=dict(excluded),
         recortes=dict(cuts),
         filas_cambiadas_por_patron=dict(patterns),
-        grupos=len(members),
-        grupos_con_varios=sum(1 for indexes in members.values() if len(indexes) > 1),
+        grupos=len(groups),
+        grupos_con_varios=sum(1 for info in groups.values() if info["n"] > 1),
+        uniones_casi_duplicado=near_pairs,
+        cruces_comun={
+            "comprobado": comun is not None,
+            "fragmentos_indice": len(comun) if comun is not None else 0,
+            "retirados_prueba_congelada": excluded.get("cruce_prueba_congelada", 0),
+            "en_desarrollo_a_entrenamiento": in_development,
+        },
         por_etiqueta=dict(Counter(item["etiqueta"] for item in kept)),
         por_particion=dict(Counter(partition_of.values())),
         por_decision=dict(Counter(item["decision"] for item in kept)),

@@ -10,6 +10,7 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
+from hashlib import sha256
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -28,6 +29,7 @@ from backend.schemas.public import PublicAnalysis, PublicAnalysisDetail, PublicA
 from backend.services.analysis import clean_fragments
 from backend.schemas.admin import DatasetItem
 from backend.services.datasets import build_dataset, export_csv
+from datos_comunes.cruces import IndiceComun
 from backend.services.model_versions import ModelVersionError, ModelVersionManager
 
 NOW = datetime(2026, 11, 12, 12, 0, tzinfo=timezone.utc)
@@ -272,12 +274,15 @@ def reviewed(text, label, *, url=None, event=None, decision="aprobado", fragment
 
 
 def news(topic, sentences=12, words=12):
-    """Noticia en español de `sentences` oraciones de `words` palabras sobre `topic`."""
-    body = " ".join(
+    """Noticia en español de `sentences` oraciones de `words` palabras sobre `topic`.
+
+    Las palabras de relleno llevan una marca del tema, así dos temas no son casi duplicados.
+    """
+    mark = sha256(topic.encode("utf-8")).hexdigest()[:6]
+    return " ".join(
         f"El informe sobre {topic} dice que la medida {index} " + " ".join(
-            f"dato{index}x{word}" for word in range(words - 9)) + " para todos."
+            f"d{mark}{index}x{word}" for word in range(words - 9)) + " para todos."
         for index in range(sentences))
-    return body
 
 
 class DatasetTests(unittest.TestCase):
@@ -349,6 +354,46 @@ class DatasetTests(unittest.TestCase):
                                              "sin_fin_de_oracion": 1})
         self.assertEqual(summary.casos, 1)
         self.assertEqual(summary.recortes, {"inicio_incompleto": 1, "final_incompleto": 1})
+
+    def test_casi_duplicados_van_al_mismo_grupo(self):
+        base = news("la represa", sentences=10)
+        copy = base.replace("medida 3", "medida tres")  # otro medio, una palabra cambiada
+        build = build_dataset([reviewed(base, "falsa", url="https://a.pe/1"),
+                               reviewed(copy, "falsa", url="https://b.pe/2"),
+                               reviewed(news("otra cosa"), "real")])
+        self.assertEqual(build.summary.uniones_casi_duplicado, 1)
+        self.assertEqual(build.summary.grupos, 2)
+
+    def test_cruces_con_comun_v1(self):
+        frozen, development = news("la prueba congelada"), news("el desarrollo")
+        index = IndiceComun([
+            {"archivo": "fragmentos_prueba_congelada.csv", "grupo": "gc", "pliegue": "congelada",
+             "texto": frozen},
+            # comun_v1 guarda fragmentos: basta con que la noticia del panel contenga uno.
+            {"archivo": "fragmentos_desarrollo.csv", "grupo": "gd", "pliegue": "F1",
+             "texto": development[: len(development) // 2]},
+        ])
+        rows = [reviewed(frozen, "falsa"), reviewed(development, "real")]
+        rows += [reviewed(news(f"tema {index}"), "real") for index in range(40)]
+        build = build_dataset(rows, 0.5, index)
+        self.assertEqual(build.summary.excluidas.get("cruce_prueba_congelada"), 1)
+        self.assertEqual(build.summary.cruces_comun["en_desarrollo_a_entrenamiento"], 1)
+        crossed = [item for item in build.items if "desarrollo" in item.texto]
+        self.assertTrue(crossed)
+        self.assertEqual({item.particion for item in crossed}, {"entrenamiento"})
+        self.assertEqual(crossed[0].procedencia["grupos_comun_v1"], ["gd"])
+        self.assertFalse(any("congelada" in item.texto for item in build.items))
+        self.assertTrue(build_dataset(rows, 0.5).summary.cruces_comun["comprobado"] is False)
+
+    def test_la_prueba_tiene_las_dos_clases(self):
+        rows = [reviewed(news(f"falsa {index}"), "falsa") for index in range(5)]
+        rows += [reviewed(news(f"real {index}"), "real") for index in range(30)]
+        split = build_dataset(rows, 0.2).summary.por_particion_etiqueta["prueba"]
+        self.assertEqual(split["falsa"], 1)
+        self.assertEqual(split["real"], 6)
+        # Con menos de 1/fracción grupos en una clase, esa clase no se fuerza a prueba.
+        few = build_dataset(rows[:2] + rows[5:], 0.2).summary.por_particion_etiqueta["prueba"]
+        self.assertEqual(few["falsa"], 0)
 
     def test_la_particion_es_estable_y_respeta_la_fraccion(self):
         rows = [reviewed(news(f"el tema {index}"), "real") for index in range(400)]
