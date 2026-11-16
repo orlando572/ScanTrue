@@ -20,6 +20,8 @@ from backend.schemas.admin import (
     AdminIdentity,
     AdminSummary,
     CalibrationRequest,
+    CombinedSetCreate,
+    CombinedSetPreview,
     CaseStandardPreview,
     DatasetCreate,
     DatasetDetail,
@@ -48,6 +50,7 @@ from backend.services.model_registry import (
     MAX_ZIP_BYTES, TYPES, ModelDeploymentManager, ModelVersionError, calibration_for, default_weights,
 )
 from backend.services.calibration import CalibrationError, CalibrationManager
+from backend.services.combined_sets import CombinedSetError, CombinedSetManager, PanelSource
 from backend.services.training import OUTPUT_DIR, TrainingError, TrainingManager
 
 
@@ -315,6 +318,91 @@ def delete_dataset(
     return {"eliminado": True}
 
 
+# ── Conjuntos combinados ────────────────────────────────────────────
+# comun_v1 (sin cambiarlo) + versiones del panel, con balanceo 50/50 opcional de lo añadido. Se
+# guardan en datasets/conjuntos/ y se eligen como fuente en Entrenamiento.
+
+
+def _sets(request: Request) -> CombinedSetManager:
+    return _training(request).sets
+
+
+def _set_error(error: CombinedSetError) -> HTTPException:
+    return HTTPException(status_code=error.status_code,
+                         detail={"codigo": error.code, "mensaje": str(error)})
+
+
+def _panel_sources(repository: SupabaseRepository, ids: list[UUID]) -> list[PanelSource]:
+    sources = []
+    for version_id in dict.fromkeys(ids):  # sin repetir, en el orden elegido
+        version = _dataset(repository, version_id)
+        items, _ = repository.dataset_items(version.id)
+        try:
+            files = standard_csvs(items)
+        except LegacyVersionError as error:
+            raise HTTPException(status_code=409, detail={
+                "codigo": "version_anterior_al_estandar",
+                "mensaje": f"«{version.nombre}» se creó antes del estándar de fragmentos: crea una versión nueva.",
+            }) from error
+        sources.append(PanelSource(id=str(version.id), nombre=version.nombre,
+                                   fecha=version.fecha.isoformat() if version.fecha else None, files=files))
+    return sources
+
+
+@router.get("/conjuntos")
+def list_sets(request: Request) -> list[dict]:
+    return _sets(request).list()
+
+
+@router.post("/conjuntos/vista-previa")
+def preview_set(
+    payload: CombinedSetPreview,
+    request: Request,
+    repository: SupabaseRepository = Depends(service_repository),
+) -> dict:
+    """Qué saldría del conjunto, sin guardarlo."""
+    sources = _panel_sources(repository, payload.versiones)
+    try:
+        return _sets(request).preview(sources, payload.incluir_comun, payload.balanceo,
+                                      comun_index() if payload.incluir_comun else None)
+    except CombinedSetError as error:
+        raise _set_error(error) from error
+
+
+@router.post("/conjuntos", status_code=201)
+def create_set(
+    payload: CombinedSetCreate,
+    request: Request,
+    user=Depends(admin_user),
+    repository: SupabaseRepository = Depends(service_repository),
+) -> dict:
+    sources = _panel_sources(repository, payload.versiones)
+    try:
+        return _sets(request).create(payload.nombre, payload.descripcion, sources, payload.incluir_comun,
+                                     payload.balanceo, comun_index() if payload.incluir_comun else None,
+                                     user.email)
+    except CombinedSetError as error:
+        raise _set_error(error) from error
+
+
+@router.get("/conjuntos/{version}")
+def get_set(version: str, request: Request) -> dict:
+    try:
+        return _sets(request).get(version)
+    except CombinedSetError as error:
+        raise _set_error(error) from error
+
+
+@router.delete("/conjuntos/{version}")
+def delete_set(version: str, request: Request) -> dict[str, bool]:
+    """Borra el conjunto. Los modelos ya entrenados con él no cambian: guardan su procedencia."""
+    try:
+        _sets(request).delete(version)
+    except CombinedSetError as error:
+        raise _set_error(error) from error
+    return {"eliminado": True}
+
+
 # ── Modelos desplegados ─────────────────────────────────────────────
 
 
@@ -548,6 +636,7 @@ def training_options(
     comun = manager.comun_source()
     if comun is not None:
         sources.append(comun)
+    sources.extend(manager.set_sources())
     try:
         sources.extend(manager.panel_sources(repository.list_dataset_versions()))
     except SupabaseDataError:

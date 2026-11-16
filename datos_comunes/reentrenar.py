@@ -73,9 +73,14 @@ def archivos_del_conjunto(conjunto: Path) -> set[str]:
 
 
 def brazos_disponibles(brazos: list[str], conjunto: Path) -> tuple[list[str], list[str]]:
-    """Separa los brazos de la receta en los que el conjunto trae y los que no (se omiten)."""
+    """Separa los brazos de la receta en los que el conjunto trae y los que no (se omiten).
+
+    Un conjunto combinado trae `extra_panel.csv`: el brazo «panel» se usa siempre, aunque la receta
+    no lo pida (son las noticias del panel que se suman a comun_v1)."""
     archivos = archivos_del_conjunto(conjunto)
     usados = [b for b in brazos if BRAZOS.get(b) in archivos]
+    if BRAZOS["panel"] in archivos and "panel" not in usados:
+        usados.append("panel")
     return usados, [b for b in brazos if b not in usados]
 
 

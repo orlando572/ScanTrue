@@ -7,6 +7,7 @@ En **Administración → Entrenamiento** (`/admin/entrenamiento`) se reentrena u
 1. **Receta:** la `config.json` de la corrida que dejó el modelo desplegado de ese tipo (hiperparámetros, brazo de ablación y épocas fijas). Si el desplegado no la trae (por ejemplo, uno importado) o el tipo está retirado, se usa la de producción: B6 (`datasets/bilstm_produccion/modelo/config.json`) o BETO M3b (`datasets/mbert_produccion/modelo/config.json`). En el panel se pueden cambiar las épocas y la semilla.
 2. **Datos:** cualquiera de nuestros conjuntos:
    - `datasets/comun_v1`: todo su desarrollo, más los brazos que pida la receta. Su prueba congelada no se abre nunca, así que el modelo sale sin métricas.
+   - **Un conjunto combinado de Datasets** ([CONJUNTOS_COMBINADOS.md](CONJUNTOS_COMBINADOS.md)): `comun_v1` sin cambios más las noticias del panel, que solo se suman al entrenamiento (brazo `panel`, además de los de la receta). Se evalúa con la prueba de sus versiones y se calibra con M3b como B6. Usa su propia caché de fastText.
    - **Una versión del panel de Datasets** (creada con el estándar de fragmentos). Su partición de entrenamiento se usa como desarrollo y su partición de prueba sirve para evaluar al terminar (`metricas.json`, por noticia). Los brazos de la receta se omiten porque la versión no los trae, y queda anotado. Se rechazan las versiones anteriores al estándar y las que tienen una sola clase.
 3. **Entrena desde cero:** el BiLSTM parte de fastText y BETO/mBERT de su modelo base. Si el modelo base no está en `datasets/modelos_base/`, se descarga primero (~440 MB, una vez). Usa todo el desarrollo (`--pliegue todo`), las épocas de la receta y una semilla.
 4. **Guarda una versión nueva** en `datasets/entrenamientos/<tipo>/<versión>/` (fuera de Git), con:
@@ -53,7 +54,7 @@ Opciones: `--epocas`, `--semilla`, `--dispositivo cuda|cpu`, `--pliegues` (prepa
 | Ruta | Qué hace |
 | --- | --- |
 | `GET /admin/entrenamientos/opciones` | Receta de cada tipo, fuentes (`comun_v1` y versiones del panel, con si son aptas), si hay CUDA y la carpeta de salida |
-| `POST /admin/entrenamientos` | `{"tipo", "fuente": {"tipo": "comun_v1"} \| {"tipo": "panel", "version_id"}, "epocas"?, "semilla"?, "dispositivo"?: "cuda" \| "cpu", "pliegues"?: bool (por defecto `true`, como la casilla del panel)}` → 202. 409 si ya hay uno en curso |
+| `POST /admin/entrenamientos` | `{"tipo", "fuente": {"tipo": "comun_v1"} \| {"tipo": "panel", "version_id"} \| {"tipo": "conjunto", "version"}, "epocas"?, "semilla"?, "dispositivo"?: "cuda" \| "cpu", "pliegues"?: bool (por defecto `true`, como la casilla del panel)}` → 202. 409 si ya hay uno en curso |
 | `GET /admin/entrenamientos` | Entrenamiento activo e historial |
 | `GET /admin/entrenamientos/{id}` | Detalle con las últimas líneas del registro |
 | `POST /admin/entrenamientos/{id}/cancelar` | Cancela uno en curso |

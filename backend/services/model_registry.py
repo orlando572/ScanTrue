@@ -51,7 +51,7 @@ TYPE_NAMES = {"bilstm": "BiLSTM", "mbert": "BETO / mBERT"}
 BASE_NAMES = {"beto": "BETO", "mbert": "mBERT"}
 HISTORY_LIMIT = 50
 # Carpetas de datasets/ que no tienen modelos (o son copias de seguridad) y no se recorren.
-SKIP_DIRS = {".venv", "node_modules", "embeddings", "fuentes", "unificado", "comun_v1",
+SKIP_DIRS = {".venv", "node_modules", "embeddings", "fuentes", "unificado", "comun_v1", "conjuntos",
              "modelos_base", "archivo_octubre", "__pycache__"}
 MAX_ZIP_BYTES = 2 * 1024 ** 3
 MAX_UNZIPPED_BYTES = 4 * 1024 ** 3

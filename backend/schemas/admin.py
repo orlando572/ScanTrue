@@ -297,14 +297,32 @@ class RetireRequest(BaseModel):
 class TrainingSource(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    tipo: Literal["comun_v1", "panel"]
+    tipo: Literal["comun_v1", "panel", "conjunto"]
     version_id: UUID | None = Field(default=None, description="Versión del panel (solo con tipo panel).")
+    version: str | None = Field(default=None, max_length=200,
+                                description="Conjunto combinado de Datasets (solo con tipo conjunto).")
 
     @model_validator(mode="after")
     def panel_needs_version(self):
         if self.tipo == "panel" and self.version_id is None:
             raise ValueError("Elige la versión del panel")
+        if self.tipo == "conjunto" and not self.version:
+            raise ValueError("Elige el conjunto combinado")
         return self
+
+
+class CombinedSetPreview(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    incluir_comun: bool = Field(default=True, description="Sumar las noticias a comun_v1 (sin cambiarlo).")
+    versiones: list[UUID] = Field(min_length=1, max_length=20, description="Versiones del panel que se añaden.")
+    balanceo: Literal["ninguno", "50_50"] = Field(
+        default="ninguno", description="50_50: retira noticias enteras de la clase que sobra en lo añadido.")
+
+
+class CombinedSetCreate(CombinedSetPreview):
+    nombre: str = Field(min_length=3, max_length=80)
+    descripcion: str | None = Field(default=None, max_length=500)
 
 
 class TrainingRequest(BaseModel):

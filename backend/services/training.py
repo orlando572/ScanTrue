@@ -1,7 +1,8 @@
 """Entrenamientos lanzados desde el panel (Administración → Entrenamiento).
 
 Reentrena un BiLSTM o un BETO/mBERT desde cero con la receta del modelo desplegado de su tipo
-y el conjunto que se elija: `datasets/comun_v1/` o una versión del panel de datasets. Lanza
+y el conjunto que se elija: `datasets/comun_v1/`, una versión del panel de datasets o un conjunto
+combinado (`datasets/conjuntos/`, ver backend/services/combined_sets.py). Lanza
 `bilstm/entrenar.py reentrenar` o `mBERT/entrenar.py reentrenar` en otro proceso y sigue su
 progreso leyendo su registro.
 
@@ -317,8 +318,10 @@ class TrainingManager:
         python: str | None = None,
         launcher: Callable | None = None,
         cuda: Callable[[], bool] | None = None,
+        sets=None,
     ) -> None:
         self.jobs_dir = Path(jobs_dir)
+        self._sets = sets  # CombinedSetManager (conjuntos combinados); se crea al usarlo
         self.output_dir = Path(output_dir)
         self.comun_dir = Path(comun_dir)
         venv = ROOT / "bilstm" / ".venv" / "bin" / "python"
@@ -368,6 +371,37 @@ class TrainingManager:
             "brazos": sorted(name[len("ablacion_"):-4] for name in files if name.startswith("ablacion_")),
             "con_prueba": False,
         }
+
+    @property
+    def sets(self):
+        if self._sets is None:
+            from backend.services.combined_sets import CombinedSetManager  # evita el import circular
+
+            self._sets = CombinedSetManager()
+        return self._sets
+
+    def set_sources(self) -> list[dict]:
+        """Conjuntos combinados de Datasets (comun_v1 + versiones del panel)."""
+        sources = []
+        for item in self.sets.list():
+            summary = item.get("resumen") or {}
+            total = summary.get("total_entrenamiento") or {}
+            test = summary.get("prueba") or {}
+            sources.append({
+                "tipo": "conjunto",
+                "version": item["version"],
+                "nombre": item["nombre"],
+                "fecha": item.get("fecha"),
+                "fragmentos": total.get("fragmentos"),
+                "fragmentos_prueba": test.get("fragmentos"),
+                "incluye_comun": item["incluye_comun"],
+                "balanceo": item.get("balanceo"),
+                "apta": item["apto"],
+                "motivo": item["motivo"],
+                "con_prueba": bool(test.get("fragmentos")),
+                "plegable": summary.get("plegable", True),
+            })
+        return sources
 
     @staticmethod
     def panel_sources(versions: list) -> list[dict]:
@@ -612,8 +646,31 @@ class TrainingManager:
                     "3 grupos de noticias falsas y 3 de reales.", 422)
             prefix = f"panel-{_slug(version.get('nombre') or 'dataset')}"
             fuente = {"tipo": "panel", "nombre": version.get("nombre"), "version_id": str(version.get("id"))}
+        elif source.get("tipo") == "conjunto":
+            from backend.services.combined_sets import CombinedSetError
+
+            try:
+                info = self.sets.get(str(source.get("version") or ""))
+                conjunto = self.sets.path(info["version"])
+            except CombinedSetError as error:
+                raise TrainingError(error.code, str(error), error.status_code) from error
+            summary = info.get("resumen") or {}
+            if folds and not summary.get("plegable", True):
+                raise TrainingError(
+                    "muy_pequena_para_calibrar",
+                    "El conjunto es demasiado pequeño para preparar la calibración: hacen falta al menos "
+                    "3 grupos de noticias falsas y 3 de reales.", 422)
+            # Caché fastText propia: la de comun_v1 no tiene las palabras del panel.
+            cache = folder / "cache_fasttext.npz"
+            total, test = summary.get("total_entrenamiento") or {}, summary.get("prueba") or {}
+            datos = {"entrenamiento": total.get("fragmentos"), "prueba": test.get("fragmentos") or 0,
+                     "reales": total.get("reales"), "falsas": total.get("falsas"),
+                     "panel": (summary.get("panel_despues") or {}).get("fragmentos"),
+                     "balanceo": summary.get("balanceo"), "incluye_comun": info["incluye_comun"]}
+            prefix = f"conjunto-{_slug(info.get('nombre') or info['version'])}"
+            fuente = {"tipo": "conjunto", "nombre": info.get("nombre"), "version": info["version"]}
         else:
-            raise TrainingError("fuente_desconocida", "Elige comun_v1 o una versión del panel.", 422)
+            raise TrainingError("fuente_desconocida", "Elige comun_v1, una versión del panel o un conjunto.", 422)
         version_name = f"{prefix}_{configuration}_{stamp:%Y%m%d}_{token}"
         job = {
             "id": job_id, "tipo": tipo, "fuente": fuente,
