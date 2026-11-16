@@ -77,6 +77,9 @@ export function textSnippet(text) {
 
 // Lectura complementaria de P05 y P08: posición de cada modelo en el espectro,
 // acuerdo entre modelos y qué se leyó (página de origen, palabras y fragmento del texto).
+// Nota bajo el resultado, en lenguaje cotidiano (la `nota` de la API es técnica y no se muestra).
+export const RESULT_NOTE = 'Es una orientación basada en cómo está escrito el texto. No comprueba si lo que dice la noticia es cierto.';
+
 export function presentInsights(result, text = null, url = null) {
   const { models } = presentBreakdown(result);
   const available = models.filter(({ value }) => value !== null);
@@ -105,6 +108,6 @@ export function presentInsights(result, text = null, url = null) {
     markers: available.map(({ key, name, value }) => ({ key, name, value })),
     consensus,
     reading,
-    note: typeof result?.nota === 'string' && result.nota.trim() ? result.nota.trim() : null,
+    note: available.length > 0 ? RESULT_NOTE : null,
   };
 }
