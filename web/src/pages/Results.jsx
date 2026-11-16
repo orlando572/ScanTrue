@@ -51,10 +51,6 @@ export default function Results() {
       <header className="page-head">
         <span className="label label--accent">Registro público</span>
         <h1 className="display h-page" style={{ margin: '8px 0 10px' }}>Resultados</h1>
-        <p className="muted" style={{ margin: 0, maxWidth: 680 }}>
-          Todos los fragmentos analizados con ScanTrue y lo que respondió cada modelo. No se muestra quién
-          hizo cada análisis. Las salidas son una orientación: no verifican los hechos.
-        </p>
       </header>
 
       <Filters filters={filters} onChange={change} domains={summary.data?.dominios ?? []} />

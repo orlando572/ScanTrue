@@ -84,11 +84,11 @@ export default function HistoryDetailScreen({ id, onBack, onBreakdown, onLoaded,
     {status === 'error' && <div className="mt-6" role="alert"><p className="text-sm leading-5 text-muted">No pudimos abrir este análisis.</p><button type="button" className="secondary-button mt-5" onClick={load}>Intentar de nuevo</button></div>}
 
     {shown && <>
-      <span className="hud-code hud-code--cyan mt-5 mb-1.5" aria-hidden="true">Texto archivado</span>
+      <span className="hud-code hud-code--accent mt-5 mb-1.5" aria-hidden="true">Texto archivado</span>
       <div className="selection-preview max-h-[220px] overflow-y-auto whitespace-pre-wrap break-words text-sm leading-5" tabIndex="0" aria-label="Texto analizado">{shown.text ?? 'Texto no disponible'}</div>
       <div className="result-stack mt-4">
         <ResultGaugePanel level={shown.level} percentage={shown.percentage} />
-        <ResultInsights result={item} level={shown.level} text={shown.text} url={item.url} showText={false} />
+        <ResultInsights result={item} level={shown.level} text={shown.text} url={item.url} showText={false} fullUrl />
         {shown.hasBreakdown && <button type="button" className="result-detail" onClick={() => onBreakdown(item)} disabled={deleting}>
           <span>Ver desglose por modelo</span>
           <ChevronIcon />
@@ -98,7 +98,7 @@ export default function HistoryDetailScreen({ id, onBack, onBreakdown, onLoaded,
       {!confirming ? <button ref={deleteButton} type="button" className="secondary-button delete-button mt-7" onClick={() => setConfirming(true)}>Eliminar análisis</button>
         : <div className="delete-confirmation hud-panel mt-7" role="dialog" aria-labelledby="delete-title" onKeyDown={(event) => { if (event.key === 'Escape') cancelDelete(); }}>
           <div className="hazard-band" aria-hidden="true" />
-          <span className="hud-code hud-code--magenta" aria-hidden="true">Orden de borrado · irreversible</span>
+          <span className="hud-code hud-code--coral" aria-hidden="true">Orden de borrado · irreversible</span>
           <h2 id="delete-title" className="screen-title mt-1">¿Eliminar este análisis?</h2>
           {deleteError && <p className="hud-alert mt-3 text-sm" role="alert">{deleteError}</p>}
           <div className="mt-5 flex gap-3">

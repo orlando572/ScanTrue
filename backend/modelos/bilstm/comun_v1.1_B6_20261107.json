@@ -1,0 +1,10 @@
+{
+  "tipo": "bilstm",
+  "version": "comun_v1.1_B6_20261107",
+  "nombre": "BiLSTM B6",
+  "fecha": "2026-11-07",
+  "notas": "Entrenado con el conjunto común v1.1 y calibrado junto a BETO M3b (combinación 20/80).",
+  "predeterminado": true,
+  "contrato": "datasets/bilstm_produccion/modelo/contrato.json",
+  "metricas": "backend/metrics/evaluaciones.json"
+}

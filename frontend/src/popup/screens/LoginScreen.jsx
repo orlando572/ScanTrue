@@ -48,7 +48,7 @@ export default function LoginScreen({ onBack, onRegister, onComplete }) {
     <ScreenHeader title="Iniciar sesión" titleId="login-title" backLabel="Volver a cuenta" onBack={onBack} />
     <form className="mt-6 flex flex-1 flex-col" noValidate onSubmit={submit}>
       <div className="hud-panel">
-      <span className="hud-code hud-code--cyan mb-4" aria-hidden="true">Terminal de autenticación</span>
+      <span className="hud-code hud-code--accent mb-4" aria-hidden="true">Terminal de autenticación</span>
       <div>
         <label className="hud-label" htmlFor="login-email">Correo electrónico</label>
         <input

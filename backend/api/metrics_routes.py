@@ -24,7 +24,10 @@ _catalogs = {
 async def get_metrics(
     request: Request, modelo: Literal["bilstm", "mbert"] = "bilstm"
 ) -> MetricsResponse:
-    """Devuelve las evaluaciones publicadas de la versión activa de cada modelo."""
+    """Evaluaciones publicadas del modelo desplegado de ese tipo.
+
+    Si no hay ninguno desplegado o no tiene métricas, las de producción de siempre.
+    """
     versions = getattr(request.app.state, "model_versions", None)
     active = versions.active_metrics(modelo) if versions is not None else None
     return active or _catalogs[modelo]

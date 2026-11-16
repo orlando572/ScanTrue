@@ -44,6 +44,8 @@ const TABS = [
   { to: '/admin', label: 'Panel', end: true },
   { to: '/admin/casos', label: 'Casos' },
   { to: '/admin/datasets', label: 'Datasets' },
+  { to: '/admin/entrenamiento', label: 'Entrenamiento' },
+  { to: '/admin/calibracion', label: 'Calibración' },
   { to: '/admin/modelos', label: 'Modelos' },
 ];
 

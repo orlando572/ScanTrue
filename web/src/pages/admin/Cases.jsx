@@ -6,7 +6,7 @@ import { Empty, ErrorState, Loader } from '../../components/ui.jsx';
 import { adminApi, query } from '../../lib/api.js';
 import { activeCount, emptyFilters, readFilters, toApiQuery, writeFilters } from '../../lib/filters.js';
 import { useLoad } from '../../lib/hooks.js';
-import { formatDate, presentAnalysis, presentTracking } from '../../lib/presentation.js';
+import { CASE_CUTS, DATASET_EXCLUDED, formatDate, presentAnalysis, presentTracking } from '../../lib/presentation.js';
 import { ModelPanel, WebPanel } from '../ResultDetail.jsx';
 
 const PAGE = 20;
@@ -70,6 +70,36 @@ function VerificationAdmin({ verification, tracking, busy, error, onRetry }) {
         </button>
       )}
       {error && <p className="alert" style={{ margin: '10px 0 0' }} role="alert">{error.message}</p>}
+    </div>
+  );
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const words = (count) => `${count} palabra${count === 1 ? '' : 's'}`;
+
+function list(values) {
+  return values.length < 2 ? values.join('') : `${values.slice(0, -1).join(', ')} y ${values.at(-1)}`;
+}
+
+// Cómo entraría el caso a una versión de dataset si se aprueba o corrige (mismo estándar).
+// Es solo un aviso: si no carga, no aparece y la revisión sigue igual.
+function StandardPreview({ id }) {
+  const { data } = useLoad((signal) => adminApi(`/admin/casos/${id}/estandar`, { signal }), [id]);
+  if (!data) return null;
+  const cuts = data.recortes.map((cut) => CASE_CUTS[cut]).filter(Boolean);
+  return (
+    <div className={`alert ${data.entra ? 'alert--info' : ''}`} style={{ margin: '0 0 16px' }} role="note">
+      {data.entra ? (
+        <>
+          <strong>Al dataset entraría como {data.fragmentos.length === 1 ? '1 fragmento' : `${data.fragmentos.length} fragmentos`}</strong>
+          {' '}({list(data.fragmentos.map(words))}).
+          {data.cruce_comun === 'desarrollo' && ' Ya está en el desarrollo de comun_v1: irá siempre a entrenamiento.'}
+        </>
+      ) : (
+        <><strong>Quedaría fuera del dataset:</strong> {DATASET_EXCLUDED[data.motivo] ?? data.motivo}. Puedes descartarlo.</>
+      )}
+      {data.entra && cuts.length > 0 && <span className="muted" style={{ display: 'block', marginTop: 4 }}>{cuts.join(' ')}</span>}
+      {!data.comprobado_comun && <span className="muted" style={{ display: 'block', marginTop: 4 }}>No se pudo comparar con comun_v1.</span>}
     </div>
   );
 }
@@ -180,6 +210,7 @@ function CaseDetail({ id, onChange, onDecided }) {
             ? <>El resultado combinado apunta a <strong style={{ color: 'var(--color-ink)' }}>{model}</strong>. Elige la etiqueta correcta: si coincide se aprueba; si no, se corrige.</>
             : 'Este caso no tiene resultado combinado: indica la etiqueta correcta o descártalo.'}
         </p>
+        <StandardPreview id={id} />
         <div className="decide">
           <button type="button" className="btn btn--tone tone-very-high" disabled={action.busy} onClick={() => decide('falsa')}>
             Falsa <kbd>F</kbd>
@@ -244,9 +275,11 @@ export default function Cases() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = readFilters(searchParams, 'admin');
   const key = writeFilters(filters, 'admin').toString();
+  // ?caso=<id> abre ese caso aunque no esté en la primera página (enlaces desde Datasets).
+  const linked = UUID.test(searchParams.get('caso') ?? '') ? searchParams.get('caso') : null;
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(null);
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(linked);
   const [more, setMore] = useState({ loading: false, error: null });
   const itemsRef = useRef(items);
   itemsRef.current = items;
@@ -261,7 +294,10 @@ export default function Cases() {
     if (!first.data) return;
     setItems(first.data.elementos);
     setTotal(first.data.total);
-    setSelected((current) => (first.data.elementos.some((item) => item.id === current) ? current : first.data.elementos[0]?.id ?? null));
+    setSelected((current) => (
+      current && (current === linked || first.data.elementos.some((item) => item.id === current))
+        ? current
+        : first.data.elementos[0]?.id ?? null));
     setMore({ loading: false, error: null });
   }, [first.data]);
 
@@ -324,7 +360,7 @@ export default function Cases() {
 
       {first.error ? <ErrorState error={first.error} onRetry={first.reload} />
         : first.loading ? <Loader code="Recuperando casos" label="Cargando casos" />
-          : items.length === 0 ? (
+          : items.length === 0 && !selected ? (
             <Empty title={filtered ? 'Ningún caso coincide' : 'Todavía no hay casos'}>
               {filtered
                 ? <button type="button" className="btn btn--ghost" onClick={() => change(emptyFilters('admin'))}>Limpiar filtros</button>

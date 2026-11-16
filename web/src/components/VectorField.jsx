@@ -13,7 +13,7 @@ const PULSE_MS = 1500;
 const PULSE_RADIUS = 460;
 
 function makeNodes(width, height) {
-  const count = Math.max(28, Math.min(90, Math.round((width * height) / 21000)));
+  const count = Math.max(44, Math.min(130, Math.round((width * height) / 13000)));
   return Array.from({ length: count }, () => ({
     x: Math.random() * width,
     y: Math.random() * height,
@@ -22,7 +22,7 @@ function makeNodes(width, height) {
     kx: 0,
     ky: 0,
     color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
-    size: Math.random() < .2 ? 3 : 2,
+    size: Math.random() < .25 ? 4 : 3,
     glow: 0,
   }));
 }
@@ -166,7 +166,7 @@ export default function VectorField({ dim = false }) {
           const distance = Math.hypot(nodes[a].x - nodes[b].x, nodes[a].y - nodes[b].y);
           if (distance < LINK) {
             const lit = Math.max(nodes[a].glow, nodes[b].glow);
-            context.strokeStyle = `rgba(${lit > .25 ? ACID : nodes[a].color},${((1 - distance / LINK) * (.2 + lit * .5)).toFixed(3)})`;
+            context.strokeStyle = `rgba(${lit > .25 ? ACID : nodes[a].color},${((1 - distance / LINK) * (.32 + lit * .5)).toFixed(3)})`;
             context.beginPath();
             context.moveTo(nodes[a].x, nodes[a].y);
             context.lineTo(nodes[b].x, nodes[b].y);
@@ -186,7 +186,7 @@ export default function VectorField({ dim = false }) {
           }
         }
         const size = node.size + node.glow * 2;
-        context.fillStyle = `rgba(${node.glow > .25 ? ACID : node.color},${(.55 + node.glow * .45).toFixed(3)})`;
+        context.fillStyle = `rgba(${node.glow > .25 ? ACID : node.color},${(.8 + node.glow * .2).toFixed(3)})`;
         context.fillRect(node.x - size / 2, node.y - size / 2, size, size);
       });
       if (pointer.active) drawReticle(now);
@@ -243,7 +243,7 @@ export default function VectorField({ dim = false }) {
     <canvas
       ref={canvasRef}
       className="vector-field"
-      style={{ opacity: dim ? .5 : 1, transition: 'opacity .6s' }}
+      style={{ opacity: dim ? .6 : 1, transition: 'opacity .6s' }}
       aria-hidden="true"
     />
   );

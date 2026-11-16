@@ -33,7 +33,8 @@ from backend.services.identity import (
     SupabaseAuthUnavailable,
 )
 from backend.services.llm_status import LlmProbe
-from backend.services.model_versions import ModelVersionManager
+from backend.services.model_registry import ModelDeploymentManager
+from backend.services.training import TrainingManager
 from backend.services.verification.case import build_case_verifier
 from backend.services.verification.worker import VerificationWorker
 
@@ -84,13 +85,15 @@ async def lifespan(app: FastAPI):
                 verification_task = asyncio.create_task(worker.run())
         else:
             logger.error("VERIFICATION_ENABLED requiere SUPABASE_SECRET_KEY; la cola no arranca")
-    # La versión activa de los modelos se carga una vez (backend/despliegues/); BETO
-    # puede faltar sin detener el servicio. El panel puede cambiarla sin reiniciar.
+    # Los modelos desplegados (uno por tipo, backend/services/model_registry.py) se cargan
+    # una vez; si uno falla, el servicio sigue con el otro. El panel los cambia sin reiniciar.
     def swap_service(service) -> None:
         app.state.analysis_service = service
 
-    versions = ModelVersionManager(on_swap=swap_service)
+    versions = ModelDeploymentManager(on_swap=swap_service)
     app.state.model_versions = versions
+    # Entrenamientos del panel: lanzan un proceso aparte y nunca tocan lo desplegado.
+    app.state.training = TrainingManager()
     try:
         AnalysisSettings.from_environment()
         app.state.analysis_service = await asyncio.to_thread(versions.start)

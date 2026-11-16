@@ -1,0 +1,9 @@
+{
+  "tipo": "bilstm",
+  "version": "pequeno_mejorado_fasttext_cc300_s42",
+  "nombre": "BiLSTM fastText (octubre)",
+  "fecha": "2026-10-10",
+  "notas": "Modelo anterior a la calibración conjunta. No tiene contrato de inferencia: se conserva solo para comparar sus métricas.",
+  "archivado": true,
+  "metricas": "backend/metrics/archivo_octubre/evaluaciones.json"
+}

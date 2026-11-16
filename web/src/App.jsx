@@ -11,6 +11,8 @@ import Dashboard from './pages/admin/Dashboard.jsx';
 import Cases from './pages/admin/Cases.jsx';
 import Datasets from './pages/admin/Datasets.jsx';
 import Models from './pages/admin/Models.jsx';
+import Training from './pages/admin/Training.jsx';
+import Calibration from './pages/admin/Calibration.jsx';
 
 export default function App() {
   const { pathname } = useLocation();
@@ -36,6 +38,8 @@ export default function App() {
               <Route index element={<Dashboard health={health} />} />
               <Route path="casos" element={<Cases />} />
               <Route path="datasets" element={<Datasets />} />
+              <Route path="entrenamiento" element={<Training />} />
+              <Route path="calibracion" element={<Calibration />} />
               <Route path="modelos" element={<Models />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

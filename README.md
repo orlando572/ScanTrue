@@ -15,6 +15,12 @@ Extensión para Chrome y Chromium que analiza texto seleccionado en páginas web
 
 Los modelos de producción están en `datasets/bilstm_produccion/modelo/` y `datasets/mbert_produccion/modelo/` (BETO; sus pesos se descargan con Git LFS: `git lfs pull`), cada uno con su `contrato.json`. La combinación está en `datasets/combinacion_produccion/combinacion.json`. Cómo se eligieron: [docs/mejora_modelos/](docs/mejora_modelos/README.md).
 
+Desde **Administración → Modelos** se elige el modelo de cada tipo, se retira uno de los dos y se editan los pesos, sin reiniciar la API. Los modelos que deja el entrenamiento bajo `datasets/` aparecen solos; los de otro equipo se importan en ZIP y se guardan en `datasets/modelos/`, fuera de Git. Detalle: [backend/docs/DESPLIEGUE_MODELOS.md](backend/docs/DESPLIEGUE_MODELOS.md).
+
+Desde **Administración → Entrenamiento** se reentrena un BiLSTM o un BETO/mBERT desde cero con la receta del modelo desplegado y `comun_v1` o una versión del panel de Datasets, con su avance en vivo. El modelo nuevo se guarda en `datasets/entrenamientos/` y aparece en Modelos como «Pendiente de calibrar»: Entrenamiento no despliega ni borra nada. Detalle: [backend/docs/ENTRENAMIENTO_PANEL.md](backend/docs/ENTRENAMIENTO_PANEL.md).
+
+En **Administración → Calibración** se calibra una pareja de modelos con sus predicciones fuera de pliegue. Se pueden editar la pareja, el peso y las temperaturas. Con los valores por defecto (B6 + M3b, 20/80) sale exactamente la calibración de producción. Guardar crea contratos calibrados nuevos (mismos pesos, sin copiarlos) que se despliegan desde Modelos. Detalle: [backend/docs/CALIBRACION_PANEL.md](backend/docs/CALIBRACION_PANEL.md).
+
 ## Requisitos
 
 - Python 3.14
@@ -26,10 +32,24 @@ Los modelos de producción están en `datasets/bilstm_produccion/modelo/` y `dat
 ## Base de datos 🗄️
 
 1. Crea un proyecto en Supabase y habilita los proveedores **Anonymous** y **Email** en Authentication.
-2. Ejecuta en orden las migraciones `backend/db/migrations/001_identity_history.sql` a `007_revision_datasets.sql` en el SQL Editor de Supabase.
+2. Ejecuta en orden las migraciones `backend/db/migrations/001_identity_history.sql` a `008_estandar_datasets.sql` en el SQL Editor de Supabase.
 3. Copia `backend/.env.example` a `backend/.env` y completa `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` y `SUPABASE_SECRET_KEY`. Mantén las claves fuera de Git.
 
 ## Ejecutar localmente 🚀
+
+### Arranque rápido
+
+Con las dependencias ya instaladas (pasos 1 y 2 de abajo), un solo comando levanta Anvil, la API y la web:
+
+```bash
+./levantar.sh                   # Ctrl+C lo para todo
+./levantar.sh --sin-blockchain  # sin Anvil
+./levantar.sh --sin-web         # solo Anvil y la API (para la extensión)
+```
+
+Antes de arrancar, el script comprueba el entorno, `backend/.env`, los pesos de mBERT y el contrato desplegado. Arranca Anvil con su estado guardado, espera a que cada servicio responda y reutiliza el que ya esté escuchando en su puerto. Los registros quedan en `backend/.local/logs/`. Web: `http://127.0.0.1:5174`. Administración: `http://127.0.0.1:5174/admin`.
+
+### Paso a paso
 
 Desde la raíz del repositorio:
 

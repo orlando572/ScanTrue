@@ -303,7 +303,8 @@ class HealthTests(unittest.TestCase):
     def client(self, probe):
         app = FastAPI()
         app.include_router(analysis_router)
-        app.state.analysis_service = SimpleNamespace(mbert_predictor=object())
+        # /salud lee también el predictor BiLSTM desde que develop permite retirar un modelo (fusión del 15 nov 2026).
+        app.state.analysis_service = SimpleNamespace(predictor=object(), mbert_predictor=object())
         app.state.identity_service = SimpleNamespace(settings=SimpleNamespace(secret_key="s"))
         app.state.blockchain_client = SimpleNamespace(check_ready=lambda: None)
         app.state.llm_probe = probe

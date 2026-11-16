@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Empty, ErrorState, Icon, Loader } from '../../components/ui.jsx';
 import { adminApi, adminDownload, query } from '../../lib/api.js';
 import { useLoad } from '../../lib/hooks.js';
-import { formatDate, percent, shortId } from '../../lib/presentation.js';
+import { DATASET_CUTS, DATASET_EXCLUDED, formatDate, percent, shortId } from '../../lib/presentation.js';
 
 const PAGE = 25;
 
@@ -18,21 +18,66 @@ function save(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// Qué entra en una versión y qué se separó: duplicados, conflictos, grupos y particiones.
+// Por debajo de esto por clase, las métricas de la prueba del panel varían demasiado.
+const MIN_TEST_PER_CLASS = 20;
+
+const sum = (values) => Object.values(values ?? {}).reduce((total, value) => total + value, 0);
+
+// Qué entra en una versión y qué se separó: duplicados, conflictos, estándar, grupos y particiones.
 function Summary({ summary }) {
   const split = summary.por_particion_etiqueta ?? {};
   const cell = (partition, label) => split[partition]?.[label] ?? 0;
+  const standard = summary.estandar ?? {};
+  const excluded = Object.entries(summary.excluidas ?? {}).filter(([, count]) => count);
+  const cuts = Object.entries(summary.recortes ?? {}).filter(([, count]) => count);
+  const crosses = summary.cruces_comun ?? {};
+  const dropped = summary.excluidas_casos ?? [];
+  const testFalse = cell('prueba', 'falsa');
+  const testReal = cell('prueba', 'real');
   return (
     <>
       <div className="tiles">
         <div className="tile"><span className="label">Casos</span><b style={{ color: 'var(--color-acid)' }}>{summary.casos}</b><small>de {summary.candidatos} aprobados o corregidos</small></div>
         <div className="tile"><span className="label">Duplicados retirados</span><b>{summary.duplicados_retirados}</b><small>copias exactas del mismo texto</small></div>
         <div className="tile"><span className="label">Conflictos retirados</span><b style={{ color: summary.conflictos_retirados ? 'var(--color-false)' : undefined }}>{summary.conflictos_retirados}</b><small>mismo texto con etiquetas contrarias</small></div>
-        <div className="tile"><span className="label">Grupos</span><b>{summary.grupos}</b><small>{summary.grupos_con_varios} con varios casos (misma página o evento)</small></div>
+        <div className="tile"><span className="label">Fuera por el estándar</span><b style={{ color: sum(summary.excluidas) ? 'var(--color-false)' : undefined }}>{sum(summary.excluidas)}</b><small>idioma, longitud, oraciones incompletas o prueba congelada</small></div>
+        <div className="tile"><span className="label">Fragmentos</span><b>{summary.fragmentos ?? 0}</b><small>{standard.min_tokens ?? 100}–{standard.max_tokens_fragmento ?? 200} palabras, terminados en punto</small></div>
+        <div className="tile"><span className="label">Grupos</span><b>{summary.grupos}</b><small>{summary.grupos_con_varios} con varios casos (misma página, evento o casi duplicado)</small></div>
       </div>
+      <ul className="muted" style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 14 }}>
+        {excluded.map(([key, count]) => <li key={key}>{count} fuera: {DATASET_EXCLUDED[key] ?? key}</li>)}
+        {cuts.map(([key, count]) => <li key={key}>{count} {DATASET_CUTS[key] ?? key}</li>)}
+        {summary.uniones_casi_duplicado > 0 && <li>{summary.uniones_casi_duplicado} unidas a otra por ser casi la misma noticia</li>}
+        {crosses.comprobado
+          ? <li>Comparadas con los {crosses.fragmentos_indice} fragmentos de comun_v1: {crosses.en_desarrollo_a_entrenamiento ?? 0} ya estaban en su desarrollo y van a entrenamiento</li>
+          : <li>No se pudo comparar con comun_v1 (falta datasets/comun_v1): revisa los cruces antes de entrenar</li>}
+      </ul>
+      {dropped.length > 0 && (
+        <details style={{ marginTop: 12 }}>
+          <summary className="text-link" style={{ cursor: 'pointer' }}>
+            Ver {dropped.length === 1 ? 'la noticia que queda fuera' : `las ${dropped.length} noticias que quedan fuera`}
+          </summary>
+          <ul style={{ margin: '10px 0 0', paddingLeft: 18, display: 'grid', gap: 6, fontSize: 14 }}>
+            {dropped.map((item) => (
+              <li key={`${item.analisis_id}-${item.motivo}`}>
+                <Link className="text-link mono" to={`/admin/casos?caso=${item.analisis_id}`}>{shortId(item.analisis_id)}</Link>
+                {' · '}<span className="muted">{DATASET_EXCLUDED[item.motivo] ?? item.motivo}</span>
+              </li>
+            ))}
+          </ul>
+          {dropped.length >= 100 && <p className="label" style={{ margin: '8px 0 0' }}>Se muestran las 100 primeras.</p>}
+        </details>
+      )}
+      {Math.min(testFalse, testReal) < MIN_TEST_PER_CLASS && (
+        <p className="alert alert--info" style={{ margin: '12px 0 0' }} role="note">
+          La prueba tiene {testFalse} {testFalse === 1 ? 'falsa' : 'falsas'} y {testReal} {testReal === 1 ? 'real' : 'reales'}:
+          aún no es fiable para comparar modelos. Usa la prueba congelada de comun_v1 como referencia
+          hasta tener al menos {MIN_TEST_PER_CLASS} noticias de cada clase en prueba.
+        </p>
+      )}
       <div className="table-wrap" style={{ marginTop: 16 }}>
         <table className="data">
-          <thead><tr><th>Partición</th><th>Falsas</th><th>Reales</th><th>Total</th></tr></thead>
+          <thead><tr><th>Partición</th><th>Falsas</th><th>Reales</th><th>Noticias</th><th>Fragmentos</th></tr></thead>
           <tbody>
             {['entrenamiento', 'prueba'].map((partition) => (
               <tr key={partition}>
@@ -40,13 +85,15 @@ function Summary({ summary }) {
                 <td className="num">{cell(partition, 'falsa')}</td>
                 <td className="num">{cell(partition, 'real')}</td>
                 <td className="num">{summary.por_particion?.[partition] ?? 0}</td>
+                <td className="num">{summary.fragmentos_por_particion?.[partition] ?? 0}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <p className="label" style={{ margin: '12px 0 0' }}>
-        Cada grupo va entero a una partición · prueba ≈ {percent(summary.fraccion_prueba)} de los grupos
+        Cada grupo va entero a una partición · prueba ≈ {percent(summary.fraccion_prueba)} de las noticias de cada clase
+        {standard.tope_noticia ? ` · máximo ${standard.tope_noticia} palabras por noticia` : ''}
       </p>
     </>
   );
@@ -84,7 +131,8 @@ function NewVersion({ onCreated }) {
       <h2 className="h-panel" style={{ margin: '0 0 6px' }}>Nueva versión</h2>
       <p className="muted" style={{ margin: '0 0 16px', fontSize: 14 }}>
         Una versión es una copia fija de los casos aprobados o corregidos hasta hoy, con su etiqueta,
-        procedencia y evidencia. No cambia aunque después se revisen más casos.
+        procedencia y evidencia, guardados con el estándar de comun_v1: cada noticia en fragmentos
+        de 100 a 200 palabras que terminan en punto. No cambia aunque después se revisen más casos.
       </p>
       {preview.error ? <ErrorState error={preview.error} onRetry={preview.reload} />
         : !preview.data ? <Loader code="Calculando" label="Calculando la vista previa" rows={1} />
@@ -129,13 +177,14 @@ function Items({ version }) {
     <>
       <div className="table-wrap">
         <table className="data">
-          <thead><tr><th>Partición</th><th>Etiqueta</th><th>Texto</th><th>Origen</th><th>Decisión</th><th>Grupo</th></tr></thead>
+          <thead><tr><th>Partición</th><th>Etiqueta</th><th>Texto</th><th>Palabras</th><th>Origen</th><th>Decisión</th><th>Grupo</th></tr></thead>
           <tbody>
             {data.elementos.map((item) => (
               <tr key={item.id}>
                 <td>{item.particion}</td>
                 <td><span className={`tag ${item.etiqueta === 'falsa' ? 'tag--fail' : 'tag--ok'}`}>{item.etiqueta}</span></td>
                 <td style={{ minWidth: 280 }}>{item.texto.length > 220 ? `${item.texto.slice(0, 219)}…` : item.texto}</td>
+                <td className="num">{item.tokens_bilstm ?? '—'}</td>
                 <td className="mono">{item.dominio ?? '—'}</td>
                 <td>{item.decision}</td>
                 <td className="mono">{shortId(item.grupo.replace('g_', ''))}</td>
@@ -168,12 +217,24 @@ function Version({ version, open, onToggle, onDeleted }) {
     const file = await adminDownload(`/admin/datasets/${version.id}/exportar`);
     save(file.blob, file.name);
   });
-  // El manifiesto describe la versión sin los textos: nombre, fecha, reglas y recuentos.
+  // ZIP con el formato de comun_v1 (fragmentos por partición, procedencia y manifest.json).
+  const standard = () => run('zip', async () => {
+    const file = await adminDownload(`/admin/datasets/${version.id}/exportar${query({ formato: 'estandar' })}`);
+    save(file.blob, file.name);
+  });
+  // Las versiones anteriores al estándar (una fila por noticia) no tienen fragmentos.
+  const hasManifest = Boolean(version.manifiesto?.archivos);
+  const hasStandard = hasManifest || (version.resumen?.fragmentos ?? 0) > 0;
+  // El manifiesto describe la versión sin los textos: archivos con SHA-256, reglas, código y recuentos.
   const manifest = () => save(
     new Blob([JSON.stringify({
       id: version.id, nombre: version.nombre, descripcion: version.descripcion, fecha: version.fecha,
-      resumen: version.resumen,
-      reglas: 'Solo casos aprobados o corregidos; sin copias exactas ni etiquetas en conflicto; cada grupo (misma página o evento) va entero a una partición.',
+      ...(hasManifest ? version.manifiesto : {
+        resumen: version.resumen,
+        reglas: hasStandard
+          ? 'Versión con fragmentos creada antes del manifiesto: sin SHA-256 guardados.'
+          : 'Versión anterior al estándar: una fila por noticia, sin fragmentos.',
+      }),
     }, null, 2)], { type: 'application/json' }),
     `scantrue_${version.nombre.replace(/[^\w.-]+/g, '_')}_manifiesto.json`,
   );
@@ -188,12 +249,16 @@ function Version({ version, open, onToggle, onDeleted }) {
       <div className="version-head">
         <div style={{ minWidth: 0 }}>
           <h3 className="h-panel" style={{ margin: 0, color: 'var(--color-acid)' }}>{version.nombre}</h3>
-          <span className="label">{formatDate(version.fecha)} · {summary.casos} casos · {summary.por_etiqueta?.falsa ?? 0} falsas · {summary.por_etiqueta?.real ?? 0} reales</span>
+          <span className="label">{formatDate(version.fecha)} · {summary.casos} noticias{hasStandard ? ` · ${summary.fragmentos} fragmentos` : ' · anterior al estándar'} · {summary.por_etiqueta?.falsa ?? 0} falsas · {summary.por_etiqueta?.real ?? 0} reales</span>
           {version.descripcion && <p className="muted" style={{ margin: '8px 0 0' }}>{version.descripcion}</p>}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           <button type="button" className="btn btn--small" onClick={csv} disabled={state.busy !== null}>
             <span style={{ width: 14 }}><Icon name="download" /></span>{state.busy === 'csv' ? 'Preparando…' : 'CSV'}
+          </button>
+          <button type="button" className="btn btn--small" onClick={standard} disabled={state.busy !== null || !hasStandard}
+            title={hasStandard ? 'Fragmentos con las columnas de comun_v1, procedencia y manifest.json' : 'Versión anterior al estándar: crea una nueva para exportarla para entrenar'}>
+            <span style={{ width: 14 }}><Icon name="download" /></span>{state.busy === 'zip' ? 'Preparando…' : 'Para entrenar (.zip)'}
           </button>
           <button type="button" className="btn btn--ghost btn--small" onClick={manifest}>Manifiesto</button>
           <button type="button" className="btn btn--ghost btn--small" aria-expanded={open} onClick={onToggle}>{open ? 'Cerrar' : 'Ver casos'}</button>

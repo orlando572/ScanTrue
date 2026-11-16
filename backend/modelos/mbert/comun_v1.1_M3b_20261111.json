@@ -1,0 +1,10 @@
+{
+  "tipo": "mbert",
+  "version": "comun_v1.1_M3b_20261111",
+  "nombre": "BETO M3b",
+  "fecha": "2026-11-11",
+  "notas": "BETO entrenado con el conjunto común v1.1 y calibrado junto al BiLSTM B6 (combinación 20/80).",
+  "predeterminado": true,
+  "contrato": "datasets/mbert_produccion/modelo/contrato.json",
+  "metricas": "backend/metrics/mbert_evaluaciones.json"
+}

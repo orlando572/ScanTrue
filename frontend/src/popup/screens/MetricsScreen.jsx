@@ -7,12 +7,12 @@ import ModelIcon from '../components/ModelIcon.jsx';
 import HudLoader from '../components/HudLoader.jsx';
 
 // Cada modelo usa el mismo color que su luz en la tira de estado.
-const modelColors = { BiLSTM: { key: 'bilstm', color: '#38E1FF' }, BETO: { key: 'mbert', color: '#A98BFF' } };
+const modelColors = { BiLSTM: { key: 'bilstm', color: '#E6FF4D' }, BETO: { key: 'mbert', color: '#9B7CFF' } };
 // Etiqueta de color según el tipo de conjunto de prueba.
 const setTones = {
-  'Validación': 'green', 'Prueba interna': 'magenta', 'Fuentes reservadas': 'amber', 'Prueba externa': 'amber', 'Prueba': 'cyan',
+  'Validación': 'green', 'Prueba interna': 'coral', 'Fuentes reservadas': 'amber', 'Prueba externa': 'amber', 'Prueba': 'cyan',
   'Fuentes no vistas': 'green', 'Fuente no vista: v1': 'cyan', 'Fuente no vista: FakeDeS': 'cyan',
-  'Fuente no vista: Polyglot': 'cyan', 'Prueba congelada': 'magenta',
+  'Fuente no vista: Polyglot': 'violet', 'Prueba congelada': 'coral',
   'Prueba congelada: FalleDesinfo (fuente nueva)': 'amber',
 };
 
@@ -107,7 +107,7 @@ export default function MetricsScreen({ onBack }) {
     {status === 'loading' && <HudLoader label="Cargando pruebas" code="Consultando pruebas" count={2} />}
     {status === 'error' && <div className="mt-6" role="alert"><p className="text-sm leading-5 text-muted">No pudimos cargar las pruebas.</p><button type="button" className="secondary-button mt-5" onClick={load}>Intentar de nuevo</button></div>}
     {shown?.map((model) => {
-      const identity = modelColors[model.model] ?? { key: 'bilstm', color: '#38E1FF' };
+      const identity = modelColors[model.model] ?? { key: 'bilstm', color: '#E6FF4D' };
       return <section key={model.model} className="metrics-model mt-5" style={{ '--model-color': identity.color }} aria-label={`Pruebas de ${model.model}`}>
         <div className="flex items-center gap-2.5">
           <span className="metrics-model-icon"><ModelIcon model={identity.key} /></span>
