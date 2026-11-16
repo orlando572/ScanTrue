@@ -21,11 +21,18 @@ EQUIVALENCES: dict[str, list[str]] = {
     "fuera_de_contexto": [
         "enganoso", "enganosa", "sin contexto", "descontextualizado", "descontextualizada", "fuera de contexto",
         "contexto erroneo", "falta contexto", "le falta contexto", "no es de ahora", "no es reciente",
+        # Ampliada por escrito el 16 nov 2026 (la decidió Evelyn), antes de correr nada sobre el conjunto:
+        # Grupo Animal y Verificado usan «sacado de contexto» como su forma de «fuera de contexto».
+        "sacado de contexto", "video sacado de contexto", "esta sacado de contexto",
     ],
     "evidencia_insuficiente": [
         "sin pruebas", "sin evidencia", "sin evidencias", "no hay pruebas", "no hay evidencia", "no verificable",
         "inverificable", "inchequeable", "no se puede comprobar", "no comprobable", "no se puede verificar",
         "sin confirmar", "no confirmado",
+        # Ampliada por escrito el 16 nov 2026 (la decidió Evelyn), antes de correr nada sobre el conjunto:
+        # «Insostenible» es la calificación de Chequeado para una afirmación sin sustento o que no puede comprobarse
+        # (sus titulares dicen «no hay pruebas / no hay evidencia de que…»).
+        "insostenible",
     ],
     "respaldada": ["verdadero", "verdadera", "cierto", "cierta", "verdad", "es verdad", "es cierto", "veridico"],
 }

@@ -55,12 +55,18 @@ Campo añadido: **`tipo_texto`** (`original` o `descripcion_verificador`), por l
 | Conclusión | Veredictos originales que se traducen |
 | --- | --- |
 | `contradicha` | falso, bulo, fake, mentira, desinformación, no es cierto… |
-| `fuera_de_contexto` | engañoso, sin contexto, descontextualizado, fuera de contexto, no es reciente… |
-| `evidencia_insuficiente` | sin pruebas, sin evidencia, inchequeable, no verificable, no se puede comprobar… |
+| `fuera_de_contexto` | engañoso, sin contexto, descontextualizado, fuera de contexto, no es reciente, **sacado de contexto** (añadida 16 nov 2026)… |
+| `evidencia_insuficiente` | sin pruebas, sin evidencia, inchequeable, no verificable, no se puede comprobar, **insostenible** (añadida 16 nov 2026)… |
 | `respaldada` | verdadero, cierto, verdad… |
 | **Se descarta** | verdad a medias, apresurado, discutible, exagerado, impreciso, parcialmente falso/cierto, «verdadero pero», sátira… |
 
 Lo ambiguo no se traduce: el caso se descarta. Si un medio usa una palabra que no está, el caso se descarta o la tabla se amplía **por escrito y antes de correr nada**. Se guarda como `equivalencias.json` junto a los casos y entra en el manifiesto.
+
+**Ampliaciones hechas (ambas el 16 nov 2026, decididas por Evelyn, antes de correr nada sobre el conjunto; la versión de la tabla sigue siendo `equivalencias-v1` porque aún no se ha congelado):**
+
+- **«sacado de contexto»** (y «video sacado de contexto», «está sacado de contexto») → `fuera_de_contexto`. Es la forma en que Grupo Animal y Verificado dicen «fuera de contexto»; afecta a 6 casos de la tanda 2 (vv1-037 a vv1-042).
+- **«insostenible»** → `evidencia_insuficiente`. Es la calificación de Chequeado para una afirmación «sin sustento o que no puede comprobarse»; sus titulares dicen «No hay pruebas/evidencia de que…». Afecta a 5 casos de la tanda 3 (vv1-062 a vv1-066).
+- **No se añadió «cuestionable»** (Colombiacheck): se parece a «discutible», que la tabla descarta.
 
 ## 5. Evidencia en vivo y congelada (D14)
 
@@ -141,7 +147,53 @@ Hechos entre enero y noviembre de 2026 (verificaciones del 7 ene al 14 nov), 20 
 4. **vv1-017 (Alina Manrique):** es una persona real; el caso nombra a una periodista que no murió. Si prefiere no incluirlo, se descarta y se reemplaza.
 5. **Fecha de la verificación frente a hoy:** los de noviembre (vv1-010 a vv1-014, vv1-022) están a días de hoy; la web aún puede no tener copias.
 
-**Pendiente de las 3 tandas siguientes:** `fuera_de_contexto` (20), `evidencia_insuficiente` (20) y `respaldada` (20; aquí sí se puede usar texto original de noticias confirmadas). En el piloto ya hay en `ajuste`: 1 `fuera_de_contexto`, 1 `evidencia_insuficiente` y 2 `respaldada`; se completan a 10 y 10.
+**Estado de la tanda 1 (16 nov 2026):** aprobada por **Evelyn** (20 casos). Al revisar vv1-014 y vv1-015 se comprobó en las páginas de Maldita.es que el sello real es **«Falso»**, no «Bulo» (había sido una suposición mía): se corrigió `veredicto_original`; la conclusión (`contradicha`) no cambia.
+
+### Tanda 2: `fuera_de_contexto` (20 casos: vv1-004 del piloto y vv1-025…043 nuevos)
+
+| Medio | Casos |
+| --- | ---: |
+| Ecuador Chequea | 6 |
+| Chequeado | 4 |
+| Grupo Animal (El Sabueso) | 4 |
+| Verificado (México) | 3 |
+| La Silla Vacía (Detector de Mentiras) | 2 |
+| Newtral (piloto, vv1-004) | 1 |
+
+Reparto: 10 en `ajuste` (vv1-004, 025, 027, 030, 032, 034, 036, 038, 040, 042) y 10 en `final`. Verificaciones de enero a noviembre de 2026. **Aprobada por Evelyn el 16 nov 2026 (los 20).**
+
+- **Texto:** todos `descripcion_verificador`, escritos sin palabras del veredicto y con 100 tokens o más. Algunos llevan 1 frase de contexto general neutro para llegar al mínimo (por ejemplo, qué es la DEA o qué es un doblete sísmico).
+- **Etiqueta:** «Engañoso» en el sello o la conclusión de Chequeado, Ecuador Chequea y La Silla Vacía; en vv1-043 (Verificado) la calificación está en el cuerpo y en la URL; en 6 casos (Grupo Animal y Verificado) la página dice «sacado de contexto» sin sello aparte, y se aceptó con la ampliación de la tabla.
+- **Quedó fuera:** Newtral y EFE Verifica (las lecturas automáticas reciben 403, y el navegador integrado no se usó); los casos de Colombiacheck con «Cuestionable»; dos notas de Ecuador Chequea con etiquetas incoherentes (terremoto en Ecuador; carta de los congresistas); y el video de Trump de diciembre de 2025 (borde de la ventana de 12 meses).
+- **Discusión sobre vv1-025 (récord de exportaciones):** «es cierto que lo dijo». La etiqueta no mide eso, sino si la afirmación es cierta y completa: el récord vale en dólares corrientes, no en constantes. Es un caso menos nítido que «video antiguo presentado como reciente»; varios casos de esta tanda son frases de políticos argentinos y ecuatorianos con ese perfil.
+
+### Tanda 3: `evidencia_insuficiente` (6 de 20 casos: vv1-003 del piloto y vv1-062…066)
+
+Reparto: `ajuste` 3 (vv1-003, 062, 063) y `final` 3 (vv1-064, 065, 066). **Aprobada por Evelyn el 16 nov 2026 (los 6).**
+
+| Caso | Hecho | Calificación |
+| --- | --- | --- |
+| vv1-003 | Lista de viviendas de famosos (piloto) | Maldita.es: «No se puede verificar» |
+| vv1-062 | Amenaza de narcos mexicanos a la selección de Ecuador | Chequeado: «Insostenible» |
+| vv1-063 | Video del niño Loan en El Salvador | Chequeado: «Insostenible» |
+| vv1-064 | Correo de la agencia «PR360 Sports» | Chequeado: «Insostenible» |
+| vv1-065 | Barrio privado «Josué» en la Patagonia | Chequeado: «Insostenible» |
+| vv1-066 | Citas atribuidas a Bellingham sobre Messi | Chequeado: «Insostenible» |
+
+**Por qué solo 6.** Esta clase casi no existe como veredicto publicado. Los verificadores prefieren «Falso», «Engañoso» o «Verdadero»; muchos titulares dicen «no hay pruebas de que…» pero la calificación oficial es «Falso» (y se etiqueta por la calificación, no por el titular). El único sello claro, «Insostenible» de Chequeado, es raro: en unas 100 entradas del archivo viral de junio a noviembre de 2026 hay 3; en el archivo viral de enero a junio de 2026 y en «Frases» no hay ninguno más. Se leyeron las páginas 1 a 31 del archivo viral y 1 a 16 de «Frases». Otras cinco notas con ese sello existen, pero son de **2025** (marzo a agosto: Sun Tzu, Milei en La Rural, CFK y el desempleo, Milei y la natalidad, Milei y la pobreza); **no se usaron** porque salen de la ventana de 12 meses.
+
+**Consecuencia:** el validador con `--completo` y `congelar` exigen 80 casos y 10 por clase y partición, así que **el conjunto no se puede congelar ni abrir la prueba final** hasta decidir cómo se cierra esta clase (reducirla, admitir casos de 2025 o cambiar su construcción). Es una decisión de diseño pendiente con Orlando. Mientras tanto se puede correr y ajustar con los casos de `ajuste`, que en esta clase son solo 3.
+
+### Tanda 4: `respaldada` (20 casos: vv1-005 y vv1-006 del piloto y vv1-044…061 nuevos)
+
+Reparto: 10 en `ajuste` (vv1-005, 006, 044…051) y 10 en `final` (vv1-052…061). **Aprobada por Evelyn el 16 nov 2026 (los 20).**
+
+- **Hechos** (todos entre diciembre de 2025 y noviembre de 2026, cada uno con 2 o 3 fuentes de dominios distintos): PIB de Ecuador del primer trimestre, posesión de De la Espriella, tiroteo en Cracovia, inflación de Colombia de octubre, acuerdos de Bolivia con la COB (enero y junio), elecciones de Costa Rica, primera vuelta de Perú, terremoto de Colombia, final del Mundial 2026, segunda vuelta de Colombia, dos toques de queda en Ecuador (marzo y mayo), doblete sísmico de Venezuela, elecciones generales de España del 29N, elecciones de Chile (Kast), elecciones de Aragón y sismo de Ayacucho.
+- **Texto:** descripción de redacción propia (`descripcion_verificador`), no el texto original de una noticia, para no reproducir contenido protegido; lleva solo datos que coinciden en las fuentes. Donde las fuentes difieren (muertos, profundidades, votos), se omite o se redondea y queda anotado en `notas`.
+- **Dominios excluidos:** ninguno, porque la evidencia son las propias noticias; los verificadores se excluyen igual al evaluar.
+- **Avisos en las notas:** vv1-047, vv1-051 y vv1-057 se apoyan en alguna fuente que no se pudo leer (error del sitio o solo resultado de búsqueda). vv1-046 (Cracovia) es un hecho muy reciente. vv1-061 (sismo de Ayacucho) es el mismo sismo del que habla vv1-037 de la tanda 2.
+
+**Estado del conjunto (16 nov 2026):** 66 casos, todos aprobados: 20 `contradicha`, 20 `fuera_de_contexto`, 20 `respaldada` y 6 `evidencia_insuficiente`. Faltan 14 de esta última clase (7 por partición) para llegar a 80.
 
 ## 10. Riesgos de validez a tener presentes
 
@@ -149,3 +201,8 @@ Hechos entre enero y noviembre de 2026 (verificaciones del 7 ene al 14 nov), 20 
 - **Fugas por el tiempo:** una verificación publicada hace meses puede no coincidir con lo que muestra hoy la web; cada caso lleva su fecha y los dudosos se descartan.
 - **Los textos descriptivos** los escribe quien arma el conjunto (yo, en el piloto): pueden arrastrar mi redacción. La revisión humana y analizarlos aparte lo mitigan.
 - **Con 40 casos por conjunto** los intervalos son anchos (un solo caso mueve el F1 macro varios puntos): las cifras son orientativas y el informe lo dirá.
+- **La clase `evidencia_insuficiente` es la menos respaldada:** 6 casos (3 por partición) frente a 20 de las demás. Los intervalos de esa clase serán mucho más anchos, y un solo caso mueve su F1 varios puntos.
+- **Los casos de `fuera_de_contexto` incluyen frases de políticos con cifras** (Chequeado «Engañoso»), más discutibles que «video antiguo presentado como reciente». Conviene mirar los resultados de esa clase por tipo de caso.
+- **Cobertura de medios sesgada:** Newtral y EFE Verifica no se pudieron leer, así que están poco o nada representados; hay concentración en Chequeado y Ecuador Chequea, y mucho contenido de Argentina y Ecuador.
+- **Hechos solapados entre tandas** (por ejemplo, el sismo de Ayacucho en vv1-037 y vv1-061, o el toque de queda de Ecuador en vv1-055 y una nota de Ecuador Chequea) están en la misma partición o en grupos distintos: no hay fuga entre ajuste y final por el mismo `grupo_evento`, pero la evidencia de un caso puede ayudar a otro.
+- **Fuentes de `respaldada` no leídas por completo** (vv1-047, 051 y 057) y hechos recientes cuyas cifras pueden cambiar (vv1-046, 047).

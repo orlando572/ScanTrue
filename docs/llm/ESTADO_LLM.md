@@ -41,10 +41,10 @@ Es la que dice si el sistema sirve. Se mide con un conjunto propio, `verificacio
 **Hecho**
 - El **arnés de evaluación** completo en `backend/evaluacion/` (47 pruebas): formato y validación de los casos, tabla de equivalencias escrita antes de etiquetar, evidencia en vivo y congelada, referencias A y B, métricas con intervalos de incertidumbre, comprobación de citas y enlaces, informe por corrida y las salvaguardas de la prueba final.
 - Un **piloto** de 6 casos reales que corrió de punta a punta: unos 50 s y 9 búsquedas por caso, 18 fuentes presentadas y las 18 comprobadas aparte, **0 direcciones inventadas**. Acertó 1 de 6, lo que no significa nada con 6 casos: solo prueba que el arnés mide.
-- **Tanda 1 del conjunto armada:** 20 casos `contradicha` (10 de ajuste y 10 de prueba final) de Newtral, Chequeado, Ecuador Chequea, La República, Maldita.es y La Silla Vacía, con hechos de 2026. Están **en revisión por una persona** (se está revisando la hoja ahora).
+- **Conjunto `verificacion_v1` armado en 4 tandas (16 nov 2026):** 20 `contradicha`, 20 `fuera_de_contexto`, 20 `respaldada` y **6** `evidencia_insuficiente` (de 20), todos **aprobados por Evelyn**; 66 casos, 0 problemas. Detalle, medios, decisiones y límites en [EVALUACION_VERIFICACION.md](EVALUACION_VERIFICACION.md), sección 9. La tabla de equivalencias se amplió con «sacado de contexto» y «insostenible» (decisión de Evelyn, antes de correr nada).
 
 **Falta**
-1. Terminar la revisión de la tanda 1 y armar las otras tres tandas de 20: `fuera_de_contexto`, `evidencia_insuficiente` y `respaldada`.
+1. **Cerrar la clase `evidencia_insuficiente`:** solo hay 6 casos de 20, porque casi ningún verificador publica ese veredicto y «Insostenible» (Chequeado) es muy raro (5 casos en 2026; otros 5 son de 2025, fuera de la ventana de 12 meses). Sin esto no se puede congelar el conjunto ni abrir la prueba final. Es una decisión de diseño pendiente con Orlando: reducir la tanda, admitir casos de 2025 o cambiar cómo se construye la clase.
 2. Congelar el conjunto (huella SHA-256) y correr las referencias A y B y el sistema sobre el conjunto de ajuste.
 3. Ajustar **solo con el conjunto de ajuste**: instrucciones, tope de afirmaciones y la regla de conclusión (hay 5 ajustes candidatos en [CONCLUSION_Y_TRABAJADOR.md](CONCLUSION_Y_TRABAJADOR.md)).
 4. Fijar la cifra mínima de F1 macro, abrir la prueba final **una sola vez** y escribir el informe de resultados.
