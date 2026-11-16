@@ -7,7 +7,7 @@
 
 Antes de buscar en internet, cada afirmación extraída se busca en esta base. Si ya se verificó y no ha expirado, se reutiliza su veredicto con sus fuentes y se marca `origen: base_anterior`. Al terminar la verificación de un caso, sus afirmaciones se guardan.
 
-- **Tabla:** `afirmaciones_verificadas`, creada en la migración 008. Las funciones `buscar_afirmacion_verificada` y `guardar_afirmacion_verificada` son de la migración [009](../../backend/db/migrations/009_afirmaciones_verificadas.sql).
+- **Tabla:** `afirmaciones_verificadas`, creada en la migración 009. Las funciones `buscar_afirmacion_verificada` y `guardar_afirmacion_verificada` son de la migración [010](../../backend/db/migrations/010_afirmaciones_verificadas.sql).
 - **Código:** [known_claims.py](../../backend/services/verification/known_claims.py) (`find_known_claim`, `save_known_claim`) y los métodos `find_verified_claims` y `save_verified_claim` del repositorio.
 - **Normalización** (la misma al guardar y al buscar): minúsculas, sin tildes, sin signos de puntuación y con los espacios colapsados. «El 12 de marzo, Lima.» y «el 12 de MARZO lima» son la misma afirmación; «Lima» y «Quito» no.
 - **Vigencia (D5):** 30 días; 7 si el veredicto fue `insuficiente`. La calcula la base al guardar y se renueva si se vuelve a guardar la misma afirmación.
@@ -61,7 +61,7 @@ Una paráfrasis cambia muchas palabras y baja la similitud; un cambio de un dato
 
 **Lo que queda abierto.** Si más adelante interesa recuperar paráfrasis, la opción discutida es usar la similitud solo para proponer candidatas (por ejemplo, ≥ 0,5) y que el LLM decida si dos afirmaciones dicen exactamente lo mismo. Costaría una llamada por candidata y habría que medir antes si un modelo de 4B distingue estos cambios de una palabra; con los pares de esta medición ya se puede probar. No se hizo.
 
-## 4. Pruebas contra la base de desarrollo (migración 009)
+## 4. Pruebas contra la base de desarrollo (migración 010)
 
 23 comprobaciones, todas OK:
 - **Exacta:** una afirmación guardada se encuentra aunque cambien mayúsculas, tildes o puntuación; «Lima → Quito», «12 → 13 de marzo» y una paráfrasis **no** se reutilizan.

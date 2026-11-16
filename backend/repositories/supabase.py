@@ -332,7 +332,7 @@ class SupabaseRepository:
             },
         )
 
-    # ── Cola de verificación web (incremento 2; migración 008) ─────
+    # ── Cola de verificación web (incremento 2; migración 009) ─────
 
     def analysis_text(self, analysis_id: UUID) -> str | None:
         """El texto del análisis (solo el backend con la clave de servicio); None si ya no existe."""
@@ -489,7 +489,7 @@ class SupabaseRepository:
         )
         return "reintentada" if changed else "en_proceso"
 
-    # ── Base de afirmaciones ya verificadas (incremento 2; migración 009) ──
+    # ── Base de afirmaciones ya verificadas (incremento 2; migración 010) ──
 
     def find_verified_claims(
         self, claim_hash: str, normalized: str, threshold: float | None, limit: int = 5

@@ -1,5 +1,5 @@
--- Deshace backend/db/migrations/009_afirmaciones_verificadas.sql.
--- Solo borra las dos funciones: la tabla afirmaciones_verificadas y sus datos son de la 008
+-- Deshace backend/db/migrations/010_afirmaciones_verificadas.sql.
+-- Solo borra las dos funciones: la tabla afirmaciones_verificadas y sus datos son de la 009
 -- y se conservan.
 
 drop function if exists public.guardar_afirmacion_verificada(

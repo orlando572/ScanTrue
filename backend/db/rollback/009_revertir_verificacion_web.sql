@@ -1,4 +1,4 @@
--- Deshace backend/db/migrations/008_verificacion_web.sql.
+-- Deshace backend/db/migrations/009_verificacion_web.sql.
 -- ATENCIÓN: borra la base de afirmaciones verificadas y las columnas de la cola
 -- (intentos, proximo_intento, ultimo_error, version_prompts, iniciado_en, terminado_en,
 -- copiada_de). Las filas de verificaciones_web, y con ellas los resultados ya guardados

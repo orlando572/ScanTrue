@@ -1,4 +1,4 @@
-"""Cola de verificación (Fase 2): configuración, trabajador, encolado y migración 008.
+"""Cola de verificación (Fase 2): configuración, trabajador, encolado y migración 009.
 
 Sin Supabase, llama-server ni pesos. Uso:
     PYTHONPATH=. backend/.venv/Scripts/python.exe -m unittest backend.tests.test_verification_queue
@@ -290,11 +290,11 @@ class AnalyzeRouteTests(unittest.TestCase):
 
 
 class MigrationTests(unittest.TestCase):
-    """La reversión 008 deshace todo lo que crea la 008 y nada más."""
+    """La reversión 009 deshace todo lo que crea la 009 y nada más."""
 
     def setUp(self):
-        self.up = (ROOT / "backend/db/migrations/008_verificacion_web.sql").read_text(encoding="utf-8")
-        self.down = (ROOT / "backend/db/rollback/008_revertir_verificacion_web.sql").read_text(encoding="utf-8")
+        self.up = (ROOT / "backend/db/migrations/009_verificacion_web.sql").read_text(encoding="utf-8")
+        self.down = (ROOT / "backend/db/rollback/009_revertir_verificacion_web.sql").read_text(encoding="utf-8")
 
     def test_cada_funcion_creada_se_borra(self):
         created = re.findall(r"create function public\.(\w+)\(", self.up)
@@ -306,7 +306,7 @@ class MigrationTests(unittest.TestCase):
         tables = re.findall(r"create table public\.(\w+)", self.up)
         for table in tables:
             self.assertIn(f"drop table if exists public.{table}", self.down)
-        # Un índice de una tabla creada por la 008 cae con la tabla; los demás se borran aparte.
+        # Un índice de una tabla creada por la 009 cae con la tabla; los demás se borran aparte.
         for index, table in re.findall(r"create index (\w+)\s+on public\.(\w+)", self.up):
             if table not in tables:
                 self.assertIn(f"drop index if exists public.{index}", self.down)

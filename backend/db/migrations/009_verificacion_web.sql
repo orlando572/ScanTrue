@@ -1,5 +1,5 @@
 -- Cola de verificación web (incremento 2, Fase 2) y base de afirmaciones ya verificadas.
--- Aplicar después de 007. Solo el backend, con la clave secreta (service_role), usa estas
+-- Aplicar después de 008. Solo el backend, con la clave secreta (service_role), usa estas
 -- funciones y tablas; el navegador no puede leerlas directamente.
 --
 -- Estados de verificaciones_web:

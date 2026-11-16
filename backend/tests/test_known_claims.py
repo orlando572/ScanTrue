@@ -1,4 +1,4 @@
-"""Base de afirmaciones ya verificadas: normalización, comprobaciones y migración 009.
+"""Base de afirmaciones ya verificadas: normalización, comprobaciones y migración 010.
 
 Sin Supabase ni llama-server. Uso:
     PYTHONPATH=. backend/.venv/Scripts/python.exe -m unittest backend.tests.test_known_claims
@@ -193,8 +193,8 @@ class TextReferenceTests(unittest.TestCase):
 
 class MigrationTests(unittest.TestCase):
     def setUp(self):
-        self.up = (ROOT / "backend/db/migrations/009_afirmaciones_verificadas.sql").read_text(encoding="utf-8")
-        self.down = (ROOT / "backend/db/rollback/009_revertir_afirmaciones_verificadas.sql").read_text(encoding="utf-8")
+        self.up = (ROOT / "backend/db/migrations/010_afirmaciones_verificadas.sql").read_text(encoding="utf-8")
+        self.down = (ROOT / "backend/db/rollback/010_revertir_afirmaciones_verificadas.sql").read_text(encoding="utf-8")
 
     def test_la_reversion_borra_las_dos_funciones_y_nada_mas(self):
         created = re.findall(r"create function public\.(\w+)\(", self.up)

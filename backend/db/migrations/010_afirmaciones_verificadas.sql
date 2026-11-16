@@ -1,5 +1,5 @@
 -- Búsqueda y guardado de la base de afirmaciones ya verificadas (incremento 2, Fase 3).
--- Aplicar después de 008, que creó la tabla afirmaciones_verificadas. Solo el backend, con la
+-- Aplicar después de 009, que creó la tabla afirmaciones_verificadas. Solo el backend, con la
 -- clave secreta (service_role), usa estas funciones.
 
 -- ── Buscar: exacta por hash y, si no hay, por similitud de trigramas ──

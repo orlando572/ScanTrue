@@ -24,8 +24,8 @@ Si el LLM, internet o la cola fallan, el análisis rápido no se ve afectado: la
 | --- | --- | --- | --- | --- |
 | 0 | Entorno y Supabase de desarrollo propio (D12) | **Hecha** | `42b08a1` | [Plan](PLAN_INCREMENTO_2.md) |
 | 1 | Servidor LLM y cliente (`llm_client.py`) | **Hecha**; falta probar la conexión entre dos equipos (D8) | `42b08a1` | [MEDICIONES_LLM.md](MEDICIONES_LLM.md) |
-| 2 | Migración 008, cola y trabajador | **Hecha** | `21c03d1` | [Plan](PLAN_INCREMENTO_2.md) |
-| 3 | Extracción de afirmaciones y base de verificaciones anteriores (migración 009) | **Hecha** | `9d73d91` | [BASE_AFIRMACIONES.md](BASE_AFIRMACIONES.md) |
+| 2 | Migración 009, cola y trabajador | **Hecha** | `21c03d1` | [Plan](PLAN_INCREMENTO_2.md) |
+| 3 | Extracción de afirmaciones y base de verificaciones anteriores (migración 010) | **Hecha** | `9d73d91` | [BASE_AFIRMACIONES.md](BASE_AFIRMACIONES.md) |
 | 4 | Búsqueda web, descarga y juicio por afirmación | **Hecha** (medida con Tavily; Brave sin medir) | `fb1301e` | [BUSQUEDA_Y_JUICIO.md](BUSQUEDA_Y_JUICIO.md) |
 | 5 | Conclusión, resumen y trabajador completo | **Hecha**, con un límite de calidad (sección 4) | `5425b2b` | [CONCLUSION_Y_TRABAJADOR.md](CONCLUSION_Y_TRABAJADOR.md) |
 | 6 | Web y panel (cola, pausa, reintento, filtros) | **Hecha** | `15fb038` | [WEB_Y_PANEL.md](WEB_Y_PANEL.md) |
@@ -64,7 +64,7 @@ Es la que dice si el sistema sirve. Se mide con un conjunto propio, `verificacio
 
 - **Búsqueda (D3):** se midió Tavily; Brave no, por falta de clave. Los términos de Brave **prohíben guardar los resultados y usarlos para evaluar modelos de IA**, lo que parece chocar con guardar las fuentes y con la Fase 7. Hace falta decidir cuál se usa.
 - **Presupuesto de búsqueda:** una corrida en vivo de 40 casos gasta unos 360 créditos de Tavily (el cupo gratis es de 1.000 al mes). Sin decisión, la Fase 7 se itera solo con corridas congeladas.
-- **Supabase de producción:** las migraciones 008 y 009 solo se aplicaron en el proyecto de desarrollo. Antes de aplicarlas en el de producción hay que coordinarlo con quien lo administra.
+- **Supabase de producción:** nuestras migraciones 009 y 010 (la 008 es la de Orlando, estándar de datasets) solo se aplicaron en el proyecto de desarrollo; se renumeraron el 16 nov 2026 porque antes se llamaban 008 y 009 y chocaban con la 008 de `develop`. Antes de aplicarlas en el de producción hay que coordinarlo con quien lo administra.
 - **Conexión entre equipos (D8):** el LLM está pensado para correr en un equipo aparte (`LLM_BASE_URL` y clave); solo se probó en `127.0.0.1`.
 - **Confirmar D3 a D7:** estaban asignadas a Orlando en el borrador y se registraron como decididas el 15 nov; conviene que él las confirme.
 - **Documentación pendiente:** `docs/INCREMENTOS.md` decía «cuantizado a 4 bits» y se corrigió a 8 bits (Q8_0, la variante elegida) el 15 nov 2026. La Fase 8 también actualizará `backend/README.md`, `web/README.md` (hoy dice que la verificación no existe), y los documentos de base de datos, diccionario de datos y diagrama de clases.

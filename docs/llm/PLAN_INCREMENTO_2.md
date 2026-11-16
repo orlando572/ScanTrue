@@ -54,7 +54,7 @@ Después de que BiLSTM y BETO den el resultado rápido, ScanTrue contrasta el te
 - Cambiar la extensión de Chrome. Sigue enviando análisis como hoy; la verificación se ve en la web.
 - Rediseñar la web: solo se completan los puntos donde ya espera la verificación.
 - Registrar la verificación en blockchain.
-- Verificar los análisis creados **antes** de aplicar la migración 008 (D9): quedan sin verificación y la web los muestra como `sin_verificar`.
+- Verificar los análisis creados **antes** de aplicar la migración 009 (D9): quedan sin verificación y la web los muestra como `sin_verificar`.
 
 ## 4. Requisitos y diseño
 
@@ -95,7 +95,9 @@ La verificación **no bloquea ni cambia** la respuesta de `POST /analisis`. Si f
 | Concurrencia | 1 solicitud a la vez por GPU. El trabajador procesa un caso por vez. |
 | Pausa | La GPU debe poder liberarse (incremento 4B). Por eso existe el interruptor de pausa de la sección 4.7. |
 
-### 4.3. Datos: migración `008_verificacion_web.sql` (y su reversión)
+### 4.3. Datos: migración `009_verificacion_web.sql` (y su reversión)
+
+Numeración: el 16 nov 2026 estas migraciones se renumeraron a **009** (`009_verificacion_web.sql`) y **010** (`010_afirmaciones_verificadas.sql`), con sus reversiones, porque `develop` ya tenía una `008_estandar_datasets.sql` de Orlando (datasets del panel) con el mismo número. Los documentos de las fases anteriores se escribieron cuando se llamaban 008 y 009.
 
 Sigue el estilo de 006/007: función `security invoker`, `search_path` vacío, RLS sin políticas, permisos solo para `service_role`, y archivo de reversión en `backend/db/rollback/`.
 
@@ -232,7 +234,7 @@ Panel: en el detalle del caso se muestra la verificación con el componente exis
 | D9 | Análisis anteriores a la migración | **Solo los nuevos**; los existentes quedan `sin_verificar` | — |
 | D10 | Mismo texto analizado varias veces | **Reutilizar** la verificación vigente con el mismo `hash_texto` | — |
 | D11 | Reintentos | **3 intentos** con espera creciente de **1, 5 y 15 minutos**; luego `fallida` con su causa (confirmado en la Fase 5) | — |
-| D12 | Base de datos de desarrollo | **Proyecto Supabase de desarrollo aparte**; el de Orlando solo recibe 008 cuando esté probada | Crear el proyecto en la Fase 0 |
+| D12 | Base de datos de desarrollo | **Proyecto Supabase de desarrollo aparte**; el de Orlando solo recibe la 009 (y la 010) cuando estén probadas | Crear el proyecto en la Fase 0 |
 
 | D13 | Estructura de la evaluación | **Ajuste + prueba final**, esta última abierta una sola vez | — |
 | D14 | Evidencia al evaluar | **En vivo + congelada** (5.3) | — |
@@ -331,23 +333,23 @@ Cada fase termina con algo que se puede ejecutar y comprobar. El tamaño es rela
 
 ### Fase 2 — Datos y cola (M)
 
-- Migración `008` y su reversión; probarla aplicar → revertir → aplicar.
+- Migración `009` y su reversión; probarla aplicar → revertir → aplicar.
 - Repositorio: encolar, reclamar (con el orden de D6), copiar, completar, fallar y reintentar; `POST /analisis` encola sin hacerlo fallar; barrido de análisis sin fila posteriores a `VERIFICATION_DESDE` (D9).
 - Trabajador vacío que solo mueve el estado (`pendiente → en_proceso → completada` con un resultado fijo de prueba).
 - **Se cierra cuando:** crear un análisis desde la extensión deja una fila `pendiente` que el trabajador recoge una sola vez (comprobado con dos procesos a la vez), y que tras un corte vuelve a la cola al vencer la reserva.
-- **Estado (15 nov 2026):** cumplido en el Supabase de desarrollo. La migración `008` se aplicó, se revirtió y se volvió a aplicar; 43 comprobaciones contra la base (orden de D6, reserva vencida, 3 intentos, falla con espera creciente, copia con su vigencia, barrido y 12 casos con dos procesos a la vez, 6 para cada uno, sin repetir ninguno) y un recorrido por la API (`POST /analisis` → `pendiente` → `en_proceso` → `completada` con 1 intento; el mismo texto se copia). Hay 26 pruebas nuevas en `backend/tests/test_verification_queue.py`. Detalles a tener en cuenta:
-  - La prueba por la API cazó un fallo de la primera versión de la 008: una clave foránea en `copiada_de` rompía la web pública (PGRST201). Está corregida y tiene su prueba.
+- **Estado (15 nov 2026):** cumplido en el Supabase de desarrollo. La migración `009` (entonces `008`) se aplicó, se revirtió y se volvió a aplicar; 43 comprobaciones contra la base (orden de D6, reserva vencida, 3 intentos, falla con espera creciente, copia con su vigencia, barrido y 12 casos con dos procesos a la vez, 6 para cada uno, sin repetir ninguno) y un recorrido por la API (`POST /analisis` → `pendiente` → `en_proceso` → `completada` con 1 intento; el mismo texto se copia). Hay 26 pruebas nuevas en `backend/tests/test_verification_queue.py`. Detalles a tener en cuenta:
+  - La prueba por la API cazó un fallo de la primera versión de la 009: una clave foránea en `copiada_de` rompía la web pública (PGRST201). Está corregida y tiene su prueba.
   - La cola y el encolado están apagados salvo `VERIFICATION_ENABLED=true`. El resultado que guarda el trabajador es un texto fijo de prueba, marcado `prueba-fase-2`: no se debe encender donde el público vea los resultados hasta las fases 3 a 5.
   - La reserva dura 600 s y las esperas entre reintentos (60, 300 y 900 s) son provisionales; se ajustan en la Fase 5.
-  - Antes de aplicar la 008 en el proyecto de Orlando hay que coordinarlo con él.
+  - Antes de aplicar la 009 y la 010 en el proyecto de Orlando hay que coordinarlo con él.
 
 ### Fase 3 — Extracción y base de verificaciones anteriores (M)
 
 - Instrucciones de extracción versionadas; validación y reescritura de afirmaciones.
 - **Ya adelantado (15 nov 2026):** `backend/services/verification/prompts.py` (`extraccion-v1`) y `claims.py` (`extract_claims`, con la comprobación determinista de cifras y nombres). Lo medido y lo que no se arregló (atribuciones, listas vacías en noticias falsas) está en [MEDICIONES_LLM.md](MEDICIONES_LLM.md), 3.5.
-- Tabla `afirmaciones_verificadas` (migración 008), funciones de búsqueda y guardado (migración 009) y `known_claims.py`: consulta por coincidencia exacta y guardado al terminar. Se descartan también las afirmaciones que dependen del texto («esta noticia», «dicho país»).
+- Tabla `afirmaciones_verificadas` (migración 009), funciones de búsqueda y guardado (migración 010) y `known_claims.py`: consulta por coincidencia exacta y guardado al terminar. Se descartan también las afirmaciones que dependen del texto («esta noticia», «dicho país»).
 - **Se cierra cuando:** para un conjunto de textos de prueba se obtienen afirmaciones verificables razonables (revisadas a mano) y una afirmación repetida se reutiliza de la base.
-- **Estado (15 nov 2026):** cumplido en el Supabase de desarrollo (migración 009 aplicada), con una desviación del plan: **solo coincidencia exacta**, sin búsqueda por similitud. Se midió con 128 paráfrasis y 148 + 164 cambios de un solo dato: con 0,80 solo se reutiliza el 2 % de las paráfrasis y pasan 42 y 45 cambios de un dato; con 0,95 pasan 1 y 3 y se reutiliza el 0 %. 23 comprobaciones contra la base y 31 pruebas nuevas. Detalle, ejemplos y el anexo de afirmaciones para revisar: [BASE_AFIRMACIONES.md](BASE_AFIRMACIONES.md). La revisión «a mano» de las afirmaciones la hice yo sobre 7 textos; falta la de una persona del equipo.
+- **Estado (15 nov 2026):** cumplido en el Supabase de desarrollo (migración 010 aplicada), con una desviación del plan: **solo coincidencia exacta**, sin búsqueda por similitud. Se midió con 128 paráfrasis y 148 + 164 cambios de un solo dato: con 0,80 solo se reutiliza el 2 % de las paráfrasis y pasan 42 y 45 cambios de un dato; con 0,95 pasan 1 y 3 y se reutiliza el 0 %. 23 comprobaciones contra la base y 31 pruebas nuevas. Detalle, ejemplos y el anexo de afirmaciones para revisar: [BASE_AFIRMACIONES.md](BASE_AFIRMACIONES.md). La revisión «a mano» de las afirmaciones la hice yo sobre 7 textos; falta la de una persona del equipo.
 
 ### Fase 4 — Búsqueda, descarga y juicio (L)
 
@@ -414,7 +416,7 @@ Cada fase termina con algo que se puede ejecutar y comprobar. El tamaño es rela
 
 Funcionales (todos obligatorios):
 1. Crear un análisis desde la extensión no se vuelve más lento ni falla si el LLM, la búsqueda o la cola no están disponibles.
-2. Todo análisis creado después de aplicar la migración 008 recibe una fila de verificación y llega a un estado final (`completada` o `fallida` tras 3 intentos) sin intervención. Un texto repetido reutiliza la verificación vigente.
+2. Todo análisis creado después de aplicar la migración 009 recibe una fila de verificación y llega a un estado final (`completada` o `fallida` tras 3 intentos) sin intervención. Un texto repetido reutiliza la verificación vigente.
 3. Cada conclusión se acompaña de afirmaciones y de fuentes con enlace real descargado por el backend; no hay conclusión `respaldada` o `contradicha` sin al menos una fuente con cita válida.
 4. La web pública y el panel muestran el estado, la conclusión, el resumen, las afirmaciones y las fuentes, y el filtro `verificacion` funciona.
 5. El administrador puede ver la cola, reintentar un caso y pausar la verificación.
