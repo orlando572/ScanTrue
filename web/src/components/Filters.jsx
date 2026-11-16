@@ -36,9 +36,12 @@ export default function Filters({ filters, onChange, domains = [], scope = 'publ
     ...domains.map((item) => ({ value: item.dominio, label: `${item.dominio} (${item.n})` })),
   ];
   const active = activeCount(filters, scope);
+  // En móvil los filtros avanzados (todo salvo búsqueda y nivel) se pliegan en la vista pública.
+  const advanced = active - (filters.q ? 1 : 0) - (filters.nivel ? 1 : 0);
+  const [open, setOpen] = useState(advanced > 0);
 
   return (
-    <form className="panel panel--tight filters" role="search" onSubmit={(event) => { event.preventDefault(); set('q', text.trim()); }}>
+    <form className={`panel panel--tight filters filters--${scope}`} role="search" onSubmit={(event) => { event.preventDefault(); set('q', text.trim()); }}>
       <label className="search">
         <span className="sr-only">Buscar en los fragmentos o por página de origen</span>
         <Icon name="search" />
@@ -65,7 +68,16 @@ export default function Filters({ filters, onChange, domains = [], scope = 'publ
         </div>
       </div>
 
-      <div className="filter-grid">
+      {!admin && (
+        <button
+          type="button" className="btn btn--ghost btn--small filters-toggle"
+          aria-expanded={open} aria-controls={`filter-grid-${scope}`} onClick={() => setOpen(!open)}
+        >
+          {open ? 'Menos filtros' : `Más filtros${advanced > 0 ? ` · ${advanced}` : ''}`}
+        </button>
+      )}
+
+      <div id={`filter-grid-${scope}`} className={`filter-grid${open ? ' is-open' : ''}`}>
         <Select label="Acuerdo entre modelos" value={filters.comparacion} options={AGREEMENTS} all="Todos" onChange={(value) => set('comparacion', value)} />
         {admin
           ? <Select label="Revisión" value={filters.revision} options={REVIEW_STATES} all="Todos" onChange={(value) => set('revision', value)} />

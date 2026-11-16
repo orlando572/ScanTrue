@@ -19,9 +19,10 @@ Tokens en `@theme` de `src/styles.css`.
 | `ink` / `muted` | `#F2F2F5` / `#9A9AA8` | Texto principal y secundario. |
 | `violet` | `#9B7CFF` | Acento de la web pública: acciones, marcos, BETO. |
 | `acid` | `#E6FF4D` | Datos y contadores, página de origen, BiLSTM, foco de teclado. |
-| `coral` | `#FF6A3D` | Acento de administración, índices de fragmento, verificación web. |
+| `coral` | `#FF6A3D` | Acento de administración, índices de fragmento. |
+| `blue` | `#4D8DFF` | Verificación web (apagada mientras no está activa). |
 
-Un color por criterio: **BiLSTM** ácido, **BETO** violeta, **Verificación web** coral.
+Un color por criterio: **BiLSTM** ácido, **BETO** violeta, **Verificación web** azul.
 
 Los cinco niveles del resultado conservan los colores de la extensión, porque significan lo mismo: `#3DFF9A`, `#2EE6C8`, `#FFB21E`, `#FF7A1A`, `#FF4A3D` (clases `tone-*`). Siempre van con la etiqueta del nivel y el porcentaje; el color nunca es la única señal.
 

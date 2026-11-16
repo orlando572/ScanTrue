@@ -9,7 +9,7 @@ export { formatDate, presentResultLevel };
 export const CRITERIA = {
   bilstm: { name: 'BiLSTM', color: 'var(--color-acid)', role: 'Red recurrente: lee el texto palabra por palabra.' },
   mbert: { name: 'BETO', color: 'var(--color-violet)', role: 'Transformer en español: lee el texto en contexto.' },
-  web: { name: 'Verificación web', color: 'var(--color-coral)', role: 'Contrasta las afirmaciones con fuentes externas.' },
+  web: { name: 'Verificación web', color: 'var(--color-blue)', role: 'Contrasta las afirmaciones con fuentes externas.' },
 };
 
 const AGREEMENT = {
