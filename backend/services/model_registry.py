@@ -43,7 +43,6 @@ logger = logging.getLogger(__name__)
 BACKEND = Path(__file__).resolve().parents[1]
 MANIFESTS_DIR = BACKEND / "modelos"
 STATE_FILE = BACKEND / ".local" / "modelos_desplegados.json"
-SCAN_DIR = Path(os.environ.get("MODELOS_BUSCAR_EN") or ROOT / "datasets")
 IMPORTS_DIR = ROOT / "datasets" / "modelos"
 TYPES = ("bilstm", "mbert")
 TYPE_NAMES = {"bilstm": "BiLSTM", "mbert": "BETO / mBERT"}
@@ -198,6 +197,17 @@ def _check_files(contract: ModelContract) -> str | None:
     return None
 
 
+def scan_dir_from_environment() -> Path:
+    """Carpeta donde buscar entrenamientos: `MODELOS_BUSCAR_EN` (también en backend/.env) o
+    `datasets/`. Se lee al crear el catálogo, no al importar, para que cuente backend/.env."""
+    from backend.core.config import ENV_FILE
+    from dotenv import load_dotenv
+
+    load_dotenv(ENV_FILE, override=False)
+    value = os.environ.get("MODELOS_BUSCAR_EN", "").strip()
+    return (ROOT / value).resolve() if value else ROOT / "datasets"
+
+
 def _manifest_path(value: str) -> Path:
     """Rutas de un manifiesto: relativas a la raíz (o absolutas, p. ej. en las pruebas)."""
     return Path(value) if Path(value).is_absolute() else resolve(value)
@@ -207,10 +217,12 @@ class ModelCatalog:
     def __init__(
         self,
         manifests_dir: Path = MANIFESTS_DIR,
-        scan_dir: Path | None = SCAN_DIR,
+        scan_dir: Path | None = ...,
         imports_dir: Path = IMPORTS_DIR,
     ) -> None:
         self.manifests_dir = Path(manifests_dir)
+        if scan_dir is ...:
+            scan_dir = scan_dir_from_environment()
         self.scan_dir = Path(scan_dir) if scan_dir else None
         self.imports_dir = Path(imports_dir)
 

@@ -183,6 +183,17 @@ class CatalogTests(Workspace):
         self.assertIn("B2_20260201", ids)
         self.assertTrue(any(i.startswith("B2_20260201-") for i in ids))
 
+    def test_carpeta_de_busqueda_desde_el_entorno(self):
+        from unittest.mock import patch
+
+        from backend.services.model_registry import scan_dir_from_environment
+        with patch.dict("os.environ", {"MODELOS_BUSCAR_EN": str(self.datasets / "corridas")}):
+            self.assertEqual(scan_dir_from_environment(), (self.datasets / "corridas").resolve())
+            self.assertEqual(ModelCatalog(self.manifests, imports_dir=self.imports).scan_dir,
+                             (self.datasets / "corridas").resolve())
+        with patch.dict("os.environ", {"MODELOS_BUSCAR_EN": ""}):
+            self.assertTrue(str(scan_dir_from_environment()).endswith("datasets"))
+
     def test_no_entra_en_copias_de_respaldo(self):
         write_model(self.datasets / "respaldo_v1/bilstm", "bilstm", "B7_20260101", weights=b"b7")
         self.assertIsNone(self.entry("bilstm", "B7_20260101"))
