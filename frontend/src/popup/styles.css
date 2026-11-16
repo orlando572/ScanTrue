@@ -184,6 +184,9 @@ body {
   animation: alarm-in .9s steps(1, end) both;
 }
 .hud-panel--alarm-amber { --panel-color: var(--color-amber); }
+/* Aviso informativo (p. ej. saliste de la noticia): sin banda de peligro ni destello. */
+.hud-panel--alarm-info { --panel-color: var(--color-accent); border-width: 1px; padding-top: 14px; box-shadow: none; animation: none; }
+.hud-panel--alarm-info .alarm-title { text-shadow: none; }
 .hud-panel--alarm .hazard-band { margin-bottom: 12px; background: repeating-linear-gradient(135deg, var(--panel-color) 0 8px, #000 8px 16px); }
 .hud-panel--alarm.notice-timed { animation: alarm-in .9s steps(1, end) both, notice-fade .3s ease-in calc(var(--notice-ms) - 300ms) forwards; }
 .hud-panel--alarm .notice-timer { background: var(--panel-color); box-shadow: 0 0 6px var(--panel-color); }
@@ -406,16 +409,28 @@ body {
 .primary-button { background: var(--color-accent); color: #000; }
 .primary-button:hover { filter: brightness(1.15); }
 
-.secondary-button { background: var(--color-line); color: var(--color-ink); }
-.secondary-button:hover { background: var(--color-line-2); }
+/* Secundario: fantasma con borde de acento. clip-path corta el border normal, así que el borde
+   es el fondo del botón y el relleno oscuro va en ::before, 1 px hacia dentro y con el mismo chaflán. */
+.secondary-button { isolation: isolate; background: var(--color-accent); color: var(--color-accent); }
+.secondary-button::before {
+  position: absolute;
+  inset: 1px;
+  z-index: -1;
+  content: '';
+  clip-path: polygon(0 0, calc(100% - var(--chamfer) + .5px) 0, 100% calc(var(--chamfer) - .5px), 100% 100%, calc(var(--chamfer) - .5px) 100%, 0 calc(100% - var(--chamfer) + .5px));
+  background: color-mix(in srgb, var(--color-accent) 10%, #000);
+  transition: background-color .15s;
+}
+.secondary-button:hover:not(:disabled)::before { background: color-mix(in srgb, var(--color-accent) 18%, #000); }
 
 .primary-button:active:not(:disabled),
 .secondary-button:active:not(:disabled),
 .delete-confirm-button:active:not(:disabled) { transform: translateY(1px); }
 
+/* Desactivado como en la web: gris y «no disponible», no «cargando». */
 .primary-button:disabled,
-.secondary-button:disabled,
-.delete-confirm-button:disabled { cursor: wait; filter: grayscale(.7) brightness(.6); }
+.delete-confirm-button:disabled { cursor: not-allowed; background: var(--color-line); color: var(--color-muted); filter: none; }
+.secondary-button:disabled { cursor: not-allowed; opacity: .5; }
 
 .delete-button { color: var(--color-false); }
 .delete-button:hover { background: var(--color-false-soft); color: #ffc2bc; }

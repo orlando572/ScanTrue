@@ -71,14 +71,16 @@ function ServiceAlert({ health, onRetry }) {
 }
 
 // Hay fragmentos de otra página: no se mezclan. Se elige entre empezar de nuevo aquí o conservarlos.
-// Alerta llamativa del panel: banda de advertencia, borde grueso y destello al aparecer.
-// Al mostrarse, el panel se desplaza hasta ella. `timedMs` la cierra sola con cuenta atrás.
+// Alerta del panel con el tono según la gravedad: coral para errores, ámbar para decisiones
+// (banda de advertencia, borde grueso y destello) e `info` para avisos sin peligro (violeta, sin
+// banda ni destello). Al mostrarse, el panel se desplaza hasta ella. `timedMs` la cierra sola.
 function Alarm({ title, tone = 'coral', timedMs, children }) {
   const element = useRef(null);
+  const info = tone === 'info';
   useEffect(() => { element.current?.scrollIntoView?.({ block: 'nearest' }); }, []);
-  return <div ref={element} className={`hud-panel hud-panel--alarm${tone === 'amber' ? ' hud-panel--alarm-amber' : ''}${timedMs ? ' notice-timed' : ''} mt-4`} style={timedMs ? { '--notice-ms': `${timedMs}ms` } : undefined} role="alert">
-    <div className="hazard-band" aria-hidden="true" />
-    <p className="alarm-title"><span aria-hidden="true">▲ </span>{title}</p>
+  return <div ref={element} className={`hud-panel hud-panel--alarm${tone === 'amber' ? ' hud-panel--alarm-amber' : info ? ' hud-panel--alarm-info' : ''}${timedMs ? ' notice-timed' : ''} mt-4`} style={timedMs ? { '--notice-ms': `${timedMs}ms` } : undefined} role={info ? 'status' : 'alert'}>
+    {!info && <div className="hazard-band" aria-hidden="true" />}
+    <p className="alarm-title">{!info && <span aria-hidden="true">▲ </span>}{title}</p>
     {children}
     {timedMs ? <span className="notice-timer" aria-hidden="true" /> : null}
   </div>;
@@ -86,31 +88,32 @@ function Alarm({ title, tone = 'coral', timedMs, children }) {
 
 function ConflictAlert({ conflict, busy, onRestart, onKeep }) {
   if (!conflict) return null;
+  const one = conflict.count === 1;
   const from = conflict.domain ? ` de ${conflict.domain}` : ' de otra página';
-  return <Alarm title="Esta es otra página">
-    <p className="mt-2 text-sm leading-5 text-ink">Tienes {conflict.count} {conflict.count === 1 ? 'fragmento' : 'fragmentos'}{from}. Solo se analiza una noticia a la vez.</p>
-    <button type="button" className="primary-button mt-3" onClick={onRestart} disabled={busy}>Empezar de nuevo aquí</button>
-    <button type="button" className="secondary-button mt-2" onClick={onKeep} disabled={busy}>Conservar lo que tengo</button>
+  return <Alarm title="Ya tienes texto de otra noticia" tone="amber">
+    <p className="mt-2 text-sm leading-5 text-ink">Tienes {conflict.count} {one ? 'fragmento' : 'fragmentos'}{from}. Solo se analiza una noticia a la vez.</p>
+    <button type="button" className="primary-button mt-3" onClick={onRestart} disabled={busy}>{one ? 'Borrarlo y empezar aquí' : 'Borrarlos y empezar aquí'}</button>
+    <button type="button" className="secondary-button mt-2" onClick={onKeep} disabled={busy}>{conflict.domain ? `Seguir con ${conflict.domain}` : 'Seguir con la anterior'}</button>
   </Alarm>;
 }
 
 const rejectionTexts = {
-  other_page: 'Ese texto es de otra página. Solo se analiza una noticia a la vez.',
-  duplicate: 'Ese texto ya estaba marcado.',
+  other_page: 'Ese texto es de otra noticia. Solo se analiza una a la vez.',
+  duplicate: 'Ese texto ya está en la lista.',
 };
 
 // Avisos de la selección que llegan del servicio: la pestaña cambió de página, se rechazó un
 // fragmento (se cierra solo) o se está mirando otra pestaña con el modo activo.
 function SelectionNotice({ notice, selectionMode, onDismiss, onStop }) {
-  if (notice?.kind === 'navigated') return <Alarm title="Cambiaste de página">
-    <p className="mt-2 text-sm leading-5 text-ink">La selección terminó. {notice.count === 1 ? 'Tu fragmento' : `Tus ${notice.count} fragmentos`}{notice.domain ? ` de ${notice.domain}` : ''} {notice.count === 1 ? 'sigue' : 'siguen'} aquí: puedes analizarlos o vaciar para empezar con otra noticia.</p>
+  if (notice?.kind === 'navigated') return <Alarm title="Saliste de la noticia" tone="info">
+    <p className="mt-2 text-sm leading-5 text-ink">La selección terminó. {notice.count === 1 ? 'Tu fragmento' : `Tus ${notice.count} fragmentos`}{notice.domain ? ` de ${notice.domain}` : ''} {notice.count === 1 ? 'sigue' : 'siguen'} aquí.</p>
     <button type="button" className="secondary-button mt-3" onClick={onDismiss}>Entendido</button>
   </Alarm>;
   if (notice?.kind === 'rejected') return <Alarm key={notice.at} title="No se añadió" timedMs={REJECTED_MS}>
     <p className="mt-2 text-sm leading-5 text-ink">{rejectionTexts[notice.reason] ?? 'Ese texto no se pudo añadir.'}</p>
   </Alarm>;
   if (notice?.kind === 'other_tab' && selectionMode) return <Alarm title="Estás en otra pestaña" tone="amber">
-    <p className="mt-2 text-sm leading-5 text-ink">La selección sigue en la otra pestaña{notice.domain ? ` (${notice.domain})` : ''}. Vuelve a ella, o termina la selección para analizar esta página.</p>
+    <p className="mt-2 text-sm leading-5 text-ink">Solo se marca texto en la pestaña{notice.domain ? ` de ${notice.domain}` : ' anterior'}. Vuelve a ella para seguir.</p>
     <button type="button" className="secondary-button mt-3" onClick={onStop}>Terminar selección</button>
   </Alarm>;
   return null;
@@ -144,11 +147,11 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
     </ScreenHeader>
     {domain
       ? <p className="hud-readout mt-4">Origen: <b>{domain}</b></p>
-      : hasSelectionText(selection) && <p className="hud-readout mt-4">Sin página de origen: hay texto escrito o pegado.</p>}
+      : hasSelectionText(selection) && <p className="hud-readout mt-4">Texto escrito o pegado a mano.</p>}
     {/* Las alertas van arriba, bajo el título: es lo primero que se ve. */}
     <ConflictAlert conflict={conflict} busy={selecting || submitting} onRestart={onRestart} onKeep={onKeep} />
     <SelectionNotice notice={notice} selectionMode={selectionMode} onDismiss={onDismissNotice} onStop={onStop} />
-    {selection.mixedArticles && <p className="alarm-note mt-4" role="status"><span aria-hidden="true">▲ </span>Parecen notas distintas de esta página. Revisa que todo sea de la misma noticia.</p>}
+    {selection.mixedArticles && <p className="alarm-note mt-4" role="status"><span aria-hidden="true">▲ </span>Parece que hay texto de dos noticias distintas. Quita lo que no sea de la misma.</p>}
 
     <div className={`word-meter word-meter--${meter.level} mt-4`}>
       <div className="flex items-baseline justify-between gap-2">
@@ -156,20 +159,20 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
         <span className="hud-readout"><b>{meter.words}</b> palabras</span>
       </div>
       <SegmentTrack value={meter.value} segments={24} marker={meter.marker} />
-      <p className="mt-1.5 text-[12px] leading-[18px] text-muted">{meter.message}</p>
+      <p id="word-meter-message" className="mt-1.5 text-[12px] leading-[18px] text-muted">{meter.message}</p>
     </div>
 
     {/* La acción principal va junto al medidor: no hay que bajar hasta el final de la lista. */}
     {error && <p className="hud-alert mt-3 text-[12px] leading-[18px]" role="alert">{error}</p>}
-    <button type="button" className="primary-button mt-4" onClick={onAnalyze} disabled={submitting || selecting || !selection.text.trim()}>{submitting ? 'Iniciando análisis…' : 'Analizar'}</button>
-    <p className="mt-2 text-[11px] leading-4 text-muted">Al analizar, el texto y su resultado se publican en la web de ScanTrue, sin identificarte.</p>
+    <button type="button" className="primary-button mt-4" onClick={onAnalyze} disabled={submitting || selecting || !meter.ready} aria-describedby="word-meter-message">{submitting ? 'Iniciando análisis…' : 'Analizar'}</button>
+    <p className="mt-2 text-[11px] leading-4 text-muted">Se publicará en la web de ScanTrue, sin tu nombre.</p>
 
     <div className="input-buffer-meta mt-5 items-center">
       <span className="hud-code hud-code--accent" aria-hidden="true">Fragmentos · {String(fragments.length).padStart(2, '0')} marcados</span>
       <button type="button" className="clear-link" aria-label="Vaciar la selección" title="Empezar de cero" onClick={onClear} disabled={submitting || !selection.text.trim()}>Vaciar</button>
     </div>
     {fragments.length === 0
-      ? <p className="fragment-empty">{selectionMode ? 'Selecciona texto en la página para añadirlo aquí.' : 'Aún no hay fragmentos. Pulsa «Seleccionar más texto» o escribe en «Editar texto completo».'}</p>
+      ? <p className="fragment-empty">{selectionMode ? 'Selecciona texto en la página para añadirlo aquí.' : 'Aún no hay texto. Pulsa «Seleccionar texto» o escríbelo en «Escribir o pegar texto».'}</p>
       : <ul className="fragment-list">{fragments.map((fragment) => <li key={fragment.id} className="fragment-item">
         <span className="fragment-number" aria-hidden="true">#{fragment.number}</span>
         <p className="fragment-text">{fragment.text}</p>
@@ -177,13 +180,13 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
       </li>)}</ul>}
 
     <details className="metrics-details mt-4">
-      <summary>Editar texto completo<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"><path d="m6 9 6 6 6-6" /></svg></summary>
+      <summary>Escribir o pegar texto<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"><path d="m6 9 6 6 6-6" /></svg></summary>
       <div className="border-t border-line p-3">
         <textarea className="selection-preview text-editor w-full resize-none overflow-y-auto text-sm leading-5" aria-label="Texto para analizar" placeholder="Escribe o pega texto aquí" value={selection.text} onChange={(event) => onEdit(event.target.value)} disabled={submitting || selecting} />
       </div>
     </details>
 
-    {!selectionMode && !conflict && <button type="button" className="secondary-button mt-5" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : 'Seleccionar más texto'}</button>}
+    {!selectionMode && !conflict && <button type="button" className="secondary-button mt-5" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : fragments.length ? 'Seleccionar más texto' : 'Seleccionar texto'}</button>}
   </>;
 }
 
@@ -443,7 +446,8 @@ export default function App() {
   };
 
   const analyze = async () => {
-    if (analysisLock.current || !selection?.text?.trim()) return;
+    // Bajo el mínimo de palabras el servidor lo rechazaría: el botón ya está bloqueado.
+    if (analysisLock.current || !meterState(countWords(selection?.text ?? '')).ready) return;
     analysisLock.current = true;
     setSubmitting(true);
     setAnalysisError('');

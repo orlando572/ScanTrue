@@ -11,11 +11,11 @@ test('cuenta palabras igual que el TOKEN_PATTERN del backend', () => {
 
 test('el medidor pasa de rojo a amarillo, verde y dorado', () => {
   const short = meterState(40);
-  assert.deepEqual([short.level, short.ready, short.missing, short.value, short.marker, short.message], ['short', false, 60, 20, 50, 'Faltan 60 palabras']);
-  assert.deepEqual([meterState(99).level, meterState(100).level, meterState(100).message], ['short', 'ready', 'Listo para analizar']);
-  assert.deepEqual([meterState(159).level, meterState(160).level, meterState(160).message], ['ready', 'good', 'Buena longitud']);
+  assert.deepEqual([short.level, short.ready, short.missing, short.value, short.marker, short.message], ['short', false, 60, 20, 50, 'Añade 60 palabras más para poder analizar']);
+  assert.deepEqual([meterState(99).level, meterState(100).level, meterState(100).message], ['short', 'ready', 'Ya puedes analizar. Con más texto, el resultado es más fiable']);
+  assert.deepEqual([meterState(159).level, meterState(160).level, meterState(160).message], ['ready', 'good', 'Buena cantidad de texto']);
   assert.deepEqual([meterState(199).level, meterState(200).level, meterState(200).value], ['good', 'full', 100]);
-  assert.equal(meterState(900).message, 'Longitud completa: lo que siga no se analiza');
+  assert.equal(meterState(900).message, 'Ya hay texto de sobra: lo que añadas no se tendrá en cuenta');
   assert.equal(meterState(-3).words, 0);
 });
 
