@@ -144,7 +144,8 @@ def metricas_prueba(modelo: str, version: str, prueba: pd.DataFrame, logits: np.
         }],
         "limitaciones": [
             "Prueba del panel: noticias revisadas que no comparten grupo con el entrenamiento.",
-            f"Solo {n} noticias: las cifras tienen mucha incertidumbre." if n < 200 else
+            f"Solo {n} {'noticia' if n == 1 else 'noticias'}: las cifras tienen mucha incertidumbre."
+            if n < 200 else
             "La prueba sale de las mismas fuentes que el entrenamiento.",
             "Temperatura provisional (1,0): falta la calibración conjunta; el umbral 0,5 no cambia.",
         ],

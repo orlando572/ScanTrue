@@ -8,7 +8,7 @@ En **Administración → Calibración** (`/admin/calibracion`) se calibra una pa
 - **Combinación:** `p_falsa = sigmoide(w_bilstm · z_bilstm / T_bilstm + w_mbert · z_mbert / T_mbert)`. Los pesos son una decisión de diseño; el vigente es 0,20/0,80.
 - **Validación:** como en `datos_comunes/calibrar_conjunto.py`, por fuente (se ajusta con dos fuentes y se mide en la tercera). Incluye los niveles de la extensión, la regla de discrepancia (evaluada, no aplicada) y la comparación por bootstrap.
 
-**El mismo resultado que hoy:** con la pareja B6 + M3b, peso 0,20 y temperaturas ajustadas sale exactamente la calibración de producción:
+**El mismo resultado que hoy:** con la pareja B6 + M3b, peso 0,20 y temperaturas ajustadas sale exactamente la calibración de producción (también con un B6 reentrenado desde el panel **en la GPU**; uno entrenado en CPU da otra T, ver [ENTRENAMIENTO_PANEL.md](ENTRENAMIENTO_PANEL.md)):
 - T 8,4468 y 2,1347, y pesos 0,2/0,8;
 - el `metricas.json` de `comun_v1_corridas/calibracion/`, idéntico número a número;
 - desplegar esos contratos calibrados da en `POST /analisis` las mismas probabilidades, nivel y comparación. Solo cambian los nombres de versión (`version_combinacion` y la versión de cada modelo).

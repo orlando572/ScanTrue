@@ -317,8 +317,8 @@ class TrainingRequest(BaseModel):
     dispositivo: Literal["cuda", "cpu"] | None = Field(
         default=None, description="cuda (GPU) o cpu (procesador). Por defecto, la GPU si hay CUDA.")
     pliegues: bool = Field(
-        default=False, description="Preparar para calibrar: entrena también F1–F3 y guarda sus "
-                                   "predicciones fuera de pliegue.")
+        default=True, description="Preparar para calibrar (activo por defecto, como en el panel): "
+                                  "entrena también F1–F3 y guarda sus predicciones fuera de pliegue.")
 
 
 class TrainingRecipe(BaseModel):

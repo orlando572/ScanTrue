@@ -394,6 +394,7 @@ class RouteTests(Workspace):
         self.assertEqual(response.status_code, 202, response.text)
         job = response.json()
         self.assertEqual((job["estado"], job["epocas"], job["receta"]["configuracion"]), ("en_curso", 1, "B6"))
+        self.assertTrue(job["pliegues"])  # «Preparar para calibrar», activo por defecto como en el panel
         listing = self.client.get("/admin/entrenamientos", headers=self.auth).json()
         self.assertEqual(listing["activo"]["id"], job["id"])
         detail = self.client.get(f"/admin/entrenamientos/{job['id']}", headers=self.auth).json()
