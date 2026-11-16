@@ -43,7 +43,7 @@ function Temperatures({ result }) {
           <div key={type} className="tile" style={{ '--c': CRITERIA[type].color }}>
             <span className="label">T {TYPE_NAMES[type]}{t.manual ? ' · a mano' : ''}</span>
             <b>{temp(t.usada)}</b>
-            <small>{t.manual ? `ajustada: ${temp(t.ajustada)}` : 'ajustada con sus predicciones fuera de pliegue'}</small>
+            <small>{t.manual ? `ajustada: ${temp(t.ajustada)}` : 'ajustada con sus pliegues'}</small>
           </div>
         );
       })}
@@ -118,7 +118,7 @@ function ResultView({ result }) {
           <section style={{ display: 'grid', gap: 10 }}>
             <h3 className="h-panel" style={{ margin: 0 }}>Validación por fuente</h3>
             <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-              Cada parámetro se ajusta con dos fuentes y se mide en la tercera. La fila elegida es la que se guardaría.
+              Se ajusta con dos fuentes y se mide en la tercera; la fila marcada es la que se guarda.
             </p>
             <ValidationTable validation={data.validacion_por_fuente} chosen={data.metodo_elegido} />
           </section>
@@ -150,8 +150,7 @@ function ResultView({ result }) {
       ) : (
         <section style={{ display: 'grid', gap: 14 }}>
           <p className="alert alert--info" style={{ margin: 0 }}>
-            Los dos modelos no comparten conjunto: cada temperatura se ajusta con las predicciones de su modelo y la
-            combinación no se puede validar en conjunto.
+            Los modelos no comparten conjunto: cada temperatura se ajusta por separado y la combinación no se valida en conjunto.
           </p>
           {TYPES.map((type) => (
             <div key={type} style={{ display: 'grid', gap: 8 }}>
@@ -299,10 +298,7 @@ export default function Calibration() {
 
   return (
     <div className="stack" style={{ paddingTop: 24 }}>
-      <div className="section-head" style={{ margin: 0 }}>
-        <h1 className="display h-page" style={{ margin: 0 }}>Calibración</h1>
-        <button type="button" className="btn btn--ghost" disabled={busy} onClick={() => { options.reload(); list.reload(); }}>Actualizar</button>
-      </div>
+      <h1 className="display h-page" style={{ margin: 0 }}>Calibración</h1>
 
       <section className="panel" style={{ display: 'grid', gap: 12 }}>
         <h2 className="h-panel" style={{ margin: 0 }}>Calibración vigente</h2>
@@ -315,14 +311,13 @@ export default function Calibration() {
           </dl>
         ) : (
           <p className="muted" style={{ margin: 0 }}>
-            La pareja desplegada ({Object.values(data.desplegados ?? {}).join(' + ') || 'ninguna'}) no tiene una calibración guardada:
-            los análisis usan la temperatura de cada contrato y los pesos del panel.
+            La pareja desplegada ({Object.values(data.desplegados ?? {}).join(' + ') || 'ninguna'}) no tiene calibración:
+            se usan la temperatura de cada contrato y los pesos del panel.
           </p>
         )}
         <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-          Calibrar ajusta la temperatura de cada modelo con sus predicciones fuera de pliegue y fija los pesos de la combinación.
-          Guardar crea una versión calibrada nueva (contratos que usan los mismos pesos del modelo): no cambia lo desplegado.
-          «Desplegar» pone la pareja y sus pesos en un solo cambio, que se deshace con «Volver atrás» en <Link className="text-link" to="/admin/modelos">Modelos</Link>.
+          Calibrar ajusta la temperatura de cada modelo y los pesos de la combinación. Guardar crea contratos nuevos sin tocar
+          lo desplegado; «Desplegar» los pone en uso (se deshace en <Link className="text-link" to="/admin/modelos">Modelos</Link> con «Volver atrás»).
         </p>
       </section>
 
@@ -367,7 +362,7 @@ export default function Calibration() {
           <button type="button" className="btn btn--ghost" disabled={busy || !ready || (needsReason && !motivo.trim())} onClick={save}>
             Guardar calibración
           </button>
-          <span className="label">Con B6 + M3b, peso 20 y temperaturas ajustadas sale la calibración de producción.</span>
+          <span className="label">B6 + M3b, peso 20 y temperaturas ajustadas = calibración de producción.</span>
         </div>
 
         {state.busy && (
@@ -380,8 +375,8 @@ export default function Calibration() {
         {state.saved && (
           <div className="alert alert--info" role="status" style={{ display: 'grid', gap: 8 }}>
             <span>
-              Calibración <span className="mono">{state.saved.version}</span> guardada. Sus contratos calibrados
-              ({Object.values(state.saved.contratos ?? {}).join(' + ')}) ya aparecen en Modelos como «Disponible»; lo desplegado no cambió.
+              Calibración <span className="mono">{state.saved.version}</span> guardada: sus contratos ya están en Modelos
+              como «Disponible». Lo desplegado no cambió.
             </span>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <button type="button" className="btn btn--small" disabled={busy} onClick={() => deploy(state.saved.version)}>Desplegar esta calibración</button>
@@ -391,8 +386,7 @@ export default function Calibration() {
         )}
         {state.deployed && (
           <div className="alert alert--info" role="status">
-            Calibración <span className="mono">{state.deployed}</span> desplegada: los análisis nuevos usan su pareja y sus pesos.
-            Para deshacerlo, «Volver atrás» en <Link className="text-link" to="/admin/modelos">Modelos</Link>.
+            Calibración <span className="mono">{state.deployed}</span> desplegada. Para deshacerlo: «Volver atrás» en <Link className="text-link" to="/admin/modelos">Modelos</Link>.
           </div>
         )}
       </section>

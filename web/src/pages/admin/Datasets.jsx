@@ -21,6 +21,20 @@ function save(blob, name) {
 // Por debajo de esto por clase, las métricas de la prueba del panel varían demasiado.
 const MIN_TEST_PER_CLASS = 20;
 
+// Formulario de crear, plegable: abierto de entrada solo si la sección aún está vacía.
+function FormFold({ title, hint, defaultOpen, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <details className="panel panel--accent form-fold" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
+      <summary>
+        <span className="h-panel">{title}</span>
+        {hint && <span className="label">{hint}</span>}
+      </summary>
+      <div className="form-fold-body">{children}</div>
+    </details>
+  );
+}
+
 const sum = (values) => Object.values(values ?? {}).reduce((total, value) => total + value, 0);
 
 // Qué entra en una versión y qué se separó: duplicados, conflictos, estándar, grupos y particiones.
@@ -38,18 +52,18 @@ function Summary({ summary }) {
     <>
       <div className="tiles">
         <div className="tile"><span className="label">Casos</span><b style={{ color: 'var(--color-acid)' }}>{summary.casos}</b><small>de {summary.candidatos} aprobados o corregidos</small></div>
-        <div className="tile"><span className="label">Duplicados retirados</span><b>{summary.duplicados_retirados}</b><small>copias exactas del mismo texto</small></div>
-        <div className="tile"><span className="label">Conflictos retirados</span><b style={{ color: summary.conflictos_retirados ? 'var(--color-false)' : undefined }}>{summary.conflictos_retirados}</b><small>mismo texto con etiquetas contrarias</small></div>
-        <div className="tile"><span className="label">Fuera por el estándar</span><b style={{ color: sum(summary.excluidas) ? 'var(--color-false)' : undefined }}>{sum(summary.excluidas)}</b><small>idioma, longitud, oraciones incompletas o prueba congelada</small></div>
-        <div className="tile"><span className="label">Fragmentos</span><b>{summary.fragmentos ?? 0}</b><small>{standard.min_tokens ?? 100}–{standard.max_tokens_fragmento ?? 200} palabras, terminados en punto</small></div>
-        <div className="tile"><span className="label">Grupos</span><b>{summary.grupos}</b><small>{summary.grupos_con_varios} con varios casos (misma página, evento o casi duplicado)</small></div>
+        <div className="tile"><span className="label">Duplicados retirados</span><b>{summary.duplicados_retirados}</b><small>copias exactas</small></div>
+        <div className="tile"><span className="label">Conflictos retirados</span><b style={{ color: summary.conflictos_retirados ? 'var(--color-false)' : undefined }}>{summary.conflictos_retirados}</b><small>mismo texto, etiqueta contraria</small></div>
+        <div className="tile"><span className="label">Fuera por el estándar</span><b style={{ color: sum(summary.excluidas) ? 'var(--color-false)' : undefined }}>{sum(summary.excluidas)}</b><small>no cumplen el formato</small></div>
+        <div className="tile"><span className="label">Fragmentos</span><b>{summary.fragmentos ?? 0}</b><small>de {standard.min_tokens ?? 100}–{standard.max_tokens_fragmento ?? 200} palabras</small></div>
+        <div className="tile"><span className="label">Grupos</span><b>{summary.grupos}</b><small>{summary.grupos_con_varios} con varios casos</small></div>
       </div>
       <ul className="muted" style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 14 }}>
         {excluded.map(([key, count]) => <li key={key}>{count} fuera: {DATASET_EXCLUDED[key] ?? key}</li>)}
         {cuts.map(([key, count]) => <li key={key}>{count} {DATASET_CUTS[key] ?? key}</li>)}
         {summary.uniones_casi_duplicado > 0 && <li>{summary.uniones_casi_duplicado} unidas a otra por ser casi la misma noticia</li>}
         {crosses.comprobado
-          ? <li>Comparadas con los {crosses.fragmentos_indice} fragmentos de comun_v1: {crosses.en_desarrollo_a_entrenamiento ?? 0} ya estaban en su desarrollo y van a entrenamiento</li>
+          ? <li>{crosses.en_desarrollo_a_entrenamiento ?? 0} ya estaban en el desarrollo de comun_v1 (van a entrenamiento)</li>
           : <li>No se pudo comparar con comun_v1 (falta datasets/comun_v1): revisa los cruces antes de entrenar</li>}
       </ul>
       {dropped.length > 0 && (
@@ -70,14 +84,13 @@ function Summary({ summary }) {
       )}
       {Math.min(testFalse, testReal) < MIN_TEST_PER_CLASS && (
         <p className="alert alert--info" style={{ margin: '12px 0 0' }} role="note">
-          La prueba tiene {testFalse} {testFalse === 1 ? 'falsa' : 'falsas'} y {testReal} {testReal === 1 ? 'real' : 'reales'}:
-          aún no es fiable para comparar modelos. Usa la prueba congelada de comun_v1 como referencia
-          hasta tener al menos {MIN_TEST_PER_CLASS} noticias de cada clase en prueba.
+          Prueba aún pequeña ({testFalse} {testFalse === 1 ? 'falsa' : 'falsas'}, {testReal} {testReal === 1 ? 'real' : 'reales'}):
+          para comparar modelos usa la prueba congelada de comun_v1 hasta tener {MIN_TEST_PER_CLASS} de cada clase.
         </p>
       )}
       <div className="table-wrap" style={{ marginTop: 16 }}>
         <table className="data">
-          <thead><tr><th>Partición</th><th>Falsas</th><th>Reales</th><th>Noticias</th><th>Fragmentos</th></tr></thead>
+          <thead><tr><th>Partición</th><th className="num">Falsas</th><th className="num">Reales</th><th className="num">Noticias</th><th className="num">Fragmentos</th></tr></thead>
           <tbody>
             {['entrenamiento', 'prueba'].map((partition) => (
               <tr key={partition}>
@@ -92,14 +105,14 @@ function Summary({ summary }) {
         </table>
       </div>
       <p className="label" style={{ margin: '12px 0 0' }}>
-        Cada grupo va entero a una partición · prueba ≈ {percent(summary.fraccion_prueba)} de las noticias de cada clase
-        {standard.tope_noticia ? ` · máximo ${standard.tope_noticia} palabras por noticia` : ''}
+        Prueba ≈ {percent(summary.fraccion_prueba)} de cada clase · grupos sin partir
+        {standard.tope_noticia ? ` · máx. ${standard.tope_noticia} palabras por noticia` : ''}
       </p>
     </>
   );
 }
 
-function NewVersion({ onCreated }) {
+function NewVersion({ onCreated, defaultOpen }) {
   const [fraction, setFraction] = useState(20);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -126,13 +139,12 @@ function NewVersion({ onCreated }) {
   }
 
   const ready = preview.data && preview.data.casos > 0;
+  const hint = preview.data ? `${preview.data.casos} ${preview.data.casos === 1 ? 'caso listo' : 'casos listos'}` : null;
   return (
-    <section className="panel panel--accent">
-      <h2 className="h-panel" style={{ margin: '0 0 6px' }}>Nueva versión</h2>
+    <FormFold title="Nueva versión" hint={hint} defaultOpen={defaultOpen}>
       <p className="muted" style={{ margin: '0 0 16px', fontSize: 14 }}>
-        Una versión es una copia fija de los casos aprobados o corregidos hasta hoy, con su etiqueta,
-        procedencia y evidencia, guardados con el estándar de comun_v1: cada noticia en fragmentos
-        de 100 a 200 palabras que terminan en punto. No cambia aunque después se revisen más casos.
+        Copia fija de los casos aprobados y corregidos hasta hoy, en el formato de comun_v1.
+        No cambia aunque se revisen más casos.
       </p>
       {preview.error ? <ErrorState error={preview.error} onRetry={preview.reload} />
         : !preview.data ? <Loader code="Calculando" label="Calculando la vista previa" rows={1} />
@@ -150,7 +162,7 @@ function NewVersion({ onCreated }) {
           </label>
           <label className="field">
             <span>Parte para prueba · {fraction} %</span>
-            <input type="range" min={5} max={50} step={5} value={fraction} onChange={(event) => setFraction(Number(event.target.value))} style={{ accentColor: 'var(--color-coral)', height: 40 }} />
+            <input type="range" min={5} max={50} step={5} value={fraction} onChange={(event) => setFraction(Number(event.target.value))} style={{ height: 40 }} />
           </label>
         </div>
         <label className="field">
@@ -160,7 +172,7 @@ function NewVersion({ onCreated }) {
         {state.error && <p className="alert" style={{ margin: 0 }} role="alert">{state.error.message}</p>}
         <div><button type="submit" className="btn" disabled={!ready || state.sending}>{state.sending ? 'Creando…' : 'Crear versión'}</button></div>
       </form>
-    </section>
+    </FormFold>
   );
 }
 
@@ -253,7 +265,7 @@ function Version({ version, open, onToggle, onDeleted }) {
           {version.descripcion && <p className="muted" style={{ margin: '8px 0 0' }}>{version.descripcion}</p>}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          <button type="button" className="btn btn--small" onClick={csv} disabled={state.busy !== null}>
+          <button type="button" className="btn btn--ghost btn--small" onClick={csv} disabled={state.busy !== null}>
             <span style={{ width: 14 }}><Icon name="download" /></span>{state.busy === 'csv' ? 'Preparando…' : 'CSV'}
           </button>
           <button type="button" className="btn btn--small" onClick={standard} disabled={state.busy !== null || !hasStandard}
@@ -311,10 +323,10 @@ function SetPreview({ summary }) {
   return (
     <div style={{ display: 'grid', gap: 14 }}>
       <div className="tiles">
-        <div className="tile"><span className="label">Del panel</span><b style={{ color: 'var(--color-acid)' }}>{(summary.panel_despues?.reales ?? 0) + (summary.panel_despues?.falsas ?? 0)}</b><small>noticias que se suman al entrenamiento</small></div>
-        <div className="tile"><span className="label">Ya en comun_v1</span><b>{removed.duplicado_comun ?? 0}</b><small>mismo texto: no se repiten</small></div>
-        <div className="tile"><span className="label">Retiradas al equilibrar</span><b>{removed.noticias_por_balanceo ?? 0}</b><small>noticias enteras de la clase que sobraba</small></div>
-        <div className="tile"><span className="label">Prueba</span><b>{(summary.prueba?.reales ?? 0) + (summary.prueba?.falsas ?? 0)}</b><small>noticias para evaluar el modelo (no se tocan)</small></div>
+        <div className="tile"><span className="label">Del panel</span><b style={{ color: 'var(--color-acid)' }}>{(summary.panel_despues?.reales ?? 0) + (summary.panel_despues?.falsas ?? 0)}</b><small>se suman al entrenamiento</small></div>
+        <div className="tile"><span className="label">Ya en comun_v1</span><b>{removed.duplicado_comun ?? 0}</b><small>no se repiten</small></div>
+        <div className="tile"><span className="label">Retiradas al equilibrar</span><b>{removed.noticias_por_balanceo ?? 0}</b><small>de la clase que sobraba</small></div>
+        <div className="tile"><span className="label">Prueba</span><b>{(summary.prueba?.reales ?? 0) + (summary.prueba?.falsas ?? 0)}</b><small>para evaluar (no se tocan)</small></div>
       </div>
       <Balance counts={summary.panel_antes} label="Lo añadido, antes" />
       <Balance counts={summary.panel_despues} label="Lo añadido, después" />
@@ -322,8 +334,8 @@ function SetPreview({ summary }) {
       <Balance counts={summary.total_entrenamiento} label="Total para entrenar" />
       {removed.casi_duplicado_unido > 0 && (
         <p className="muted" style={{ margin: 0, fontSize: 14 }}>
-          {removed.casi_duplicado_unido} {removed.casi_duplicado_unido === 1 ? 'noticia es casi igual' : 'noticias son casi iguales'} a otra de comun_v1:
-          entrenan en su mismo grupo, así nunca se entrena con una y se valida con su gemela.
+          {removed.casi_duplicado_unido} {removed.casi_duplicado_unido === 1 ? 'noticia casi igual' : 'noticias casi iguales'} a otra de comun_v1
+          van en su mismo grupo (no se entrena con una y se valida con la otra).
         </p>
       )}
       {summary.plegable === false && (
@@ -335,7 +347,7 @@ function SetPreview({ summary }) {
   );
 }
 
-function NewSet({ versions, onCreated }) {
+function NewSet({ versions, onCreated, defaultOpen }) {
   const usable = versions.filter(isStandard);
   const [chosen, setChosen] = useState(() => (usable[0] ? [usable[0].id] : []));
   const [comun, setComun] = useState(true);
@@ -375,28 +387,25 @@ function NewSet({ versions, onCreated }) {
 
   const ready = chosen.length > 0 && preview.data && !preview.error;
   return (
-    <section className="panel panel--accent">
-      <h2 className="h-panel" style={{ margin: '0 0 6px' }}>Nuevo conjunto combinado</h2>
+    <FormFold title="Nuevo conjunto combinado" hint="comun_v1 + versiones" defaultOpen={defaultOpen}>
       <p className="muted" style={{ margin: '0 0 12px', fontSize: 14 }}>
-        Suma a comun_v1 las noticias revisadas de una o varias versiones, sin repetir ninguna. comun_v1 no cambia:
-        sus pliegues y su validación por fuente siguen igual, y lo del panel solo se añade al entrenamiento.
-        La prueba de las versiones evalúa el modelo al terminar. Se elige como fuente en <Link className="text-link" to="/admin/entrenamiento">Entrenamiento</Link>.
+        Suma a comun_v1 las noticias de una o varias versiones, sin duplicados. comun_v1 no cambia: lo añadido solo
+        va a entrenamiento y la prueba de las versiones evalúa el modelo. Se usa como fuente en <Link className="text-link" to="/admin/entrenamiento">Entrenamiento</Link>.
       </p>
       <details style={{ margin: '0 0 16px' }}>
         <summary className="text-link" style={{ cursor: 'pointer' }}>¿Hace falta que esté 50/50?</summary>
         <ul className="muted" style={{ margin: '10px 0 0', paddingLeft: 18, fontSize: 14, display: 'grid', gap: 6 }}>
-          <li>Al entrenar, las reales y las falsas ya pesan lo mismo en total: un conjunto 64/36, como comun_v1, entrena como si fuera 50/50 sin tirar noticias.</li>
-          <li>Que comun_v1 tenga más reales no lo hace mejor ni peor: refleja sus fuentes, y en la realidad circulan más noticias reales que falsas.</li>
-          <li>«Equilibrar lo añadido 50/50» retira noticias enteras de la clase que sobra entre las del panel, después de juntar y quitar duplicados. Úsalo si lo revisado está muy cargado hacia una clase. Nunca toca comun_v1 ni la prueba.</li>
+          <li>No: al entrenar, las dos clases pesan lo mismo aunque el conjunto sea 64/36.</li>
+          <li>«Equilibrar lo añadido 50/50» retira noticias de la clase que sobra, solo entre las del panel. Úsalo si lo revisado está muy cargado hacia una clase.</li>
         </ul>
       </details>
       {usable.length === 0 ? (
-        <div className="alert alert--info">Crea primero una versión con el formulario de arriba: las anteriores al estándar no se pueden combinar.</div>
+        <div className="alert alert--info">Crea antes una versión: las anteriores al formato actual no se pueden combinar.</div>
       ) : (
         <form onSubmit={submit} style={{ display: 'grid', gap: 14 }}>
           <label className="train-check">
             <input type="checkbox" checked={comun} onChange={(event) => setComun(event.target.checked)} />
-            <span><strong>Incluir comun_v1</strong><span className="muted">Se copia tal cual. Sin él, el conjunto es solo la unión de las versiones.</span></span>
+            <span><strong>Incluir comun_v1</strong><span className="muted">Se copia tal cual. Sin él, solo se unen las versiones.</span></span>
           </label>
           <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
             <span>Versiones del panel que se añaden</span>
@@ -443,7 +452,7 @@ function NewSet({ versions, onCreated }) {
           <div><button type="submit" className="btn" disabled={!ready || state.sending}>{state.sending ? 'Creando…' : 'Crear conjunto'}</button></div>
         </form>
       )}
-    </section>
+    </FormFold>
   );
 }
 
@@ -491,14 +500,14 @@ function CombinedSets({ versions }) {
   const { data, error, loading, reload, setData } = useLoad((signal) => adminApi('/admin/conjuntos', { signal }), []);
   return (
     <>
-      <h2 className="display" style={{ margin: '24px 0 0', fontSize: 16 }}>Conjuntos combinados</h2>
-      <NewSet versions={versions} onCreated={(item) => setData([item, ...(data ?? [])])} />
+      <h2 className="display h-section" style={{ margin: '24px 0 0' }}>Conjuntos combinados{data ? ` · ${data.length}` : ''}</h2>
       {error ? <ErrorState error={error} onRetry={reload} />
         : loading ? <Loader code="Recuperando conjuntos" label="Cargando conjuntos" rows={1} />
-          : data.length === 0 ? <p className="muted" style={{ margin: 0 }}>Aún no hay conjuntos combinados.</p>
+          : data.length === 0 ? <Empty compact title="Aún no hay conjuntos combinados">Crea uno abajo con tus versiones y comun_v1.</Empty>
             : data.map((item) => (
               <CombinedSet key={item.version} item={item} onDeleted={(version) => setData(data.filter((entry) => entry.version !== version))} />
             ))}
+      {(data || error) && <NewSet versions={versions} defaultOpen={!data?.length} onCreated={(item) => setData([item, ...(data ?? [])])} />}
     </>
   );
 }
@@ -509,12 +518,11 @@ export default function Datasets() {
 
   return (
     <div className="stack" style={{ paddingTop: 24 }}>
-      <h1 className="display h-page" style={{ margin: 0 }}>Versiones de dataset</h1>
-      <NewVersion onCreated={(version) => { setData([version, ...(data ?? [])]); setOpen(version.id); }} />
-      <h2 className="display" style={{ margin: '8px 0 0', fontSize: 16 }}>Versiones creadas</h2>
+      <h1 className="display h-page" style={{ margin: 0 }}>Datasets</h1>
+      <h2 className="display h-section" style={{ margin: '8px 0 0' }}>Versiones{data ? ` · ${data.length}` : ''}</h2>
       {error ? <ErrorState error={error} onRetry={reload} />
         : loading ? <Loader code="Recuperando versiones" label="Cargando versiones" rows={2} />
-          : data.length === 0 ? <Empty title="Aún no hay versiones"><p style={{ margin: 0 }}>Revisa casos y crea la primera versión con el formulario de arriba.</p></Empty>
+          : data.length === 0 ? <Empty compact title="Aún no hay versiones">Revisa casos y crea la primera abajo.</Empty>
             : data.map((version) => (
               <Version
                 key={version.id} version={version} open={open === version.id}
@@ -522,6 +530,7 @@ export default function Datasets() {
                 onDeleted={(id) => setData(data.filter((item) => item.id !== id))}
               />
             ))}
+      {(data || error) && <NewVersion defaultOpen={!data?.length} onCreated={(version) => { setData([version, ...(data ?? [])]); setOpen(version.id); }} />}
       {data && <CombinedSets versions={data} />}
     </div>
   );

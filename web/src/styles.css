@@ -104,7 +104,17 @@ main { flex: 1; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 0 18px; border: 0; background: var(--accent); color: #000; font-family: var(--font-mono); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; cursor: pointer; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); transition: filter .15s, transform .1s; }
 .btn:hover { filter: brightness(1.15); }
 .btn:active { transform: translateY(1px); }
-.btn:disabled { cursor: not-allowed; filter: grayscale(.7) brightness(.6); }
+.btn:disabled { cursor: not-allowed; background: var(--color-line); color: var(--color-muted); filter: none; }
+/* Controles nativos con el estilo de la web (sin el azul del navegador). */
+input[type='checkbox'], input[type='radio'] { accent-color: var(--accent); }
+input[type='range'] { -webkit-appearance: none; appearance: none; height: 18px; background: transparent; cursor: pointer; }
+input[type='range']:disabled { cursor: not-allowed; opacity: .4; }
+input[type='range']::-webkit-slider-runnable-track { height: 4px; background: var(--color-line-2); }
+input[type='range']::-moz-range-track { height: 4px; background: var(--color-line-2); }
+input[type='range']::-moz-range-progress { height: 4px; background: var(--accent); }
+input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px; border: 0; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+input[type='range']::-moz-range-thumb { width: 14px; height: 14px; border: 0; border-radius: 0; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+input[type='range']:focus-visible { outline: 1px solid var(--color-acid); outline-offset: 4px; }
 .btn:focus-visible { outline: 2px dashed #000; outline-offset: -5px; }
 .btn--ghost { background: var(--color-line); color: var(--color-ink); }
 .btn--ghost:hover { background: var(--color-line-2); filter: none; }
@@ -246,6 +256,16 @@ a.source:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 .empty { display: grid; justify-items: center; gap: 12px; padding: 56px 24px; text-align: center; }
 .empty svg { width: 56px; height: 56px; color: var(--color-line-2); }
+/* Vacío de una línea, para listas dentro de una página con más contenido. */
+.empty--compact { grid-auto-flow: column; justify-content: start; justify-items: start; align-items: center; gap: 12px; padding: 14px 18px; text-align: left; }
+.empty--compact svg { width: 22px; height: 22px; }
+.empty--compact .h-panel { margin: 0; }
+/* Formulario de crear plegable (Datasets). */
+.form-fold > summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; cursor: pointer; list-style: none; }
+.form-fold > summary::-webkit-details-marker { display: none; }
+.form-fold > summary .h-panel::before { content: '▸ '; color: var(--accent); }
+.form-fold[open] > summary .h-panel::before { content: '▾ '; }
+.form-fold[open] > summary { margin-bottom: 14px; }
 
 /* ── Detalle ───────────────────────────────────────────────────────── */
 
@@ -339,6 +359,8 @@ table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.data th { padding: 8px 10px; border-bottom: 1px solid var(--color-line-2); text-align: left; font-family: var(--font-mono); font-size: 10px; font-weight: 400; letter-spacing: .16em; text-transform: uppercase; color: var(--color-muted); white-space: nowrap; }
 table.data td { padding: 9px 10px; border-bottom: 1px solid var(--color-line); vertical-align: top; }
 table.data td.num { font-family: var(--font-mono); text-align: right; white-space: nowrap; }
+table.data th.num { text-align: right; }
+table.data td.nowrap { white-space: nowrap; }
 .version-head { display: flex; flex-wrap: wrap; align-items: start; justify-content: space-between; gap: 12px; }
 .metric { display: grid; grid-template-columns: minmax(0, 1fr) 54px; align-items: center; gap: 4px 10px; font-family: var(--font-mono); font-size: 12px; }
 .metric .name { grid-column: 1 / -1; color: var(--color-muted); }

@@ -68,9 +68,9 @@ export function ErrorState({ error, onRetry }) {
   );
 }
 
-export function Empty({ title, children }) {
+export function Empty({ title, children, compact = false }) {
   return (
-    <div className="panel empty">
+    <div className={`panel empty${compact ? ' empty--compact' : ''}`}>
       <Icon name="radar" />
       <h2 className="h-panel">{title}</h2>
       <div className="muted" style={{ maxWidth: 460 }}>{children}</div>
