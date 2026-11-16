@@ -52,7 +52,9 @@ Si la cuenta no existe, la crea y pide la contraseña por teclado; si existe, la
 
 ## Tercer criterio (incremento 2)
 
-La verificación web todavía no existe, pero la web ya tiene su sitio: la tarjeta de cada resultado, el panel «Verificación web» del detalle y el filtro de Resultados. Cuando el backend rellene la tabla `verificaciones_web`, la API devolverá `verificacion_web` y la web lo mostrará sin cambios (`presentVerification` en `src/lib/presentation.js`).
+La **verificación web** contrasta el texto con fuentes de internet después del resultado rápido y se publica como un tercer criterio. En la web pública aparece en la tarjeta de cada resultado, en el panel «Verificación web» del detalle (estado, conclusión —respaldada, contradicha, fuera de contexto o evidencia insuficiente—, resumen, afirmaciones y fuentes con su cita literal) y en el filtro de Resultados; la portada muestra un contador de casos verificados con fuentes. El resumen lo redacta un modelo de lenguaje y puede equivocarse: lo comprobable son las afirmaciones y sus fuentes (`presentVerification` en `src/lib/presentation.js`).
+
+En el panel de administración, el tablero «Verificación web» muestra el estado del trabajador y del LLM, los casos por estado y la duración media, y permite **pausar o reanudar** el trabajador; cada caso muestra su seguimiento (intentos, causa de una falla, próximo intento) y se puede **reintentar**. La verificación está **apagada por omisión** en el backend (`VERIFICATION_ENABLED`) y no debe encenderse donde el público vea resultados hasta cerrar la evaluación de la Fase 7. Detalle: [docs/llm/WEB_Y_PANEL.md](../docs/llm/WEB_Y_PANEL.md) y [docs/llm/ESTADO_LLM.md](../docs/llm/ESTADO_LLM.md).
 
 ## Estructura
 
