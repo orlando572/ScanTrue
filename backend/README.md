@@ -166,7 +166,7 @@ La web (`web/`, ver [su README](../web/README.md)) usa estas rutas. Todas leen y
 
 - **Administrador:** sesión normal (`POST /sesiones`) de una cuenta con `app_metadata.role = "admin"`. Se crea o asciende con `python -m backend.crear_admin correo@ejemplo.com`.
 - **CORS:** `WEB_ORIGINS` en `backend/.env` (por defecto `http://127.0.0.1:5174,http://localhost:5174`).
-- **Migraciones:** `006_web_publica_admin.sql` y `007_revision_datasets.sql`. Sin la 007, `POST /analisis` sigue guardando con la función anterior, pero la web y el panel no funcionan.
+- **Migraciones:** `006_web_publica_admin.sql`, `007_revision_datasets.sql` y `008_estandar_datasets.sql`. Sin la 007, `POST /analisis` sigue guardando con la función anterior, pero la web y el panel no funcionan. La 008 añade las columnas del estándar a `dataset_items` y el manifiesto de cada versión; sin ella no se pueden crear ni abrir versiones de dataset.
 - **Fragmentos:** `POST /analisis` acepta `fragmentos` (lista opcional). Se guardan el fragmento original (`texto_original`), los fragmentos y el texto recortado que leyó cada modelo (`resultados_modelo.texto_modelo`). `texto` y `hash_texto` no cambian.
 - **Datasets:** `services/datasets.py` retira copias exactas y etiquetas en conflicto, agrupa por página y por evento, y reparte cada grupo entero a entrenamiento o prueba.
 - **Versiones de modelos:** cada versión activable es un manifiesto en `backend/despliegues/*.json` (dos contratos y su combinación). La activa y el historial se guardan en `backend/.local/despliegue_activo.json`. Activar carga los modelos, hace una predicción de prueba y solo entonces sustituye a la versión actual. `GET /metricas` sirve las métricas de la versión activa y `/salud` incluye `despliegue`.

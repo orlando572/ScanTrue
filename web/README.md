@@ -40,7 +40,12 @@ Si la cuenta no existe, la crea y pide la contraseña por teclado; si existe, la
 
 - **Panel:** totales, reparto por nivel, acuerdo entre modelos, revisiones, análisis por día y versión de modelos activa.
 - **Casos y revisión:** lista con filtros; por defecto van primero los casos donde BiLSTM y BETO no coinciden. En cada caso se elige la etiqueta correcta (**Falsa** o **Real**: si coincide con el modelo queda *aprobado*; si no, *corregido*) o se **descarta**, con nota, enlaces de evidencia y grupo de evento. Atajos: `A` aprueba, `F` falsa, `R` real, `D` descarta, `J`/`K` siguiente y anterior. También se puede ocultar un caso de la web pública.
-- **Datasets:** crea una versión con los casos aprobados o corregidos. Retira copias exactas y textos con etiquetas contrarias, agrupa los casos de la misma página o del mismo evento y manda cada grupo entero a entrenamiento o a prueba. Se descarga en CSV, con un manifiesto JSON.
+- **Datasets:** crea una versión con los casos aprobados o corregidos, con el mismo estándar que el conjunto común `datasets/comun_v1` (`datos_comunes/estandar.py`):
+  - Limpia cada noticia como comun_v1, deja fuera las que no están en español y la corta a 400 palabras como máximo.
+  - La parte en fragmentos de 100 a 200 palabras hechos de oraciones completas (terminan en `.`, `!`, `?` o `…`), cada uno con peso 1/n.
+  - Retira copias exactas y textos con etiquetas contrarias, y retira también las noticias que ya están en la prueba congelada de comun_v1. Las que están en su desarrollo van siempre a entrenamiento.
+  - Agrupa los casos de la misma página, del mismo evento o casi iguales, y manda cada grupo entero a entrenamiento o a prueba. La prueba se toma por clase (≈20 % de las falsas y de las reales).
+  - Se descarga como CSV con toda la procedencia o como **ZIP para entrenar**: `fragmentos_entrenamiento.csv` y `fragmentos_prueba.csv` con las columnas de comun_v1, `procedencia.csv` y `manifest.json` con el SHA-256 de cada archivo. `datos_comunes/comun.py:leer()` carga esos CSV directamente.
 - **Modelos:** lista las versiones de `backend/despliegues/`, con sus métricas y una comparación lado a lado. **Activar** carga y comprueba la versión antes de sustituir a la actual; **Volver a la anterior** deshace el último cambio.
 
 ## Tercer criterio (incremento 2)

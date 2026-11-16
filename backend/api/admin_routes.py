@@ -17,6 +17,7 @@ from backend.schemas.admin import (
     AdminCasePage,
     AdminIdentity,
     AdminSummary,
+    CaseStandardPreview,
     DatasetCreate,
     DatasetDetail,
     DatasetSummary,
@@ -28,7 +29,10 @@ from backend.schemas.admin import (
     ReviewRequest,
     VisibilityUpdate,
 )
-from backend.services.datasets import build_dataset, export_csv
+from backend.services.datasets import (
+    LegacyVersionError, build_dataset, build_manifest, comun_index, export_csv,
+    export_standard_zip, preview_case,
+)
 from backend.services.model_versions import MODELS, ModelVersionError, ModelVersionManager
 
 
@@ -96,6 +100,17 @@ def get_case(
     repository: SupabaseRepository = Depends(service_repository),
 ) -> AdminCaseDetail:
     return _case(repository, analysis_id)
+
+
+@router.get("/casos/{analysis_id}/estandar", response_model=CaseStandardPreview)
+def get_case_standard(
+    analysis_id: UUID,
+    repository: SupabaseRepository = Depends(service_repository),
+) -> CaseStandardPreview:
+    """Cómo entraría el caso a una versión de dataset (no guarda nada)."""
+    case = _case(repository, analysis_id)
+    text = (case.texto_original or case.texto or "").strip()
+    return preview_case(text, case.fragmentos, comun_index())
 
 
 @router.patch("/casos/{analysis_id}", response_model=AdminCaseDetail)
@@ -173,7 +188,7 @@ def preview_dataset(
     repository: SupabaseRepository = Depends(service_repository),
 ) -> DatasetSummary:
     """Qué entraría hoy en una versión nueva, sin guardarla."""
-    return build_dataset(repository.reviewed_cases(), fraccion_prueba).summary
+    return build_dataset(repository.reviewed_cases(), fraccion_prueba, comun_index()).summary
 
 
 @router.post("/datasets", response_model=DatasetVersion, status_code=201)
@@ -182,7 +197,7 @@ def create_dataset(
     user=Depends(admin_user),
     repository: SupabaseRepository = Depends(service_repository),
 ) -> DatasetVersion:
-    build = build_dataset(repository.reviewed_cases(), payload.fraccion_prueba)
+    build = build_dataset(repository.reviewed_cases(), payload.fraccion_prueba, comun_index())
     if not build.items:
         raise HTTPException(
             status_code=409,
@@ -198,6 +213,7 @@ def create_dataset(
             (payload.descripcion or "").strip() or None,
             UUID(str(user.id)),
             build.summary.model_dump(),
+            build_manifest(build),
             [item.model_dump(mode="json", exclude={"id"}) for item in build.items],
         )
     except SupabaseDataError as error:
@@ -238,6 +254,10 @@ def get_dataset(
 @router.get("/datasets/{version_id}/exportar")
 def export_dataset(
     version_id: UUID,
+    formato: Literal["completo", "estandar"] = Query(
+        default="completo",
+        description="completo: un CSV con toda la procedencia. estandar: ZIP para entrenar "
+                    "con los CSV de comun_v1 y manifest.json."),
     repository: SupabaseRepository = Depends(service_repository),
 ) -> Response:
     version = _dataset(repository, version_id)
@@ -246,6 +266,23 @@ def export_dataset(
         character if character.isascii() and (character.isalnum() or character in "-_.") else "_"
         for character in version.nombre
     ).strip("_") or "dataset"
+    if formato == "estandar":
+        try:
+            content = export_standard_zip(version.model_dump(), items)
+        except LegacyVersionError as error:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "codigo": "version_anterior_al_estandar",
+                    "mensaje": "Esta versión se creó antes del estándar de fragmentos: "
+                               "crea una nueva para exportarla para entrenar.",
+                },
+            ) from error
+        return Response(
+            content=content,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="scantrue_{filename}.zip"'},
+        )
     return Response(
         content=export_csv(items),
         media_type="text/csv; charset=utf-8",

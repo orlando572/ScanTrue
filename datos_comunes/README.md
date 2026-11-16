@@ -7,6 +7,9 @@ datos_comunes/
 ├── construir_comun.py   Construye datasets/comun_v1/ desde datasets/unificado/
 ├── limpieza.py          Limpieza de marcas de medio y detector de idioma
 ├── grupos.py            Agrupa copias y noticias relacionadas para que no crucen particiones
+├── estandar.py          Estándar de fila de cualquier dataset nuevo (hoy, el del panel): limpieza,
+│                        tope de 400 tokens y fragmentos de 100–200 tokens en oraciones completas
+├── cruces.py            Casi duplicados y cruces de un texto con comun_v1 (índice compacto)
 ├── comun.py             Lee el conjunto y arma pliegues y validación interna
 ├── evaluar_comun.py     Métricas por artículo, bootstrap, temperatura y niveles de la extensión
 ├── referencias.py       Referencias: solo longitud y TF-IDF de caracteres

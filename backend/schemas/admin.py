@@ -107,19 +107,61 @@ class DatasetCreate(BaseModel):
     fraccion_prueba: float = Field(default=0.2, ge=0.05, le=0.5)
 
 
+class ExcludedCase(BaseModel):
+    analisis_id: UUID
+    motivo: str
+
+
+class CaseStandardPreview(BaseModel):
+    """Cómo entraría un caso al dataset si se aprueba o corrige."""
+
+    entra: bool
+    motivo: str | None = Field(default=None, description="Por qué quedaría fuera.")
+    fragmentos: list[int] = Field(default_factory=list, description="Palabras de cada fragmento.")
+    tokens: int = 0
+    tokens_limpios: int = Field(default=0, description="Palabras tras la limpieza, antes del tope.")
+    recortes: list[str] = Field(default_factory=list)
+    cruce_comun: Literal["congelada", "desarrollo"] | None = None
+    comprobado_comun: bool = False
+
+
 class DatasetSummary(BaseModel):
     """Qué entra en una versión y qué se separó o quedó fuera."""
 
     candidatos: int = 0
-    casos: int = 0
+    casos: int = Field(default=0, description="Noticias que entran (cada una da 1 o más fragmentos).")
+    fragmentos: int = Field(default=0, description="Filas del dataset: fragmentos de 100–200 tokens.")
     duplicados_retirados: int = 0
     conflictos_retirados: int = 0
+    excluidas: dict[str, int] = Field(
+        default_factory=dict,
+        description="Noticias fuera: no_espanol, sin_fin_de_oracion, menos_de_100_tokens, "
+                    "oraciones_demasiado_largas, cruce_prueba_congelada.")
+    recortes: dict[str, int] = Field(
+        default_factory=dict,
+        description="Noticias recortadas: tope_noticia, inicio_incompleto, final_incompleto, "
+                    "oraciones_sueltas.")
+    excluidas_casos: list[ExcludedCase] = Field(
+        default_factory=list,
+        description="Hasta 100 noticias que quedan fuera, con su motivo (también conflictos).")
+    filas_cambiadas_por_patron: dict[str, int] = Field(default_factory=dict)
     grupos: int = 0
     grupos_con_varios: int = 0
+    uniones_casi_duplicado: int = Field(
+        default=0, description="Grupos unidos por casi duplicado (tejas de 5 palabras).")
+    cruces_comun: dict = Field(
+        default_factory=dict,
+        description="Cruces con comun_v1: retirados por estar en su prueba congelada y "
+                    "enviados a entrenamiento por estar en su desarrollo.")
     por_etiqueta: dict[str, int] = Field(default_factory=dict)
     por_particion: dict[str, int] = Field(default_factory=dict)
     por_decision: dict[str, int] = Field(default_factory=dict)
     por_particion_etiqueta: dict[str, dict[str, int]] = Field(default_factory=dict)
+    fragmentos_por_particion: dict[str, int] = Field(default_factory=dict)
+    fragmentos_por_noticia: dict[int, int] = Field(default_factory=dict)
+    tokens_noticia: dict[str, float] = Field(default_factory=dict)
+    tokens_fragmento: dict[str, float] = Field(default_factory=dict)
+    estandar: dict = Field(default_factory=dict, description="Parámetros del estándar de fila.")
     fraccion_prueba: float = 0.2
 
 
@@ -129,6 +171,9 @@ class DatasetVersion(BaseModel):
     descripcion: str | None = None
     fecha: datetime
     resumen: DatasetSummary
+    manifiesto: dict = Field(
+        default_factory=dict,
+        description="Archivos con su SHA-256, parámetros del estándar y código que la construyó.")
 
 
 class DatasetItem(BaseModel):
@@ -144,6 +189,24 @@ class DatasetItem(BaseModel):
     decision: Literal["aprobado", "corregido"]
     procedencia: dict = Field(default_factory=dict)
     evidencia: list = Field(default_factory=list)
+    # Columnas del estándar (datos_comunes/estandar.py). Las versiones creadas antes de la
+    # migración 008 las tienen en `procedencia.fragmento`; las anteriores al estándar, vacías.
+    id_fragmento: str | None = None
+    fuente: str | None = None
+    peso: float | None = None
+    tokens_bilstm: int | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _fragment_from_origin(cls, data):
+        if isinstance(data, dict):
+            fragment = (data.get("procedencia") or {}).get("fragmento") or {}
+            for name in ("id_fragmento", "peso", "tokens_bilstm"):
+                if data.get(name) is None and fragment.get(name) is not None:
+                    data = {**data, name: fragment[name]}
+            if data.get("fuente") is None and fragment:
+                data = {**data, "fuente": (data.get("procedencia") or {}).get("fuente")}
+        return data
 
 
 class DatasetDetail(DatasetVersion):

@@ -12,9 +12,9 @@ La instalación comprobada usa Python 3.14, PyTorch 2.14.1, pandas 3.0.6 y
 scikit-learn 1.9.1. En Linux:
 
 ```bash
-python3.14 -m venv backend/.venv
-backend/.venv/bin/python -m pip install torch==2.14.1 pandas==3.0.6 scikit-learn==1.9.1
-backend/.venv/bin/python -m pip install -r backend/requirements.lock
+python3.14 -m venv bilstm/.venv
+bilstm/.venv/bin/python -m pip install -r bilstm/requirements.txt
+bilstm/.venv/bin/python -m pip install --target backend/.deps -r backend/requirements.lock
 ```
 
 También se necesitan `forge` y `anvil` de Foundry y el compilador `solc`
@@ -22,13 +22,16 @@ También se necesitan `forge` y `anvil` de Foundry y el compilador `solc`
 
 ## 2. Supabase y configuración local
 
-Crea un proyecto Supabase y aplica en orden los cinco archivos
-`backend/db/migrations/001_*.sql` a `005_*.sql`. Habilita el acceso anónimo y
+Crea un proyecto Supabase y aplica en orden los archivos
+`backend/db/migrations/001_*.sql` a `008_*.sql`. Habilita el acceso anónimo y
 el proveedor de correo y contraseña en Auth. Copia `backend/.env.example` a
 `backend/.env` y completa la URL, la clave publicable y la clave secreta de
 Supabase. El archivo `.env` y las claves nunca deben subirse a Git.
 
 ## 3. Anvil y API
+
+Con el contrato ya desplegado, `./levantar.sh` (en la raíz) arranca Anvil con su
+estado, la API y la web, y espera a que respondan. Los pasos manuales son estos.
 
 Compila el contrato con `solc` 0.8.30 disponible en `PATH`:
 
@@ -50,8 +53,8 @@ Pon en `backend/.env` la clave privada de **una cuenta local de Anvil** como
 despliega el contrato e inicia la API:
 
 ```bash
-backend/.venv/bin/python -m backend.blockchain.deploy
-backend/.venv/bin/python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
+PYTHONPATH=backend/.deps bilstm/.venv/bin/python -m backend.blockchain.deploy
+PYTHONPATH=backend/.deps bilstm/.venv/bin/python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
 ```
 
 Comprueba `http://127.0.0.1:8000/salud` y abre

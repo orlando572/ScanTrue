@@ -511,7 +511,7 @@ class SupabaseRepository:
         """Casos aprobados o corregidos, con lo necesario para armar un dataset."""
         select = (
             "decision,etiqueta_final,nota,evidencia,grupo_evento,fecha,"
-            "analisis!inner(id,fecha,url,texto,texto_original,hash_texto,comparacion,"
+            "analisis!inner(id,fecha,url,texto,texto_original,fragmentos,hash_texto,comparacion,"
             "resultado_unificado,resultados_modelo(modelo,version,probabilidad_falsa))"
         )
         cases: list[dict] = []
@@ -534,7 +534,7 @@ class SupabaseRepository:
 
     def create_dataset_version(
         self, name: str, description: str | None, creator_id: UUID,
-        summary: dict, items: list[dict],
+        summary: dict, manifest: dict, items: list[dict],
     ) -> UUID:
         value = self._request(
             "POST",
@@ -545,6 +545,7 @@ class SupabaseRepository:
                 "p_descripcion": description,
                 "p_creado_por": str(creator_id),
                 "p_resumen": summary,
+                "p_manifiesto": manifest,
                 "p_items": items,
             },
         )
@@ -555,7 +556,7 @@ class SupabaseRepository:
             "GET",
             "datasets_version",
             admin=True,
-            params={"select": "id,nombre,descripcion,fecha,resumen", "order": "fecha.desc"},
+            params={"select": "id,nombre,descripcion,fecha,resumen,manifiesto", "order": "fecha.desc"},
         )
         return [DatasetVersion(**row) for row in rows or []]
 
@@ -565,7 +566,7 @@ class SupabaseRepository:
             "datasets_version",
             admin=True,
             params={
-                "select": "id,nombre,descripcion,fecha,resumen",
+                "select": "id,nombre,descripcion,fecha,resumen,manifiesto",
                 "id": f"eq.{version_id}",
                 "limit": 1,
             },
@@ -584,7 +585,8 @@ class SupabaseRepository:
                 "dataset_items",
                 [
                     ("select", "id,analisis_id,texto,hash_texto,etiqueta,particion,grupo,"
-                               "url,dominio,decision,procedencia,evidencia"),
+                               "url,dominio,decision,procedencia,evidencia,"
+                               "id_fragmento,fuente,peso,tokens_bilstm"),
                     ("version_id", f"eq.{version_id}"),
                     ("order", "particion.asc,grupo.asc,id.asc"),
                     ("limit", size),
