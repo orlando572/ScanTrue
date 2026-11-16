@@ -107,6 +107,24 @@ class DatasetCreate(BaseModel):
     fraccion_prueba: float = Field(default=0.2, ge=0.05, le=0.5)
 
 
+class ExcludedCase(BaseModel):
+    analisis_id: UUID
+    motivo: str
+
+
+class CaseStandardPreview(BaseModel):
+    """Cómo entraría un caso al dataset si se aprueba o corrige."""
+
+    entra: bool
+    motivo: str | None = Field(default=None, description="Por qué quedaría fuera.")
+    fragmentos: list[int] = Field(default_factory=list, description="Palabras de cada fragmento.")
+    tokens: int = 0
+    tokens_limpios: int = Field(default=0, description="Palabras tras la limpieza, antes del tope.")
+    recortes: list[str] = Field(default_factory=list)
+    cruce_comun: Literal["congelada", "desarrollo"] | None = None
+    comprobado_comun: bool = False
+
+
 class DatasetSummary(BaseModel):
     """Qué entra en una versión y qué se separó o quedó fuera."""
 
@@ -123,6 +141,9 @@ class DatasetSummary(BaseModel):
         default_factory=dict,
         description="Noticias recortadas: tope_noticia, inicio_incompleto, final_incompleto, "
                     "oraciones_sueltas.")
+    excluidas_casos: list[ExcludedCase] = Field(
+        default_factory=list,
+        description="Hasta 100 noticias que quedan fuera, con su motivo (también conflictos).")
     filas_cambiadas_por_patron: dict[str, int] = Field(default_factory=dict)
     grupos: int = 0
     grupos_con_varios: int = 0

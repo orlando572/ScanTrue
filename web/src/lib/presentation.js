@@ -106,3 +106,28 @@ export function percent(value) {
 export function share(part, total) {
   return total > 0 ? Math.round((part / total) * 100) : 0;
 }
+
+// Estándar de los datasets (datos_comunes/estandar.py): por qué una noticia queda fuera y qué se recorta.
+export const DATASET_EXCLUDED = {
+  no_espanol: 'no está en español',
+  sin_fin_de_oracion: 'no tiene ninguna oración terminada en punto',
+  menos_de_100_tokens: 'tiene menos de 100 palabras en oraciones completas',
+  oraciones_demasiado_largas: 'sus oraciones pasan de 200 palabras',
+  cruce_prueba_congelada: 'ya está en la prueba congelada de comun_v1',
+  conflicto_etiquetas: 'otra copia del mismo texto tiene la etiqueta contraria',
+};
+
+export const DATASET_CUTS = {
+  tope_noticia: 'cortadas al tope de palabras por noticia',
+  inicio_incompleto: 'sin la oración inicial cortada',
+  final_incompleto: 'sin la oración final cortada',
+  oraciones_sueltas: 'con alguna oración que no cabía en un fragmento',
+};
+
+// Lo mismo para un solo caso (vista previa al revisarlo).
+export const CASE_CUTS = {
+  tope_noticia: 'Se corta al tope de 400 palabras por noticia.',
+  inicio_incompleto: 'Se quita la oración inicial, que empieza cortada.',
+  final_incompleto: 'Se quita la oración final, que quedó cortada.',
+  oraciones_sueltas: 'Alguna oración no cabe en un fragmento y se deja fuera.',
+};

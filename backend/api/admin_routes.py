@@ -17,6 +17,7 @@ from backend.schemas.admin import (
     AdminCasePage,
     AdminIdentity,
     AdminSummary,
+    CaseStandardPreview,
     DatasetCreate,
     DatasetDetail,
     DatasetSummary,
@@ -30,7 +31,7 @@ from backend.schemas.admin import (
 )
 from backend.services.datasets import (
     LegacyVersionError, build_dataset, build_manifest, comun_index, export_csv,
-    export_standard_zip,
+    export_standard_zip, preview_case,
 )
 from backend.services.model_versions import MODELS, ModelVersionError, ModelVersionManager
 
@@ -99,6 +100,17 @@ def get_case(
     repository: SupabaseRepository = Depends(service_repository),
 ) -> AdminCaseDetail:
     return _case(repository, analysis_id)
+
+
+@router.get("/casos/{analysis_id}/estandar", response_model=CaseStandardPreview)
+def get_case_standard(
+    analysis_id: UUID,
+    repository: SupabaseRepository = Depends(service_repository),
+) -> CaseStandardPreview:
+    """Cómo entraría el caso a una versión de dataset (no guarda nada)."""
+    case = _case(repository, analysis_id)
+    text = (case.texto_original or case.texto or "").strip()
+    return preview_case(text, case.fragmentos, comun_index())
 
 
 @router.patch("/casos/{analysis_id}", response_model=AdminCaseDetail)

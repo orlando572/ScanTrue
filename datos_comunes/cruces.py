@@ -10,15 +10,21 @@ etiquetas ni evalúa nada, así que no «abre» la prueba congelada en el sentid
 (sus métricas se miran una sola vez, en `prueba_congelada.py`). Se lee con `csv` y no con
 `comun.leer()` para no depender de pandas ni de su candado.
 
+El índice es compacto (unos 20 MB para los ~7500 fragmentos): un único `array` ordenado
+con cada pareja (teja, fila) empaquetada en un entero de 64 bits, que se busca con `bisect`.
+
 Solo usa la biblioteca estándar.
 """
 
 from __future__ import annotations
 
+from array import array
+from bisect import bisect_left
 import csv
+from dataclasses import dataclass
+from hashlib import blake2b
 import re
 import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 from datos_comunes.grupos import fingerprint
@@ -30,11 +36,20 @@ CONGELADA = "congelada"
 ARCHIVOS = ("fragmentos_desarrollo.csv", "fragmentos_prueba_congelada.csv",
             "ablacion_satira.csv", "ablacion_usmsc.csv", "ablacion_politica.csv")
 _PALABRA = re.compile(r"\w+")
+# Cada pareja del índice es (hash de 43 bits de la teja) << 20 | fila: hasta ~1 millón de filas.
+_BITS_FILA = 20
+_MASCARA_FILA = (1 << _BITS_FILA) - 1
+
+
+def _hash_teja(teja: tuple[str, ...]) -> int:
+    """Hash estable (igual en cada proceso) de 43 bits: con la fila cabe en un int64 con signo."""
+    digest = blake2b(" ".join(teja).encode("utf-8"), digest_size=8).digest()
+    return int.from_bytes(digest, "big") >> 21
 
 
 def tejas(texto: str) -> frozenset[int]:
     palabras = _PALABRA.findall(texto.casefold())
-    return frozenset(hash(teja) for teja in zip(*(palabras[i:] for i in range(TAMANO_TEJA))))
+    return frozenset(_hash_teja(teja) for teja in zip(*(palabras[i:] for i in range(TAMANO_TEJA))))
 
 
 def parecidas(a: frozenset[int], b: frozenset[int]) -> bool:
@@ -43,6 +58,10 @@ def parecidas(a: frozenset[int], b: frozenset[int]) -> bool:
         return False
     compartidas = len(a & b)
     return compartidas >= MIN_COMPARTIDAS and compartidas / menor >= MIN_PROPORCION
+
+
+def _hash_huella(texto: str) -> int:
+    return int.from_bytes(blake2b(fingerprint(texto).encode("utf-8"), digest_size=8).digest(), "big")
 
 
 @dataclass(frozen=True)
@@ -60,16 +79,20 @@ class IndiceComun:
     """Huellas y tejas de todos los fragmentos de comun_v1, para buscar cruces."""
 
     def __init__(self, filas: list[dict]):
-        self._filas = [(f["archivo"], f["grupo"], f["pliegue"]) for f in filas]
-        self._huellas: dict[str, int] = {}
-        self._tejas: list[frozenset[int]] = []
-        self._indice: dict[int, list[int]] = {}
+        if len(filas) > _MASCARA_FILA:
+            raise ValueError("Demasiadas filas para el índice compacto")
+        self._filas = [(sys.intern(f["archivo"]), sys.intern(f["grupo"]), sys.intern(f["pliegue"]))
+                       for f in filas]
+        self._huellas: dict[int, int] = {}
+        self._cuantas = array("i")
+        parejas: list[int] = []
         for posicion, fila in enumerate(filas):
-            self._huellas.setdefault(fingerprint(fila["texto"]), posicion)
+            self._huellas.setdefault(_hash_huella(fila["texto"]), posicion)
             conjunto = tejas(fila["texto"])
-            self._tejas.append(conjunto)
-            for teja in conjunto:
-                self._indice.setdefault(teja, []).append(posicion)
+            self._cuantas.append(len(conjunto))
+            parejas.extend(teja << _BITS_FILA | posicion for teja in conjunto)
+        parejas.sort()
+        self._parejas = array("q", parejas)
 
     @classmethod
     def cargar(cls, carpeta: Path) -> "IndiceComun | None":
@@ -94,16 +117,20 @@ class IndiceComun:
     def cruces(self, texto: str) -> list[Cruce]:
         """Fragmentos de comun_v1 que son el mismo texto o un casi duplicado de `texto`."""
         encontrados: set[int] = set()
-        exacta = self._huellas.get(fingerprint(texto))
+        exacta = self._huellas.get(_hash_huella(texto))
         if exacta is not None:
             encontrados.add(exacta)
         consulta = tejas(texto)
         cuentas: dict[int, int] = {}
+        parejas = self._parejas
         for teja in consulta:
-            for posicion in self._indice.get(teja, ()):
+            inicio = bisect_left(parejas, teja << _BITS_FILA)
+            fin = bisect_left(parejas, (teja + 1) << _BITS_FILA, inicio)
+            for k in range(inicio, fin):
+                posicion = parejas[k] & _MASCARA_FILA
                 cuentas[posicion] = cuentas.get(posicion, 0) + 1
         for posicion, compartidas in cuentas.items():
-            menor = min(len(consulta), len(self._tejas[posicion]))
+            menor = min(len(consulta), self._cuantas[posicion])
             if compartidas >= MIN_COMPARTIDAS and menor and compartidas / menor >= MIN_PROPORCION:
                 encontrados.add(posicion)
         return sorted({Cruce(*self._filas[p]) for p in encontrados},

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Empty, ErrorState, Icon, Loader } from '../../components/ui.jsx';
 import { adminApi, adminDownload, query } from '../../lib/api.js';
 import { useLoad } from '../../lib/hooks.js';
-import { formatDate, percent, shortId } from '../../lib/presentation.js';
+import { DATASET_CUTS, DATASET_EXCLUDED, formatDate, percent, shortId } from '../../lib/presentation.js';
 
 const PAGE = 25;
 
@@ -18,20 +18,6 @@ function save(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-const EXCLUDED = {
-  no_espanol: 'no está en español',
-  sin_fin_de_oracion: 'sin ninguna oración terminada en punto',
-  menos_de_100_tokens: 'menos de 100 palabras en oraciones completas',
-  oraciones_demasiado_largas: 'oraciones de más de 200 palabras',
-  cruce_prueba_congelada: 'ya está en la prueba congelada de comun_v1',
-};
-const CUTS = {
-  tope_noticia: 'cortadas al tope de palabras por noticia',
-  inicio_incompleto: 'sin la oración inicial cortada',
-  final_incompleto: 'sin la oración final cortada',
-  oraciones_sueltas: 'con alguna oración que no cabía en un fragmento',
-};
-
 const sum = (values) => Object.values(values ?? {}).reduce((total, value) => total + value, 0);
 
 // Qué entra en una versión y qué se separó: duplicados, conflictos, estándar, grupos y particiones.
@@ -42,6 +28,7 @@ function Summary({ summary }) {
   const excluded = Object.entries(summary.excluidas ?? {}).filter(([, count]) => count);
   const cuts = Object.entries(summary.recortes ?? {}).filter(([, count]) => count);
   const crosses = summary.cruces_comun ?? {};
+  const dropped = summary.excluidas_casos ?? [];
   return (
     <>
       <div className="tiles">
@@ -53,13 +40,29 @@ function Summary({ summary }) {
         <div className="tile"><span className="label">Grupos</span><b>{summary.grupos}</b><small>{summary.grupos_con_varios} con varios casos (misma página, evento o casi duplicado)</small></div>
       </div>
       <ul className="muted" style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 14 }}>
-        {excluded.map(([key, count]) => <li key={key}>{count} fuera: {EXCLUDED[key] ?? key}</li>)}
-        {cuts.map(([key, count]) => <li key={key}>{count} {CUTS[key] ?? key}</li>)}
+        {excluded.map(([key, count]) => <li key={key}>{count} fuera: {DATASET_EXCLUDED[key] ?? key}</li>)}
+        {cuts.map(([key, count]) => <li key={key}>{count} {DATASET_CUTS[key] ?? key}</li>)}
         {summary.uniones_casi_duplicado > 0 && <li>{summary.uniones_casi_duplicado} unidas a otra por ser casi la misma noticia</li>}
         {crosses.comprobado
           ? <li>Comparadas con los {crosses.fragmentos_indice} fragmentos de comun_v1: {crosses.en_desarrollo_a_entrenamiento ?? 0} ya estaban en su desarrollo y van a entrenamiento</li>
           : <li>No se pudo comparar con comun_v1 (falta datasets/comun_v1): revisa los cruces antes de entrenar</li>}
       </ul>
+      {dropped.length > 0 && (
+        <details style={{ marginTop: 12 }}>
+          <summary className="text-link" style={{ cursor: 'pointer' }}>
+            Ver {dropped.length === 1 ? 'la noticia que queda fuera' : `las ${dropped.length} noticias que quedan fuera`}
+          </summary>
+          <ul style={{ margin: '10px 0 0', paddingLeft: 18, display: 'grid', gap: 6, fontSize: 14 }}>
+            {dropped.map((item) => (
+              <li key={`${item.analisis_id}-${item.motivo}`}>
+                <Link className="text-link mono" to={`/admin/casos?caso=${item.analisis_id}`}>{shortId(item.analisis_id)}</Link>
+                {' · '}<span className="muted">{DATASET_EXCLUDED[item.motivo] ?? item.motivo}</span>
+              </li>
+            ))}
+          </ul>
+          {dropped.length >= 100 && <p className="label" style={{ margin: '8px 0 0' }}>Se muestran las 100 primeras.</p>}
+        </details>
+      )}
       <div className="table-wrap" style={{ marginTop: 16 }}>
         <table className="data">
           <thead><tr><th>Partición</th><th>Falsas</th><th>Reales</th><th>Noticias</th><th>Fragmentos</th></tr></thead>

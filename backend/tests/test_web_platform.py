@@ -12,6 +12,7 @@ from pathlib import Path
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 from uuid import uuid4
 import zipfile
 
@@ -32,6 +33,7 @@ from backend.schemas.admin import DatasetItem
 from backend.services.analysis import clean_fragments
 from backend.services.datasets import (
     LegacyVersionError, build_dataset, build_manifest, export_csv, export_standard_zip,
+    preview_case,
 )
 from backend.services.model_versions import ModelVersionError, ModelVersionManager
 from datos_comunes.comun import leer
@@ -255,6 +257,15 @@ class RouteTests(unittest.TestCase):
         self.assertIsNone(discarded["revision"]["etiqueta_final"])
         self.assertIsNone(self.client.delete(url, headers=self.auth).json()["revision"])
 
+    def test_vista_previa_del_estandar_de_un_caso(self):
+        with patch("backend.api.admin_routes.comun_index", return_value=None):
+            response = self.client.get(f"/admin/casos/{uuid4()}/estandar", headers=self.auth)
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual(set(body), {"entra", "motivo", "fragmentos", "tokens", "tokens_limpios",
+                                     "recortes", "cruce_comun", "comprobado_comun"})
+        self.assertFalse(body["comprobado_comun"])
+
     def test_ocultar_y_dataset_vacio(self):
         case = uuid4()
         hidden = self.client.patch(f"/admin/casos/{case}", headers=self.auth, json={"oculto": True})
@@ -400,6 +411,30 @@ class DatasetTests(unittest.TestCase):
         # Con menos de 1/fracción grupos en una clase, esa clase no se fuerza a prueba.
         few = build_dataset(rows[:2] + rows[5:], 0.2).summary.por_particion_etiqueta["prueba"]
         self.assertEqual(few["falsa"], 0)
+
+    def test_excluidas_con_su_motivo(self):
+        vacuna = news("la vacuna")
+        rows = [reviewed(vacuna, "falsa"), reviewed(vacuna.upper(), "real"),
+                reviewed("Una frase corta y nada más.", "real"), reviewed(news("ok"), "real")]
+        listed = build_dataset(rows).summary.excluidas_casos
+        reasons = {str(case.analisis_id): case.motivo for case in listed}
+        self.assertEqual(sorted(reasons.values()),
+                         ["conflicto_etiquetas", "conflicto_etiquetas", "menos_de_100_tokens"])
+        self.assertEqual(reasons[rows[2]["analisis"]["id"]], "menos_de_100_tokens")
+
+    def test_preview_case(self):
+        text = news("el puerto", sentences=30)
+        ok = preview_case(text, [text], None)
+        self.assertTrue(ok.entra)
+        self.assertEqual(len(ok.fragmentos), 2)
+        self.assertIn("tope_noticia", ok.recortes)
+        english = " ".join(["The government said that the law is in effect for all of them."] * 15)
+        self.assertEqual(preview_case(english, [], None).motivo, "no_espanol")
+        index = IndiceComun([{"archivo": "fragmentos_prueba_congelada.csv", "grupo": "g",
+                              "pliegue": "congelada", "texto": text}])
+        frozen = preview_case(text, [text], index)
+        self.assertEqual((frozen.entra, frozen.motivo, frozen.cruce_comun),
+                         (False, "cruce_prueba_congelada", "congelada"))
 
     def test_la_particion_es_estable_y_respeta_la_fraccion(self):
         rows = [reviewed(news(f"el tema {index}"), "real") for index in range(400)]

@@ -31,7 +31,7 @@ import zipfile
 from statistics import mean, median
 
 from backend.repositories.filters import public_url
-from backend.schemas.admin import DatasetItem, DatasetSummary
+from backend.schemas.admin import CaseStandardPreview, DatasetItem, DatasetSummary
 from datos_comunes import estandar
 from datos_comunes.cruces import IndiceComun, parecidas, tejas
 from datos_comunes.grupos import UnionFind, fingerprint
@@ -47,6 +47,8 @@ STANDARD_FILES = {"entrenamiento": ("fragmentos_entrenamiento.csv", "panel"),
 CODE_FILES = ("datos_comunes/estandar.py", "datos_comunes/limpieza.py",
               "datos_comunes/cruces.py", "datos_comunes/grupos.py",
               "backend/services/datasets.py")
+# Noticias fuera que se listan en el resumen (el resto solo se cuenta).
+MAX_LISTED = 100
 logger = logging.getLogger(__name__)
 
 
@@ -173,10 +175,12 @@ def build_dataset(
     for item in candidates:
         by_print[item["huella"]].append(item)
     unique: list[dict] = []
+    dropped: list[tuple[str, str]] = []  # (análisis, motivo) de lo que queda fuera
     duplicates = conflicts = 0
     for copies in by_print.values():
         if len({item["etiqueta"] for item in copies}) > 1:
             conflicts += len(copies)
+            dropped.extend((item["analisis_id"], "conflicto_etiquetas") for item in copies)
             continue
         duplicates += len(copies) - 1
         unique.append(copies[-1])
@@ -190,6 +194,7 @@ def build_dataset(
         news = estandar.preparar_noticia(item["partes"])
         if news.motivo:
             excluded[news.motivo] += 1
+            dropped.append((item["analisis_id"], news.motivo))
             continue
         patterns.update(news.patrones)
         cuts.update(set(news.recortes))
@@ -203,6 +208,7 @@ def build_dataset(
             found = comun.cruces(item["texto"])
             if any(cruce.congelada for cruce in found):
                 excluded["cruce_prueba_congelada"] += 1
+                dropped.append((item["analisis_id"], "cruce_prueba_congelada"))
                 continue
             item["comun"] = sorted({cruce.grupo for cruce in found})
             in_development += bool(found)
@@ -318,6 +324,9 @@ def build_dataset(
         duplicados_retirados=duplicates,
         conflictos_retirados=conflicts,
         excluidas=dict(excluded),
+        excluidas_casos=[
+            {"analisis_id": case, "motivo": reason} for case, reason in dropped[:MAX_LISTED]
+        ],
         recortes=dict(cuts),
         filas_cambiadas_por_patron=dict(patterns),
         grupos=len(groups),
@@ -382,6 +391,33 @@ def export_csv(items: list[DatasetItem]) -> str:
             "tokens_bilstm": "" if item.tokens_bilstm is None else item.tokens_bilstm,
         })
     return buffer.getvalue()
+
+
+# ── Vista previa de un caso al revisarlo ────────────────────────────
+
+
+def preview_case(text: str, parts: list[str], comun: IndiceComun | None) -> CaseStandardPreview:
+    """Cómo entraría un caso al dataset si se aprueba: mismo estándar y cruces que una versión."""
+    news = estandar.preparar_noticia(parts or [text])
+    cross = None
+    if comun is not None and not news.motivo:
+        found = comun.cruces(text)
+        if any(item.congelada for item in found):
+            cross = "congelada"
+        elif found:
+            cross = "desarrollo"
+    reason = news.motivo or ("cruce_prueba_congelada" if cross == "congelada" else None)
+    return CaseStandardPreview(
+        entra=reason is None,
+        motivo=reason,
+        fragmentos=[estandar.contar_tokens(fragment) for fragment in news.fragmentos]
+        if reason is None else [],
+        tokens=news.tokens if reason is None else 0,
+        tokens_limpios=news.tokens_limpios,
+        recortes=news.recortes,
+        cruce_comun=cross,
+        comprobado_comun=comun is not None,
+    )
 
 
 # ── Formato estándar (el de comun_v1) y manifiesto ──────────────────
