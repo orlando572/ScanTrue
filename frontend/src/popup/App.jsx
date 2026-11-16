@@ -57,6 +57,8 @@ const serviceLabels = {
   unknown: 'No se pudo confirmar el estado del servicio.',
 };
 const serviceCodes = { checking: 'Conectando…', available: 'En línea', degraded: 'Servicio limitado', unavailable: 'Sin conexión', unknown: 'Estado desconocido' };
+// Rótulo sobre el ojo del inicio: dice en palabras si se puede analizar ahora.
+const homeStatus = { checking: 'Conectando…', available: 'Listo para analizar', degraded: 'Funciona en parte', unavailable: 'Sin conexión', unknown: 'Estado sin confirmar' };
 
 // Aviso junto a la acción principal, solo cuando el servicio no está disponible.
 function ServiceAlert({ health, onRetry }) {
@@ -535,13 +537,13 @@ export default function App() {
     <main className={`flex flex-1 flex-col px-5 ${current === 'P01' ? 'pb-5 pt-2' : 'pb-6 pt-6'}${current === 'P01' || current === 'P02' ? ' screen-boot' : ''}`}>
       {current === 'P01' ? <>
         <div className="home-core">
-          <span className="hud-code" aria-hidden="true">Consola de análisis de noticias</span>
+          <span className={`hud-code home-status home-status--${health}`} aria-hidden="true">{homeStatus[health]}</span>
           <ScanEye />
         </div>
         <div className="hud-panel hud-panel--accent hud-panel--mark">
           <h1 className="screen-title">¿Dudas de una noticia?</h1>
-          <p className="mt-2 text-sm leading-5 text-muted">Marca el titular y unos párrafos de la noticia. Te mostramos si se parece más a una noticia falsa o a una real.</p>
-          <p className="mt-2 text-[12px] leading-[18px] text-muted opacity-80">Es una orientación, no una verificación de los hechos.</p>
+          <p className="mt-2 text-sm leading-5 text-muted">Selecciona el titular y algunos párrafos de la noticia, y te decimos si podría ser una noticia falsa o real.</p>
+          <p className="mt-2 text-[12px] leading-[18px] text-muted opacity-80">Es una orientación: no comprueba si los hechos son ciertos.</p>
           <ServiceAlert health={health} onRetry={refreshHealth} />
           <button type="button" className="primary-button mt-5" onClick={() => startSelection()} disabled={selecting}>{selecting ? 'Preparando selección…' : 'Escoger texto'}</button>
           <ConflictAlert conflict={conflict} busy={selecting} onRestart={() => startSelection(true)} onKeep={() => { setConflict(null); open('P02'); }} />

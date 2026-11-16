@@ -295,7 +295,7 @@ body {
   container-type: inline-size;
 }
 
-.led-strip-status { display: inline-flex; flex: none; align-items: center; gap: 6px; margin-left: auto; white-space: nowrap; text-transform: uppercase; letter-spacing: .12em; }
+.led-strip-status { position: relative; display: inline-flex; flex: none; align-items: center; gap: 6px; margin-left: auto; padding: 6px 0; white-space: nowrap; text-transform: uppercase; letter-spacing: .12em; cursor: help; }
 .led-strip-status .status-dot { width: 7px; height: 7px; margin-top: 0; }
 .led-strip-status--available { color: var(--color-real); }
 .led-strip-status--degraded { color: var(--color-amber); }
@@ -303,8 +303,9 @@ body {
 .led-strip-status--unknown { color: var(--color-amber); }
 
 /* Luces de servicio: color propio si funciona, rojo si está caído, ámbar si falla en parte. */
-.service-lights { display: flex; flex: none; align-items: center; gap: 12px; min-width: 0; margin: 0; padding: 0; overflow: hidden; list-style: none; }
-.service-light { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--color-muted); }
+/* Sin overflow: hidden: recortaba el tooltip que sale bajo la tira. */
+.service-lights { display: flex; flex: none; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 0; list-style: none; }
+.service-light { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 6px 4px; white-space: nowrap; color: var(--color-muted); cursor: help; }
 .service-light i { width: 7px; height: 7px; background: var(--svc, var(--color-line-2)); box-shadow: 0 0 8px var(--svc, transparent); }
 .service-light--down i { animation: led-blink 1.1s steps(2, end) infinite; }
 .service-light--checking i { background: var(--color-line-2); animation: led-blink 1.1s steps(2, end) infinite; }
@@ -314,10 +315,46 @@ body {
 .service-name { font-size: 9px; letter-spacing: .1em; text-transform: uppercase; }
 .latency { font-weight: 400; color: var(--color-muted); }
 
-/* Panel estrecho: solo las luces; el nombre sigue en el title y para lectores de pantalla. */
+/* Tooltip propio: aparece al instante con el ratón o el foco (el title nativo tardaba y en el
+   panel lateral a veces no salía). Sale bajo la tira: las luces lo alinean a la izquierda y el
+   resumen a la derecha, para que el borde del panel no lo corte. */
+.service-light::after,
+.led-strip-status::after {
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: 30;
+  width: max-content;
+  max-width: 240px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-line-2);
+  background: var(--color-surface-2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .6);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: .04em;
+  text-align: left;
+  text-transform: none;
+  white-space: normal;
+  content: attr(data-tip);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s;
+}
+.service-light::after { left: -4px; }
+.led-strip-status::after { right: 0; }
+.service-light:hover::after,
+.service-light:focus-visible::after,
+.led-strip-status:hover::after,
+.led-strip-status:focus-visible::after { opacity: 1; }
+.service-light:focus-visible,
+.led-strip-status:focus-visible { outline: 1px solid var(--color-focus); outline-offset: 1px; }
+
+/* Panel estrecho: solo las luces; el nombre sale en el tooltip y para lectores de pantalla. */
 @container (max-width: 390px) {
   .service-name { display: none; }
-  .service-lights { gap: 8px; }
+  .service-lights { gap: 4px; }
 }
 
 @keyframes led-blink { 50% { opacity: .25; box-shadow: none; } }
@@ -402,6 +439,11 @@ body {
 /* El bloque ocupa el alto libre del panel y centra la pieza. */
 .home-core { display: grid; flex: 1; place-items: center; align-content: center; gap: 18px; padding: 28px 0; text-align: center; }
 .home-core .hud-code { color: var(--color-accent); }
+/* Rótulo de estado sobre el ojo: los mismos colores que el resumen de la cabecera. */
+.home-core .home-status--checking { color: var(--color-muted); animation: led-blink 1.1s steps(2, end) infinite; }
+.home-core .home-status--degraded,
+.home-core .home-status--unknown { color: var(--color-amber); }
+.home-core .home-status--unavailable { color: var(--color-false); }
 
 .scan-eye { position: relative; width: 196px; max-width: 100%; margin-inline: auto; }
 .in-panel .scan-eye { width: min(240px, 76%); }

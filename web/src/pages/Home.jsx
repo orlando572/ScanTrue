@@ -31,7 +31,7 @@ export default function Home({ health }) {
         <h1>SCAN<span>//</span>TRUE</h1>
         <p className="hero-question">¿Dudas de una noticia?</p>
         <p className="hero-lead">
-          Selecciona su texto con la extensión de ScanTrue y te mostramos si se parece más a una noticia falsa o a una real.
+          Selecciona su texto con la extensión de ScanTrue y te decimos si podría ser una noticia falsa o real.
         </p>
         <div className="hero-actions">
           <Link className="btn" to="/resultados">Ver resultados</Link>
