@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { countWords, hasSelectionText, meterState, presentFragments } from '../src/popup/selection-presentation.js';
+import { countWords, hasSelectionText, meterState, presentFragments, resultForSelection } from '../src/popup/selection-presentation.js';
 
 test('cuenta palabras igual que el TOKEN_PATTERN del backend', () => {
   assert.equal(countWords('Hola, ¿qué tal? El niño comió 3,5 kg_de pan.'), 10);
@@ -17,6 +17,17 @@ test('el medidor pasa de rojo a amarillo, verde y dorado', () => {
   assert.deepEqual([meterState(199).level, meterState(200).level, meterState(200).value], ['good', 'full', 100]);
   assert.equal(meterState(900).message, 'Ya hay texto de sobra: lo que añadas no se tendrá en cuenta');
   assert.equal(meterState(-3).words, 0);
+});
+
+test('ofrece volver al resultado solo si es del texto actual', () => {
+  const done = { status: 'completed', result: { id: 'x' }, selectionCapturedAt: 10 };
+  assert.equal(resultForSelection(done, { capturedAt: 10 }), true);
+  assert.equal(resultForSelection(done, { capturedAt: 11 }), false);
+  assert.equal(resultForSelection({ ...done, result: null }, { capturedAt: 10 }), false);
+  assert.equal(resultForSelection({ ...done, status: 'working' }, { capturedAt: 10 }), false);
+  assert.equal(resultForSelection({ status: 'completed', result: {} }, {}), false);
+  assert.equal(resultForSelection(null, { capturedAt: 10 }), false);
+  assert.equal(resultForSelection(done, null), false);
 });
 
 test('presenta fragmentos numerados y trata el texto antiguo como uno', () => {

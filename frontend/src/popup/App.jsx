@@ -9,12 +9,12 @@ import MetricsScreen from './screens/MetricsScreen.jsx';
 import AccountScreen from './screens/AccountScreen.jsx';
 import RegisterScreen from './screens/RegisterScreen.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
-import ScreenHeader from './components/ScreenHeader.jsx';
+import ScreenHeader, { ChevronIcon } from './components/ScreenHeader.jsx';
 import { LedStrip, ScanEye, SegmentTrack } from './components/HudDecor.jsx';
 import { LoaderSweep } from './components/HudLoader.jsx';
 // El mismo fondo interactivo que la web.
 import VectorField from '../../../web/src/components/VectorField.jsx';
-import { countWords, hasSelectionText, meterState, presentFragments } from './selection-presentation.js';
+import { countWords, hasSelectionText, meterState, presentFragments, resultForSelection } from './selection-presentation.js';
 import { keepsSource, sourceOf } from '../shared/selection.js';
 import { presentServices } from './service-presentation.js';
 import scanTrueMark from './assets/scantrue-mark.svg';
@@ -137,12 +137,12 @@ function RemoveIcon() {
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M6 6l12 12M18 6 6 18" /></svg>;
 }
 
-function SelectionScreen({ selection, error, selecting, selectionMode, submitting, notice, conflict, onAnalyze, onAddText, onRestart, onKeep, onDismissNotice, onStop, onEdit, onBack, onRemoveFragment, onClear }) {
+function SelectionScreen({ selection, error, selecting, selectionMode, submitting, notice, conflict, hasResult, onViewResult, onAnalyze, onAddText, onRestart, onKeep, onDismissNotice, onStop, onEdit, onBack, onRemoveFragment, onClear }) {
   const domain = selectionDomain(selection.url);
   const fragments = presentFragments(selection);
   const meter = meterState(countWords(selection.text));
   return <>
-    <ScreenHeader title="Texto para analizar" onBack={onBack}>
+    <ScreenHeader title="Texto para analizar" onBack={onBack} action={hasResult && <button type="button" className="hud-back hud-forward" aria-label="Ver resultado" title="Ver resultado" onClick={onViewResult}><ChevronIcon /></button>}>
       {selectionMode && <span className="live-chip mt-2" role="status"><span aria-hidden="true">Seleccionando</span><span className="sr-only">Modo selección activo en la página</span></span>}
     </ScreenHeader>
     {domain
@@ -164,8 +164,16 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
 
     {/* La acción principal va junto al medidor: no hay que bajar hasta el final de la lista. */}
     {error && <p className="hud-alert mt-3 text-[12px] leading-[18px]" role="alert">{error}</p>}
-    <button type="button" className="primary-button mt-4" onClick={onAnalyze} disabled={submitting || selecting || !meter.ready} aria-describedby="word-meter-message">{submitting ? 'Iniciando análisis…' : 'Analizar'}</button>
-    <p className="mt-2 text-[11px] leading-4 text-muted">Se publicará en la web de ScanTrue, sin tu nombre.</p>
+    {/* Ya analizado y sin cambios: se vuelve al resultado en lugar de analizar otra vez (evita duplicados). */}
+    {hasResult
+      ? <>
+        <button type="button" className="primary-button mt-4" onClick={onViewResult}>Ver resultado<span className="size-5" aria-hidden="true"><ChevronIcon /></span></button>
+        <p className="mt-2 text-[11px] leading-4 text-muted">Ya analizaste este texto. Si lo cambias, podrás analizarlo de nuevo.</p>
+      </>
+      : <>
+        <button type="button" className="primary-button mt-4" onClick={onAnalyze} disabled={submitting || selecting || !meter.ready} aria-describedby="word-meter-message">{submitting ? 'Iniciando análisis…' : 'Analizar'}</button>
+        <p className="mt-2 text-[11px] leading-4 text-muted">Se publicará en la web de ScanTrue, sin tu nombre.</p>
+      </>}
 
     <div className="input-buffer-meta mt-5 items-center">
       <span className="hud-code hud-code--accent" aria-hidden="true">Fragmentos · {String(fragments.length).padStart(2, '0')} marcados</span>
@@ -318,6 +326,8 @@ export default function App() {
         if (pendingChange.updatedBy === 'page') setStack(['P01', 'P02']);
       }
       const next = changes.analysisOperation?.newValue;
+      // Si se borra (el texto cambió o se empezó de nuevo), no se guarda en memoria un resultado viejo.
+      if ('analysisOperation' in changes && !next) setOperation((previous) => previous?.status === 'working' ? previous : null);
       if (!next) return;
       setOperation(next);
       if (next.status === 'completed') setStack(resultStack());
@@ -448,6 +458,8 @@ export default function App() {
   const analyze = async () => {
     // Bajo el mínimo de palabras el servidor lo rechazaría: el botón ya está bloqueado.
     if (analysisLock.current || !meterState(countWords(selection?.text ?? '')).ready) return;
+    // El mismo texto ya tiene resultado: se muestra en lugar de crear un análisis duplicado.
+    if (resultForSelection(operation, selectionRef.current)) { open('P05'); return; }
     analysisLock.current = true;
     setSubmitting(true);
     setAnalysisError('');
@@ -558,7 +570,7 @@ export default function App() {
         {current !== 'P02' && current !== 'P04' && current !== 'P05' && current !== 'P06' && current !== 'P07' && current !== 'P08' && current !== 'P09' && current !== 'P11' && current !== 'P12' && current !== 'P13' && <button type="button" className="text-link mb-5 flex w-fit items-center gap-1.5" onClick={back}><span className="size-5"><Icon name="back" /></span>Volver</button>}
         {stack.includes('P07') && <div hidden={current !== 'P07'}><HistoryScreen deletedAnalysis={deletedAnalysis} onBack={back} onOpen={(id) => { historyScroll.current = popupScroll.current?.scrollTop ?? 0; setHistoryDetail(null); setSelectedAnalysisId(id); open('P08'); }} onChooseText={() => setStack(['P01'])} /></div>}
         {stack.includes('P08') && selectedAnalysisId && <div hidden={current !== 'P08'}><HistoryDetailScreen key={selectedAnalysisId} id={selectedAnalysisId} onBack={back} onLoaded={setHistoryDetail} onDeletingChange={setDetailDeleting} onBreakdown={(item) => { setHistoryDetail(item); open('P06'); }} onDeleted={(id) => { setDeletedAnalysis({ id }); setHistoryDetail(null); setSelectedAnalysisId(null); back(); }} /></div>}
-        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} notice={selectionNotice} conflict={conflict} onAnalyze={analyze} onAddText={() => startSelection()} onRestart={() => startSelection(true)} onKeep={() => setConflict(null)} onDismissNotice={dismissNotice} onStop={stopSelectionMode} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
+        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} notice={selectionNotice} conflict={conflict} hasResult={resultForSelection(operation, selection)} onViewResult={() => open('P05')} onAnalyze={analyze} onAddText={() => startSelection()} onRestart={() => startSelection(true)} onKeep={() => setConflict(null)} onDismissNotice={dismissNotice} onStop={stopSelectionMode} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
           : current === 'P04' ? <AnalysisScreen operation={operation} onHistory={() => open('P07')} onBack={() => setStack(['P01', 'P02'])} onRetry={analyze} />
           : current === 'P05' ? <ResultScreen result={operation?.result} url={selection?.url} text={selection?.text} onBack={back} onBreakdown={() => open('P06')} onStartOver={startOver} clearing={clearing} error={resultError} />
           : current === 'P06' ? <BreakdownScreen result={stack.at(-2) === 'P08' ? historyDetail : operation?.result} onBack={back} />

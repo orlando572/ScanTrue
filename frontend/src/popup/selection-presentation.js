@@ -25,6 +25,16 @@ export function meterState(words) {
   };
 }
 
+// El resultado guardado es de este mismo texto: cualquier cambio (editar, añadir o quitar
+// fragmentos) le pone un `capturedAt` nuevo a la selección. Sirve para volver al resultado sin
+// analizar otra vez (lo que crearía un duplicado).
+export function resultForSelection(operation, selection) {
+  return operation?.status === 'completed'
+    && Boolean(operation.result)
+    && operation.selectionCapturedAt !== undefined
+    && operation.selectionCapturedAt === selection?.capturedAt;
+}
+
 export function presentFragments(selection) {
   return normalizeFragments(selection).map((fragment, index) => ({
     id: fragment.id,

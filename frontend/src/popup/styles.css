@@ -381,6 +381,8 @@ body {
 
 .hud-back:hover { border-color: var(--color-accent); }
 .hud-back svg { width: 20px; height: 20px; }
+/* Flecha hacia adelante (p. ej. volver al resultado): la misma tecla que «Volver», a la derecha. */
+.hud-forward { margin-left: auto; }
 .hud-back:disabled { opacity: .5; cursor: wait; }
 
 /* ── Botones: teclas planas con chaflán ────────────────────────── */
