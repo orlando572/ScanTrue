@@ -85,3 +85,22 @@ El ajuste debe hacerse **solo con estos casos** y dejando anotado cada cambio. L
 5. **Fijar la cifra mínima de F1 macro** solo después del ajuste y antes de abrir la prueba final.
 
 Cualquier cambio de la regla de conclusión es una decisión de diseño que conviene confirmar con Orlando.
+
+## 7. Ronda de ajuste 1: cambios anotados ANTES de calcular
+
+**Hora de esta anotación: 16 nov 2026, antes de calcular nada.** Evelyn pidió una sola ronda con dos cambios, anotados de antemano, para limitar el sobreajuste (con 33 casos es fácil que un cambio parezca mejorar solo porque se parece a esos casos).
+
+**Qué cambia: solo la regla que junta los veredictos de las afirmaciones** (versión candidata `conclusion-v2`). El **código de producción no se toca en esta ronda**.
+
+1. **`respaldada` se relaja.** Antes: todas las afirmaciones `apoyada`. Ahora: **ninguna `contradicha` y más de la mitad de las afirmaciones `apoyada`** (las `insuficiente` y las `fuera_de_contexto` cuentan en el total).
+2. **`fuera_de_contexto` por afirmación no decide el caso.** Se trata como «sin evidencia suficiente» para la conclusión. **Consecuencia anotada de antemano:** el caso ya no puede concluir `fuera_de_contexto`; esa conclusión desaparece mientras el juez no sea fiable con ella.
+
+**Regla completa `conclusion-v2`:** sin afirmaciones → `evidencia_insuficiente`; alguna `contradicha` → `contradicha` (sin cambio); `fuera_de_contexto` por afirmación se cuenta como `insuficiente`; más de la mitad `apoyada` → `respaldada`; en cualquier otro caso → `evidencia_insuficiente`.
+
+**Por qué (principios, no casos):** ambos candidatos estaban escritos **antes** de la corrida `ajuste_1`: la propuesta de que `fuera_de_contexto` por afirmación no cuente está en [CONCLUSION_Y_TRABAJADOR.md](CONCLUSION_Y_TRABAJADOR.md) (propuesta 5), y que `respaldada` casi no se alcanza con «todas apoyada» está en [ESTADO_LLM.md](ESTADO_LLM.md) (sección 4) desde la Fase 5.
+
+**Cómo se evalúa:** se **recalcula la conclusión de cada caso con la regla v2** a partir de los veredictos por afirmación ya guardados en `corridas/ajuste_1/resultados.jsonl`. Son las mismas afirmaciones, la misma evidencia y el mismo juez: no se enciende el LLM, no se gasta Tavily y no hay aleatoriedad. Se hace lo mismo con la referencia B (misma regla sobre sus veredictos); la referencia A no cambia.
+
+**Qué espero (anotado antes):** el recall de `respaldada` sube desde 0; el de `fuera_de_contexto` cae a 0 (hoy 2 de 10), lo que por sí solo le resta al F1 macro hasta unos 0,06. El efecto neto puede ser pequeño o incluso negativo.
+
+**Criterio de decisión:** se considera mejora si **el F1 macro sube y el error grave «`respaldada` cuando era `contradicha`» sigue en 0**. **Una sola evaluación, sin probar variantes.** Si no hay mejora, la regla no se adopta. El resultado se documenta igual, sea mejor, igual o peor. Adoptarla en producción es una decisión posterior de Evelyn y de Orlando.
