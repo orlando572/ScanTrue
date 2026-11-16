@@ -749,8 +749,8 @@ body {
   position: relative;
   color: var(--result-color);
   font-family: var(--font-mono);
-  /* Proporcional al dial para que quepa dentro del aro con cualquier ancho. */
-  font-size: clamp(30px, 33cqi, 48px);
+  /* Proporcional al dial para que quepa dentro del aro con cualquier ancho (ver --d1/--d2/--d3). */
+  font-size: clamp(30px, 34cqi, 52px);
   line-height: 1;
   letter-spacing: -.02em;
   text-shadow: 0 0 14px color-mix(in srgb, var(--result-color) 70%, transparent);
@@ -759,9 +759,12 @@ body {
   transform: translateY(.06em);
 }
 
-.result-gauge-value--wide { font-size: clamp(24px, 25cqi, 38px); }
-.result-gauge-value > span { position: relative; display: block; }
-.result-gauge-value small { position: absolute; bottom: .12em; left: 100%; margin-left: 2px; font-size: .5em; }
+/* Según las cifras del valor final: el bloque «73%» llena la retícula interior (53 % del dial) sin tocarla. */
+.result-gauge-value--d1 { font-size: clamp(34px, 42cqi, 62px); }
+.result-gauge-value--d3 { font-size: clamp(22px, 25cqi, 40px); }
+.result-gauge-value > span { display: flex; align-items: baseline; justify-content: center; white-space: nowrap; }
+.result-gauge-digits { display: inline-block; text-align: right; }
+.result-gauge-value small { margin-left: .04em; font-size: .55em; }
 
 /* Qué mide el número: el porcentaje no es «probabilidad de ser verdadero». */
 .result-gauge-caption {
@@ -773,7 +776,7 @@ body {
   font-family: var(--font-mono);
   font-size: 8px;
   letter-spacing: .1em;
-  line-height: 10px;
+  line-height: 9px;
   text-align: center;
   text-transform: uppercase;
   white-space: nowrap;
@@ -951,10 +954,10 @@ body {
 }
 .spectrum-marker--combined::before {
   position: absolute;
-  top: -7px;
-  left: -7px;
-  width: 14px;
-  height: 14px;
+  top: -5.5px;
+  left: -5.5px;
+  width: 11px;
+  height: 11px;
   border: 2px solid #000;
   background: var(--result-color);
   box-shadow: 0 0 10px var(--result-color);
