@@ -4,7 +4,7 @@ Clasificador de noticias falsas en español basado en un transformer. Plan en cu
 
 ```
 mBERT/
-├── entrenar.py          Único script de entrenamiento: corrida, experimento, truncado, plan, decidir, final
+├── entrenar.py          Único script de entrenamiento: corrida, experimento, truncado, plan, decidir, final, reentrenar
 ├── modelo.py            Modelos base (mbert, beto, roberta_bne, xlmr): revisión fijada, SHA-256, descarga y carga
 ├── requirements.txt
 ├── tests/               Pruebas cortas en CPU con un conjunto sintético y un BERT diminuto
@@ -59,6 +59,7 @@ Una corrida (un pliegue, una semilla), un experimento (3 pliegues × 3 semillas,
 - La época se elige con la validación interna del pliegue (F1 macro de artículo, empate a favor de la anterior). El mejor estado se guarda en memoria y se recarga, comprobando que reproduce su F1; no se escriben checkpoints por época.
 - Cada corrida escribe `config.json` (argumentos, modelo base con revisión y SHA-256, SHA-256 del conjunto y del script, fracción truncada), `resultados.json` y `predicciones.csv` con logits en el formato común.
 - Prueba congelada: nunca se abre (lo impide `datos_comunes/comun.py`).
+- `reentrenar` repite una receta (`config.json` de una corrida, p. ej. la de BETO M3b) desde cero con `comun_v1` o una versión del panel. Si falta el modelo base, lo descarga, y deja una versión nueva con contrato provisional. Con `--pliegues` entrena también F1–F3 y guarda sus predicciones fuera de pliegue, para calibrarlo en el panel. Es lo que lanza **Administración → Entrenamiento** ([backend/docs/ENTRENAMIENTO_PANEL.md](../backend/docs/ENTRENAMIENTO_PANEL.md)). En Linux, con `PYTHONPATH=backend/.deps`.
 
 Pruebas:
 

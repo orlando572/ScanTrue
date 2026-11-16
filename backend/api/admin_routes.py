@@ -1,7 +1,8 @@
-"""Panel de administración: resumen, casos y revisión, datasets y versiones de modelos."""
+"""Panel de administración: resumen, casos y revisión, datasets, modelos y entrenamiento."""
 
 import asyncio
 from datetime import date
+import json
 import os
 import uuid
 from typing import Literal
@@ -18,6 +19,7 @@ from backend.schemas.admin import (
     AdminCasePage,
     AdminIdentity,
     AdminSummary,
+    CalibrationRequest,
     CaseStandardPreview,
     DatasetCreate,
     DatasetDetail,
@@ -30,16 +32,22 @@ from backend.schemas.admin import (
     RetireRequest,
     Review,
     ReviewRequest,
+    TrainingJob,
+    TrainingList,
+    TrainingOptions,
+    TrainingRequest,
     VisibilityUpdate,
     Weights,
 )
 from backend.services.datasets import (
     LegacyVersionError, build_dataset, build_manifest, comun_index, export_csv,
-    export_standard_zip, preview_case,
+    export_standard_zip, preview_case, standard_csvs,
 )
 from backend.services.model_registry import (
-    MAX_ZIP_BYTES, TYPES, ModelDeploymentManager, ModelVersionError, default_weights,
+    MAX_ZIP_BYTES, TYPES, ModelDeploymentManager, ModelVersionError, calibration_for, default_weights,
 )
+from backend.services.calibration import CalibrationError, CalibrationManager
+from backend.services.training import OUTPUT_DIR, TrainingError, TrainingManager
 
 
 router = APIRouter(prefix="/admin", dependencies=[Depends(admin_user)])
@@ -322,6 +330,13 @@ def _versions(request: Request) -> ModelDeploymentManager:
     return manager
 
 
+def calibrated_weights(manager: ModelDeploymentManager) -> dict[str, float]:
+    """Pesos de la calibración de la pareja desplegada; si no la hay, los de producción."""
+    versions = {tipo: entry.version for tipo, entry in manager.selection().items() if entry is not None}
+    combination = calibration_for(versions)
+    return dict(combination.weights) if combination else default_weights()
+
+
 def _models(request: Request, repository: SupabaseRepository) -> ModelsResponse:
     manager = _versions(request)
     try:
@@ -353,7 +368,7 @@ def _models(request: Request, repository: SupabaseRepository) -> ModelsResponse:
         desplegados=dict(deployed),
         cargados=sorted(manager.loaded),
         pesos=Weights(**manager.state.weights),
-        pesos_calibrados=Weights(**default_weights()),
+        pesos_calibrados=Weights(**calibrated_weights(manager)),
         combinacion=getattr(combination, "version", None),
         anterior=manager.previous_state(),
         modelos=groups,
@@ -474,3 +489,205 @@ async def delete_model(
     manager = _versions(request)
     await _change(lambda: manager.delete(tipo, model_id))
     return await asyncio.to_thread(_models, request, repository)
+
+
+# ── Entrenamiento ───────────────────────────────────────────────────
+# Solo entrena: el modelo nuevo aparece en Modelos («Pendiente de calibrar»). Desde aquí no se
+# despliega, no se borra y no se sobrescribe ningún modelo.
+
+
+def _training(request: Request) -> TrainingManager:
+    manager = getattr(request.app.state, "training", None)
+    if manager is None:
+        manager = request.app.state.training = TrainingManager()
+    return manager
+
+
+def _training_error(error: TrainingError) -> HTTPException:
+    return HTTPException(status_code=error.status_code,
+                         detail={"codigo": error.code, "mensaje": str(error)})
+
+
+def _deployed(request: Request, tipo: str):
+    versions = getattr(request.app.state, "model_versions", None)
+    if versions is None:
+        return None
+    try:
+        return versions.selection().get(tipo)
+    except Exception:
+        return None
+
+
+@router.get("/entrenamientos/opciones", response_model=TrainingOptions)
+def training_options(
+    request: Request,
+    repository: SupabaseRepository = Depends(service_repository),
+) -> TrainingOptions:
+    manager = _training(request)
+    recipes, errors = {}, {}
+    for tipo in TYPES:
+        try:
+            recipes[tipo] = manager.recipe(tipo, _deployed(request, tipo)).summary()
+        except TrainingError as error:
+            recipes[tipo], errors[tipo] = None, str(error)
+    sources = []
+    comun = manager.comun_source()
+    if comun is not None:
+        sources.append(comun)
+    try:
+        sources.extend(manager.panel_sources(repository.list_dataset_versions()))
+    except SupabaseDataError:
+        pass
+    salida = OUTPUT_DIR.relative_to(OUTPUT_DIR.parents[1]).as_posix()
+    return TrainingOptions(tipos=recipes, errores_receta=errors, fuentes=sources,
+                           cuda=manager.cuda_available(), salida=salida)
+
+
+@router.get("/entrenamientos", response_model=TrainingList)
+def list_trainings(request: Request) -> TrainingList:
+    return TrainingList(**_training(request).overview())
+
+
+@router.post("/entrenamientos", response_model=TrainingJob, status_code=202)
+def start_training(
+    payload: TrainingRequest,
+    request: Request,
+    user=Depends(admin_user),
+    repository: SupabaseRepository = Depends(service_repository),
+) -> TrainingJob:
+    manager = _training(request)
+
+    def panel_version(version_id: str):
+        version = _dataset(repository, UUID(version_id))
+        items, _ = repository.dataset_items(version.id)
+        try:
+            files = standard_csvs(items)
+        except LegacyVersionError as error:
+            raise TrainingError(
+                "version_anterior_al_estandar",
+                "Esta versión se creó antes del estándar de fragmentos: crea una nueva para "
+                "entrenar con ella.", 409) from error
+        return version.model_dump(), files
+
+    try:
+        recipe = manager.recipe(payload.tipo, _deployed(request, payload.tipo))
+        job = manager.start(payload.tipo, payload.fuente.model_dump(mode="json"), recipe,
+                            payload.epocas, payload.semilla, user.email, panel_version,
+                            payload.dispositivo, payload.pliegues)
+    except TrainingError as error:
+        raise _training_error(error) from error
+    return TrainingJob(**job)
+
+
+@router.get("/entrenamientos/{job_id}", response_model=TrainingJob)
+def get_training(job_id: str, request: Request) -> TrainingJob:
+    try:
+        return TrainingJob(**_training(request).get(job_id))
+    except TrainingError as error:
+        raise _training_error(error) from error
+
+
+@router.post("/entrenamientos/{job_id}/cancelar", response_model=TrainingJob)
+def cancel_training(job_id: str, request: Request) -> TrainingJob:
+    try:
+        return TrainingJob(**_training(request).cancel(job_id))
+    except TrainingError as error:
+        raise _training_error(error) from error
+
+
+# ── Calibración ─────────────────────────────────────────────────────
+# Calibra una pareja y guarda una versión calibrada nueva (contratos que apuntan a los mismos
+# pesos). No toca contratos existentes ni lo desplegado: se despliega desde Modelos.
+
+
+def _calibration(request: Request) -> CalibrationManager:
+    manager = getattr(request.app.state, "calibration", None)
+    if manager is None:
+        manager = request.app.state.calibration = CalibrationManager(_versions(request).catalog)
+    return manager
+
+
+def _calibration_error(error: CalibrationError) -> HTTPException:
+    return HTTPException(status_code=error.status_code,
+                         detail={"codigo": error.code, "mensaje": str(error)})
+
+
+def _deployed_versions(request: Request) -> dict[str, str]:
+    versions = getattr(request.app.state, "model_versions", None)
+    if versions is None:
+        return {}
+    return {tipo: entry.version for tipo, entry in versions.selection().items() if entry is not None}
+
+
+def _calibration_options(request: Request) -> dict:
+    manager = _calibration(request)
+    candidates = manager.candidates()
+    versions = getattr(request.app.state, "model_versions", None)
+    deployed = versions.selection() if versions is not None else {}
+    defaults = {}
+    for tipo in TYPES:
+        entry = deployed.get(tipo)
+        usable = {item["id"] for item in candidates[tipo] if item["apto"]}
+        pick = entry.id if entry is not None and entry.id in usable else None
+        if pick is None and entry is not None:  # una variante calibrada: su modelo de origen
+            try:
+                origin = (json.loads(entry.contrato.read_text("utf-8")).get("calibrado_desde") or {}).get("id")
+            except (OSError, ValueError, AttributeError):
+                origin = None
+            pick = origin if origin in usable else None
+        defaults[tipo] = pick or next(iter(sorted(usable)), None)
+    reference = manager.reference() or {}
+    return {
+        "candidatos": candidates,
+        "por_defecto": {**defaults, "peso_bilstm": (reference.get("pesos") or {}).get("bilstm", 0.2)},
+        "produccion": {key: reference.get(key) for key in ("version", "temperaturas", "pesos", "motivo_pesos",
+                                                           "contratos")} if reference else None,
+        "vigente": manager.current(_deployed_versions(request)),
+        "desplegados": _deployed_versions(request),
+    }
+
+
+@router.get("/calibraciones/opciones")
+async def calibration_options(request: Request) -> dict:
+    return await asyncio.to_thread(_calibration_options, request)
+
+
+@router.post("/calibraciones/vista-previa")
+async def calibration_preview(payload: CalibrationRequest, request: Request) -> dict:
+    """Calcula la calibración sin guardar nada (tarda unos segundos)."""
+    manager = _calibration(request)
+    try:
+        return await asyncio.to_thread(
+            manager.preview, payload.bilstm, payload.mbert, payload.peso_bilstm,
+            payload.temperaturas.model_dump())
+    except CalibrationError as error:
+        raise _calibration_error(error) from error
+
+
+@router.post("/calibraciones", status_code=201)
+async def save_calibration(
+    payload: CalibrationRequest,
+    request: Request,
+    user=Depends(admin_user),
+) -> dict:
+    manager = _calibration(request)
+    try:
+        return await asyncio.to_thread(
+            manager.save, payload.bilstm, payload.mbert, payload.peso_bilstm,
+            payload.temperaturas.model_dump(), payload.motivo or "", user.email)
+    except CalibrationError as error:
+        raise _calibration_error(error) from error
+
+
+@router.get("/calibraciones")
+async def list_calibrations(request: Request) -> dict:
+    data = await asyncio.to_thread(_calibration(request).overview)
+    return {**data, "vigente": await asyncio.to_thread(_calibration(request).current, _deployed_versions(request))}
+
+
+@router.get("/calibraciones/{version}")
+async def get_calibration(version: str, request: Request) -> dict:
+    try:
+        return await asyncio.to_thread(_calibration(request).get, version)
+    except CalibrationError as error:
+        raise _calibration_error(error) from error

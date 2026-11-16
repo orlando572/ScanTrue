@@ -25,6 +25,7 @@ const evaluationNames = {
   fuente_no_vista_polyglot: 'Fuente no vista: Polyglot',
   prueba_congelada: 'Prueba congelada',
   prueba_congelada_falledesinfo: 'Prueba congelada: FalleDesinfo (fuente nueva)',
+  prueba_panel_articulos: 'Prueba del panel',
 };
 
 // Pruebas que se muestran de entrada, en este orden; el resto queda en «Ver más».

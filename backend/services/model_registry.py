@@ -44,6 +44,8 @@ BACKEND = Path(__file__).resolve().parents[1]
 MANIFESTS_DIR = BACKEND / "modelos"
 STATE_FILE = BACKEND / ".local" / "modelos_desplegados.json"
 IMPORTS_DIR = ROOT / "datasets" / "modelos"
+# Calibraciones del panel: cada una con su combinacion.json y los contratos calibrados.
+CALIBRATIONS_DIR = ROOT / "datasets" / "calibraciones"
 TYPES = ("bilstm", "mbert")
 TYPE_NAMES = {"bilstm": "BiLSTM", "mbert": "BETO / mBERT"}
 BASE_NAMES = {"beto": "BETO", "mbert": "mBERT"}
@@ -77,7 +79,7 @@ class ModelEntry:
     version: str
     nombre: str
     fecha: str | None
-    origen: str  # repositorio | entrenamiento | importado
+    origen: str  # repositorio | entrenamiento | importado | calibracion
     ruta: str | None  # carpeta del contrato, relativa a la raíz si se puede
     estado: str  # disponible | pendiente_calibrar | no_admitido | no_valido | archivado
     motivo: str | None = None
@@ -168,8 +170,8 @@ def inspect_contract(path: Path) -> dict | None:
         return {**info, "estado": "no_valido", "motivo": problem}
     if contract.provisional:
         return {**info, "estado": "pendiente_calibrar",
-                "motivo": "Su temperatura aún es provisional: falta la calibración conjunta "
-                          "(datos_comunes/calibrar_conjunto.py --actualizar-contratos)."}
+                "motivo": "Su temperatura aún es provisional: calíbralo en Administración → Calibración "
+                          "(crea una versión calibrada que se despliega desde aquí)."}
     return info
 
 
@@ -219,12 +221,14 @@ class ModelCatalog:
         manifests_dir: Path = MANIFESTS_DIR,
         scan_dir: Path | None = ...,
         imports_dir: Path = IMPORTS_DIR,
+        calibrations_dir: Path = CALIBRATIONS_DIR,
     ) -> None:
         self.manifests_dir = Path(manifests_dir)
         if scan_dir is ...:
             scan_dir = scan_dir_from_environment()
         self.scan_dir = Path(scan_dir) if scan_dir else None
         self.imports_dir = Path(imports_dir)
+        self.calibrations_dir = Path(calibrations_dir)
 
     @staticmethod
     def _inspect(path: Path) -> dict | None:
@@ -279,7 +283,8 @@ class ModelCatalog:
 
     # Contratos bajo datasets/ (entrenamientos e importados).
     def _contract_paths(self) -> list[Path]:
-        roots = [root for root in (self.scan_dir, self.imports_dir) if root and root.is_dir()]
+        roots = [root for root in (self.scan_dir, self.imports_dir, self.calibrations_dir)
+                 if root and root.is_dir()]
         seen: set[Path] = set()
         paths = []
         for root in roots:
@@ -297,6 +302,7 @@ class ModelCatalog:
     def _scanned_entries(self) -> list[ModelEntry]:
         found = []
         imports = self.imports_dir.resolve()
+        calibrations = self.calibrations_dir.resolve()
         for path in self._contract_paths():
             info = self._inspect(path)
             if info is None or info.get("tipo") is None:
@@ -307,7 +313,8 @@ class ModelCatalog:
             found.append(ModelEntry(
                 id=version, tipo=tipo, version=version, nombre=_model_name(tipo, info["data"]),
                 fecha=_date_from_version(version, path),
-                origen="importado" if folder.is_relative_to(imports) else "entrenamiento",
+                origen="importado" if folder.is_relative_to(imports)
+                else "calibracion" if folder.is_relative_to(calibrations) else "entrenamiento",
                 ruta=_relative(folder), estado=info["estado"], motivo=info["motivo"],
                 contrato=path, metricas=metrics if metrics.is_file() else None,
                 temperatura=info.get("temperatura"), max_tokens=info.get("max_tokens"),
@@ -478,10 +485,7 @@ class PredictorCache:
             contracts["mbert"] = mbert.contract
         if not contracts:
             raise RuntimeError("No se pudo cargar ningún modelo")
-        try:
-            calibrated = Combination.load(COMBINATION_FILE)
-        except Exception:
-            calibrated = None
+        calibrated = calibration_for({tipo: c.version for tipo, c in contracts.items()})
         combination = Combination.for_models(contracts, weights, calibrated)
         return AnalysisService(bilstm, mbert_predictor=mbert, mbert_text_policy=policy,
                                combination=combination)
@@ -521,6 +525,31 @@ def smoke_test(service) -> None:
 
 
 # ── Despliegue ──────────────────────────────────────────────────────
+
+
+def calibration_files(calibrations_dir: Path = CALIBRATIONS_DIR) -> list[Path]:
+    """La combinación de producción y las de las calibraciones del panel (las ocultas, a medio
+    escribir, no cuentan)."""
+    files = [COMBINATION_FILE]
+    if calibrations_dir.is_dir():
+        files += sorted(path / "combinacion.json" for path in calibrations_dir.iterdir()
+                        if path.is_dir() and not path.name.startswith(".") and (path / "combinacion.json").is_file())
+    return files
+
+
+def calibration_for(versions: dict[str, str], calibrations_dir: Path = CALIBRATIONS_DIR) -> Combination | None:
+    """Combinación calibrada para exactamente esos contratos ({tipo: versión}), si la hay.
+
+    Con ella, la versión de combinación de los análisis es la de la calibración y «Volver a los
+    calibrados» usa sus pesos."""
+    for path in calibration_files(calibrations_dir):
+        try:
+            combination = Combination.load(path)
+        except Exception:
+            continue
+        if combination.model_versions == versions:
+            return combination
+    return None
 
 
 def default_weights() -> dict[str, float]:

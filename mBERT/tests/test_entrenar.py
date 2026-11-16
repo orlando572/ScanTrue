@@ -19,7 +19,8 @@ import torch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import modelo as bases  # noqa: E402
 from entrenar import (  # noqa: E402
-    aplicar, argumentos, corrida, decidir, elegir_modelo, parse_args, perdida_ponderada, pesos_de_clase,
+    aplicar, argumentos, corrida, decidir, elegir_modelo, opciones_de_receta, parse_args, perdida_ponderada,
+    pesos_de_clase, reentrenar,
 )
 
 COLUMNAS = ["id_fragmento", "id_articulo", "grupo", "fuente", "dominio", "texto",
@@ -116,6 +117,33 @@ class ReglasTests(unittest.TestCase):
         self.assertEqual((b.semillas, b.opciones), ([42], ["--modelo", "beto", "--brazo", "usmsc"]))
         with self.assertRaises(SystemExit):
             parse_args(["corrida", "--pliegue", "F1", "--configuracion", "x", "--salida", "x", "--desconocida"])
+
+    def test_receta_de_produccion_a_opciones(self):
+        """La receta de BETO M3b se convierte en las opciones de `corrida` (sin entrenar nada)."""
+        receta = json.loads((Path(__file__).resolve().parents[2]
+                             / "datasets/mbert_produccion/modelo/config.json").read_text("utf-8"))
+        opciones = opciones_de_receta({**receta, "modelo": "beto"}, ["usmsc"])
+        self.assertEqual(opciones[:2], ["--brazo", "usmsc"])
+        args = parse_args(["corrida", "--pliegue", "todo", "--configuracion", "M3b", "--salida", "x",
+                           "--epocas-fijas", "3", *opciones])
+        self.assertEqual((args.modelo, args.max_length, args.lote_efectivo, args.microlote, args.lr),
+                         ("beto", 256, 16, 4, 2e-5))
+        self.assertFalse(args.gradient_checkpointing)
+        self.assertEqual(opciones_de_receta({"gradient_checkpointing": True}, []), ["--gradient-checkpointing"])
+
+    def test_reentrenar_opciones_y_receta_no_valida(self):
+        args = parse_args(["reentrenar", "--receta", "r.json", "--salida", "s", "--version", "v", "--progreso"])
+        self.assertEqual((args.epocas, args.semilla, args.progreso), (0, 42, True))
+        with tempfile.TemporaryDirectory() as tmp:
+            receta = Path(tmp) / "r.json"
+            receta.write_text(json.dumps({"configuracion": "X", "modelo": "gpt2", "epocas_fijas": 1}))
+            conjunto = Path(tmp) / "c"
+            conjunto.mkdir()
+            (conjunto / "manifest.json").write_text(json.dumps({"archivos": {"fragmentos_desarrollo.csv": {}}}))
+            with self.assertRaises(ValueError):
+                reentrenar(parse_args(["reentrenar", "--receta", str(receta), "--conjunto", str(conjunto),
+                                       "--salida", str(Path(tmp) / "s"), "--version", "v"]))
+            self.assertFalse((Path(tmp) / "s").exists())
 
     def test_registro_de_modelos(self):
         self.assertEqual(set(bases.PREFERENCIA), set(bases.MODELOS))

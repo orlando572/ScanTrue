@@ -31,6 +31,7 @@ from backend.services.identity import (
     SupabaseAuthUnavailable,
 )
 from backend.services.model_registry import ModelDeploymentManager
+from backend.services.training import TrainingManager
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,8 @@ async def lifespan(app: FastAPI):
 
     versions = ModelDeploymentManager(on_swap=swap_service)
     app.state.model_versions = versions
+    # Entrenamientos del panel: lanzan un proceso aparte y nunca tocan lo desplegado.
+    app.state.training = TrainingManager()
     try:
         AnalysisSettings.from_environment()
         app.state.analysis_service = await asyncio.to_thread(versions.start)

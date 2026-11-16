@@ -12,15 +12,15 @@ En el panel, **Administración → Modelos** (`/admin/modelos`), se elige qué m
 - **Un modelo por tipo:** cada tipo tiene como mucho un modelo desplegado. BETO y mBERT comparten tipo, así que nunca están desplegados a la vez.
 - **Retirar:** se puede retirar cualquiera de los dos, pero debe quedar al menos uno. Con uno solo, el resultado unificado es su probabilidad (`comparacion: "no_disponible"`, «Respondió un solo modelo»).
 - **Pesos:** se editan en el panel y valen por defecto 20 % BiLSTM y 80 % BETO, los de `datasets/combinacion_produccion/combinacion.json`. La temperatura de cada modelo sale de su propio contrato.
-- **Mismo resultado que antes del panel:** mientras estén desplegados B6 y BETO M3b con 20/80, se usa la combinación calibrada tal cual (`version_combinacion = comun_v1.1_conjunta_20261111`), y la respuesta de `POST /analisis` es idéntica. Con otros modelos o pesos, `version_combinacion` pasa a ser `panel: <bilstm> + <beto> @ <pesos>`. La forma de la respuesta no cambia y la extensión no necesita cambios.
+- **Mismo resultado que antes del panel:** mientras estén desplegados B6 y BETO M3b con 20/80, se usa la combinación calibrada tal cual (`version_combinacion = comun_v1.1_conjunta_20261111`), y la respuesta de `POST /analisis` es idéntica. Con otros modelos o pesos, `version_combinacion` pasa a ser `panel: <bilstm> + <beto> @ <pesos>`, salvo que la pareja tenga una calibración guardada en Calibración con esos mismos pesos: entonces es la versión de esa calibración. La forma de la respuesta no cambia y la extensión no necesita cambios.
 
 ## De dónde salen los modelos
 
 1. **Manifiestos del repositorio** (`backend/modelos/<tipo>/<versión>.json`): B6 y BETO M3b, marcados como predeterminados, y los de octubre, archivados (sin contrato, solo para comparar métricas).
-2. **Detección automática del entrenamiento:** la API busca cada `contrato.json` bajo `datasets/` (se puede cambiar con `MODELOS_BUSCAR_EN`).
+2. **Detección automática del entrenamiento:** la API busca cada `contrato.json` bajo `datasets/` (se puede cambiar con `MODELOS_BUSCAR_EN`). Incluye los que deja **Administración → Entrenamiento** en `datasets/entrenamientos/<tipo>/<versión>/` ([ENTRENAMIENTO_PANEL.md](ENTRENAMIENTO_PANEL.md)).
    - No entra en `embeddings`, `fuentes`, `unificado`, `comun_v1`, `modelos_base`, `archivo_octubre` ni en carpetas `respaldo*` u ocultas.
    - Un entrenamiento nuevo (`bilstm/entrenar.py` o `mBERT/entrenar.py` con cualquier `--salida` bajo `datasets/`) aparece solo. Mientras está abierto, el panel vuelve a leer el catálogo cada 30 s.
-   - Recién entrenado sale **Pendiente de calibrar**, porque su contrato trae `temperatura_provisional: true`. Pasa a **Disponible** en cuanto la calibración conjunta (`datos_comunes/calibrar_conjunto.py --actualizar-contratos`, fuera del panel) actualiza el contrato.
+   - Recién entrenado sale **Pendiente de calibrar**, porque su contrato trae `temperatura_provisional: true`. Se calibra en **Administración → Calibración** ([CALIBRACION_PANEL.md](CALIBRACION_PANEL.md)), que crea contratos calibrados nuevos (origen *Calibración*, en `datasets/calibraciones/`) listos para desplegar. La CLI `datos_comunes/calibrar_conjunto.py --actualizar-contratos` sigue sirviendo para los modelos finales de `comun_v1_corridas`.
 3. **ZIP importado** desde el panel, para modelos de otro equipo. Debe llevar un único `contrato.json` (en la raíz o en una carpeta), sus pesos y, opcionalmente, `metricas.json`. Se guarda en `datasets/modelos/<tipo>/<versión>/`, fuera de Git. Solo estos modelos se pueden borrar desde el panel.
 
 Las rutas de un contrato se buscan primero junto a él, probando la ruta completa y sus sufijos (`datasets/…/final/todo_s42/modelo.pt` → `todo_s42/modelo.pt` → `modelo.pt`), y después desde la raíz del repositorio. Así sirve el contrato tal como lo deja el entrenamiento, aunque la carpeta se mueva o venga en un ZIP. El SHA-256 del contrato confirma que el archivo es el correcto.
@@ -40,7 +40,7 @@ Si dos modelos tienen la misma `version` y pesos distintos, los dos aparecen; el
 | Estado | Significado |
 | --- | --- |
 | Disponible | Contrato válido, archivos presentes y SHA-256 correcto. Se puede desplegar |
-| Pendiente de calibrar | Temperatura provisional: falta la calibración conjunta |
+| Pendiente de calibrar | Temperatura provisional: falta calibrarlo (Administración → Calibración) |
 | No admitido | Transformer que no es BETO ni mBERT |
 | No válido | Contrato mal formado, faltan archivos o el SHA-256 no coincide (el motivo lo dice) |
 | Archivado | Sin contrato de inferencia: solo para comparar métricas |

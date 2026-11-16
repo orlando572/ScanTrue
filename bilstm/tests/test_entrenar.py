@@ -17,7 +17,7 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from entrenar import (  # noqa: E402
-    aplicar, argumentos, corrida, decidir, parse_args, perdida_ponderada, pesos_de_clase,
+    aplicar, argumentos, corrida, decidir, parse_args, perdida_ponderada, pesos_de_clase, reentrenar,
 )
 from modelo import BiLSTM, construir_vocabulario, tokenize  # noqa: E402
 
@@ -166,6 +166,124 @@ class EntrenamientoTests(unittest.TestCase):
         self.correr()
         with self.assertRaises(FileExistsError):
             self.correr()
+
+
+def conjunto_panel(carpeta: Path, origen: Path) -> Path:
+    """Como una versión del panel: desarrollo + prueba, sin brazos de ablación."""
+    desarrollo = pd.read_csv(origen / "fragmentos_desarrollo.csv", keep_default_na=False)
+    conjunto = carpeta / "panel"
+    conjunto.mkdir()
+    archivos = {"fragmentos_desarrollo.csv": desarrollo[desarrollo.fuente != "v1"].assign(pliegue="panel"),
+                "fragmentos_prueba.csv": desarrollo[desarrollo.fuente == "v1"].assign(pliegue="prueba_panel")}
+    manifest = {"version": "panel_estandar_v1", "nombre": "prueba", "archivos": {}}
+    for nombre, frame in archivos.items():
+        frame.to_csv(conjunto / nombre, index=False)
+        manifest["archivos"][nombre] = {"sha256": hashlib.sha256((conjunto / nombre).read_bytes()).hexdigest()}
+    (conjunto / "manifest.json").write_text(json.dumps(manifest))
+    return conjunto
+
+
+class ReentrenarTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        self.conjunto = conjunto_sintetico(self.dir)
+        self.receta = self.dir / "receta.json"
+        self.receta.write_text(json.dumps({
+            "modelo": "bilstm", "configuracion": "B6", "brazo": ["usmsc"], "pooling": "final",
+            "congelar_embeddings_epocas": 0, "lr_embeddings_factor": 1.0, "max_tokens": 64,
+            "hidden_dim": 8, "dropout": 0.0, "lr": 0.01, "weight_decay": 0.0, "lote": 16, "epocas_fijas": 2,
+        }))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def reentrenar(self, conjunto, salida, *extra):
+        args = parse_args(["reentrenar", "--receta", str(self.receta), "--conjunto", str(conjunto),
+                           "--salida", str(salida), "--version", "v_prueba", "--dispositivo", "cpu",
+                           "--vectores", str(self.dir / "vec.gz"), "--cache", str(self.dir / "cache.npz"),
+                           *extra])
+        return reentrenar(args)
+
+    def test_comun_contrato_provisional_sin_metricas(self):
+        salida = self.dir / "modelos/v_prueba"
+        resultado = self.reentrenar(self.conjunto, salida)
+        self.assertEqual(resultado["epocas"], 2)
+        self.assertEqual(resultado["brazos_omitidos"], [])
+        contrato = json.loads((salida / "contrato.json").read_text())
+        self.assertTrue(contrato["temperatura_provisional"])
+        self.assertEqual(contrato["semillas"], [42])
+        self.assertEqual(contrato["max_tokens"], 64)
+        pesos = salida / "todo_s42/modelo.pt"
+        self.assertEqual(contrato["checkpoints"]["s42"]["sha256"], hashlib.sha256(pesos.read_bytes()).hexdigest())
+        self.assertFalse((salida / "metricas.json").exists())
+        config = json.loads((salida / "todo_s42/config.json").read_text())
+        self.assertEqual(config["brazo"], ["usmsc"])
+        self.assertEqual(config["configuracion"], "B6")
+        self.assertFalse(any(p.name.endswith(".parcial") for p in salida.parent.iterdir()))
+        procedencia = json.loads((salida / "entrenamiento.json").read_text())
+        self.assertEqual(procedencia["epocas"], 2)
+
+    def test_panel_omite_brazos_y_evalua_la_prueba(self):
+        panel = conjunto_panel(self.dir, self.conjunto)
+        salida = self.dir / "modelos/v_panel"
+        resultado = self.reentrenar(panel, salida, "--epocas", "1", "--cache", str(self.dir / "cache_panel.npz"))
+        self.assertEqual(resultado["brazos_omitidos"], ["usmsc"])
+        self.assertEqual(resultado["epocas"], 1)
+        metricas = json.loads((salida / "metricas.json").read_text())
+        evaluacion = metricas["evaluaciones"][0]
+        self.assertEqual(evaluacion["n"], 40)  # 40 noticias de la prueba (2 fragmentos cada una)
+        self.assertEqual(sum(map(sum, evaluacion["matriz_confusion"])), 40)
+        self.assertEqual(metricas["orden_clases"], ["falsa", "real"])
+
+    def test_no_sobrescribe_y_limpia_lo_parcial(self):
+        salida = self.dir / "modelos/v_prueba"
+        salida.mkdir(parents=True)
+        with self.assertRaises(FileExistsError):
+            self.reentrenar(self.conjunto, salida)
+        self.assertEqual([p.name for p in salida.parent.iterdir()], ["v_prueba"])
+        # Si falla a mitad, no queda la carpeta oculta de trabajo.
+        otra = self.dir / "modelos/v_falla"
+        with self.assertRaises(Exception):
+            self.reentrenar(self.conjunto, otra, "--vectores", str(self.dir / "no_existe.gz"),
+                            "--cache", str(self.dir / "otra_cache.npz"))
+        self.assertFalse(otra.exists())
+        self.assertFalse((otra.parent / ".v_falla.parcial").exists())
+
+    def test_pliegues_para_calibrar(self):
+        salida = self.dir / "modelos/v_pliegues"
+        self.receta.write_text(json.dumps({**json.loads(self.receta.read_text()), "epocas_max": 2, "paciencia": 1}))
+        resultado = self.reentrenar(self.conjunto, salida, "--pliegues")
+        self.assertEqual(resultado["pliegues"], ["F1", "F2", "F3"])
+        oof = pd.read_csv(salida / "predicciones_fuera_de_pliegue.csv")
+        self.assertEqual(len(oof), 240)  # todo el desarrollo, una vez
+        self.assertEqual(set(oof.pliegue), {"F1", "F2", "F3"})
+        for columna in ("id_articulo", "fuente", "etiqueta_falsa", "logit_real", "logit_falsa", "semilla"):
+            self.assertIn(columna, oof.columns)
+        contrato = json.loads((salida / "contrato.json").read_text())
+        self.assertEqual(contrato["predicciones_fuera_de_pliegue"], "predicciones_fuera_de_pliegue.csv")
+        self.assertTrue((salida / "pliegues/F2_s42/predicciones.csv").exists())
+        self.assertFalse((salida / "pliegues/F2_s42/modelo.pt").exists())
+
+    def test_pliegues_exige_f1_f3(self):
+        panel = conjunto_panel(self.dir, self.conjunto)  # pliegue «panel»: sin repartir
+        with self.assertRaises(ValueError):
+            self.reentrenar(panel, self.dir / "modelos/v_x", "--pliegues", "--cache", str(self.dir / "c2.npz"))
+        self.assertFalse((self.dir / "modelos/v_x").exists())
+
+    def test_progreso_en_json(self):
+        import contextlib
+        import io
+
+        salida = self.dir / "modelos/v_progreso"
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            self.reentrenar(self.conjunto, salida, "--progreso")
+        fases = [json.loads(linea)["progreso"] for linea in buffer.getvalue().splitlines()
+                 if linea.startswith('{"progreso"')]
+        self.assertEqual(fases[0], "preparando")
+        self.assertIn("entrenando", fases)
+        self.assertEqual(fases[-2:], ["guardando", "terminado"])
 
 
 if __name__ == "__main__":
