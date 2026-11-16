@@ -7,7 +7,6 @@ from datetime import date, datetime, timezone
 from hashlib import sha256
 import io
 import json
-import logging
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -35,7 +34,6 @@ from backend.services.datasets import (
     LegacyVersionError, build_dataset, build_manifest, export_csv, export_standard_zip,
     preview_case,
 )
-from backend.services.model_versions import ModelVersionError, ModelVersionManager
 from datos_comunes.comun import leer
 from datos_comunes.cruces import IndiceComun
 from datos_comunes.estandar import COLUMNAS_BASE
@@ -484,97 +482,6 @@ class DatasetTests(unittest.TestCase):
         self.assertIn('"El ministro dijo ""basta"", y coma.', lines[1])
         self.assertIn("d.pe", lines[1])
         self.assertIn("0.9", lines[1])
-
-
-class ModelVersionTests(unittest.TestCase):
-    def setUp(self):
-        # Los manifiestos rotos y las cargas fallidas de estas pruebas se registran a propósito.
-        logging.disable(logging.CRITICAL)
-        self.addCleanup(logging.disable, logging.NOTSET)
-        self.folder = tempfile.TemporaryDirectory()
-        self.addCleanup(self.folder.cleanup)
-        root = Path(self.folder.name)
-        self.directory = root / "despliegues"
-        self.directory.mkdir()
-        self.state = root / "local" / "activo.json"
-        base = {"contratos": {"bilstm": "datasets/a.json", "mbert": "datasets/b.json"},
-                "combinacion": "datasets/c.json"}
-        for name, extra in (("v1", {"fecha": "2026-01-01", "predeterminado": True}),
-                            ("v2", {"fecha": "2026-02-01"}),
-                            ("rota", {"fecha": "2026-03-01"})):
-            (self.directory / f"{name}.json").write_text(json.dumps({"version": name, **base, **extra}))
-        (self.directory / "vieja.json").write_text(json.dumps({"version": "vieja", "activable": False}))
-        (self.directory / "invalida.json").write_text("{")
-        self.swapped = []
-
-    def manager(self):
-        def builder(deployment, strict):
-            if deployment.version == "rota":
-                raise RuntimeError("no carga")
-            return f"servicio-{deployment.version}"
-
-        return ModelVersionManager(self.directory, self.state, builder=builder,
-                                   check=lambda service: None, on_swap=self.swapped.append)
-
-    def test_arranca_con_la_predeterminada_y_lista_las_validas(self):
-        manager = self.manager()
-        self.assertEqual([d.version for d in manager.deployments()], ["rota", "v2", "v1", "vieja"])
-        self.assertEqual(manager.start(), "servicio-v1")
-        self.assertEqual(manager.current_version, "v1")
-        self.assertIsNone(manager.previous_version())
-
-    def test_activar_revertir_y_persistir(self):
-        manager = self.manager()
-        manager.start()
-        manager.activate("v2", "admin@example.com")
-        self.assertEqual(self.swapped, ["servicio-v2"])
-        self.assertEqual(manager.previous_version(), "v1")
-        # Otro proceso arranca con la versión guardada.
-        again = self.manager()
-        self.assertEqual(again.start(), "servicio-v2")
-        self.assertEqual(again.revert("admin@example.com"), "v1")
-        self.assertEqual(again.current_version, "v1")
-        history = again.history()
-        self.assertEqual([(e["accion"], e["version"], e["anterior"]) for e in history],
-                         [("revertir", "v1", "v2"), ("activar", "v2", "v1")])
-        self.assertEqual(again.previous_version(), "v2")
-
-    def test_una_version_que_falla_no_sustituye_a_la_activa(self):
-        manager = self.manager()
-        manager.start()
-        for version, code in (("rota", "version_no_cargo"), ("vieja", "version_no_activable"),
-                              ("nada", "version_desconocida"), ("v1", "version_ya_activa")):
-            with self.assertRaises(ModelVersionError) as raised:
-                manager.activate(version, None)
-            self.assertEqual(raised.exception.code, code)
-        self.assertEqual(manager.current_version, "v1")
-        self.assertEqual(self.swapped, [])
-        with self.assertRaises(ModelVersionError):
-            manager.revert(None)
-
-    def test_si_la_guardada_falla_arranca_la_predeterminada(self):
-        self.state.parent.mkdir(parents=True)
-        self.state.write_text(json.dumps({"activa": "rota", "historial": []}))
-        manager = self.manager()
-        self.assertEqual(manager.start(), "servicio-v1")
-        self.assertEqual(manager.current_version, "v1")
-
-    def test_los_manifiestos_del_repositorio_son_validos(self):
-        manager = ModelVersionManager(state_file=self.state)
-        default = manager.default()
-        self.assertTrue(default.activable)
-        self.assertTrue(all(path.is_file() for path in default.contracts.values()))
-        self.assertEqual(default.load_combination().model_versions, default.model_versions)
-        for deployment in manager.deployments():
-            for model in ("bilstm", "mbert"):
-                metrics = deployment.load_metrics(model)
-                self.assertEqual(metrics.version, deployment.model_versions[model])
-
-    def test_la_version_archivada_de_octubre_nombra_mbert(self):
-        deployments = {d.version: d for d in ModelVersionManager(state_file=self.state).deployments()}
-        self.assertEqual(deployments["archivo_octubre_2026"].model_names, {"mbert": "mBERT"})
-        # En la de producción el hueco «mbert» es BETO: no lleva nombre propio.
-        self.assertEqual(ModelVersionManager(state_file=self.state).default().model_names, {})
 
 
 if __name__ == "__main__":

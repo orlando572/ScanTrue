@@ -108,10 +108,10 @@ export default function Dashboard({ health }) {
 
       <section className="panel" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div>
-          <span className="label">Versión de modelos activa</span>
-          <p className="mono" style={{ margin: '4px 0 0', color: 'var(--color-acid)' }}>{data.despliegue_activo ?? 'Ninguna: el servicio de análisis no está disponible'}</p>
+          <span className="label">Modelos desplegados</span>
+          <p className="mono" style={{ margin: '4px 0 0', color: 'var(--color-acid)' }}>{data.despliegue_activo ?? 'Ninguno: el servicio de análisis no está disponible'}</p>
         </div>
-        <Link className="text-link" to="/admin/modelos">Gestionar versiones <span aria-hidden="true">→</span></Link>
+        <Link className="text-link" to="/admin/modelos">Gestionar modelos <span aria-hidden="true">→</span></Link>
       </section>
     </div>
   );

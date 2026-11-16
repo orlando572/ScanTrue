@@ -30,7 +30,7 @@ from backend.services.identity import (
     InvalidSessionError,
     SupabaseAuthUnavailable,
 )
-from backend.services.model_versions import ModelVersionManager
+from backend.services.model_registry import ModelDeploymentManager
 
 logger = logging.getLogger(__name__)
 
@@ -55,12 +55,12 @@ async def lifespan(app: FastAPI):
         worker_task = asyncio.create_task(
             BlockchainWorker(repository, app.state.blockchain_client).run()
         )
-    # La versión activa de los modelos se carga una vez (backend/despliegues/); BETO
-    # puede faltar sin detener el servicio. El panel puede cambiarla sin reiniciar.
+    # Los modelos desplegados (uno por tipo, backend/services/model_registry.py) se cargan
+    # una vez; si uno falla, el servicio sigue con el otro. El panel los cambia sin reiniciar.
     def swap_service(service) -> None:
         app.state.analysis_service = service
 
-    versions = ModelVersionManager(on_swap=swap_service)
+    versions = ModelDeploymentManager(on_swap=swap_service)
     app.state.model_versions = versions
     try:
         AnalysisSettings.from_environment()

@@ -15,6 +15,8 @@ Extensión para Chrome y Chromium que analiza texto seleccionado en páginas web
 
 Los modelos de producción están en `datasets/bilstm_produccion/modelo/` y `datasets/mbert_produccion/modelo/` (BETO; sus pesos se descargan con Git LFS: `git lfs pull`), cada uno con su `contrato.json`. La combinación está en `datasets/combinacion_produccion/combinacion.json`. Cómo se eligieron: [docs/mejora_modelos/](docs/mejora_modelos/README.md).
 
+Desde **Administración → Modelos** se elige el modelo de cada tipo, se retira uno de los dos y se editan los pesos, sin reiniciar la API. Los modelos que deja el entrenamiento bajo `datasets/` aparecen solos; los de otro equipo se importan en ZIP y se guardan en `datasets/modelos/`, fuera de Git. Detalle: [backend/docs/DESPLIEGUE_MODELOS.md](backend/docs/DESPLIEGUE_MODELOS.md).
+
 ## Requisitos
 
 - Python 3.14

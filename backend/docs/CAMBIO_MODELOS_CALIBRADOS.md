@@ -1,5 +1,7 @@
 # Cambio de modelos: B6 y BETO calibrados (11 nov 2026)
 
+> Desde el 15 nov 2026 el modelo de cada tipo y los pesos se eligen en el panel de administración: [DESPLIEGUE_MODELOS.md](DESPLIEGUE_MODELOS.md). Lo de abajo sigue valiendo para la configuración predeterminada (B6 + BETO M3b, 20/80).
+
 Este cambio sustituye los modelos de octubre por los entrenados con el conjunto común y aplica la calibración conjunta. Decisiones y cifras: [docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md](../../docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md).
 
 ## Qué cambia para quien usa la API
