@@ -18,6 +18,9 @@ function save(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// Por debajo de esto por clase, las métricas de la prueba del panel varían demasiado.
+const MIN_TEST_PER_CLASS = 20;
+
 const sum = (values) => Object.values(values ?? {}).reduce((total, value) => total + value, 0);
 
 // Qué entra en una versión y qué se separó: duplicados, conflictos, estándar, grupos y particiones.
@@ -29,6 +32,8 @@ function Summary({ summary }) {
   const cuts = Object.entries(summary.recortes ?? {}).filter(([, count]) => count);
   const crosses = summary.cruces_comun ?? {};
   const dropped = summary.excluidas_casos ?? [];
+  const testFalse = cell('prueba', 'falsa');
+  const testReal = cell('prueba', 'real');
   return (
     <>
       <div className="tiles">
@@ -62,6 +67,13 @@ function Summary({ summary }) {
           </ul>
           {dropped.length >= 100 && <p className="label" style={{ margin: '8px 0 0' }}>Se muestran las 100 primeras.</p>}
         </details>
+      )}
+      {Math.min(testFalse, testReal) < MIN_TEST_PER_CLASS && (
+        <p className="alert alert--info" style={{ margin: '12px 0 0' }} role="note">
+          La prueba tiene {testFalse} {testFalse === 1 ? 'falsa' : 'falsas'} y {testReal} {testReal === 1 ? 'real' : 'reales'}:
+          aún no es fiable para comparar modelos. Usa la prueba congelada de comun_v1 como referencia
+          hasta tener al menos {MIN_TEST_PER_CLASS} noticias de cada clase en prueba.
+        </p>
       )}
       <div className="table-wrap" style={{ marginTop: 16 }}>
         <table className="data">
@@ -119,7 +131,8 @@ function NewVersion({ onCreated }) {
       <h2 className="h-panel" style={{ margin: '0 0 6px' }}>Nueva versión</h2>
       <p className="muted" style={{ margin: '0 0 16px', fontSize: 14 }}>
         Una versión es una copia fija de los casos aprobados o corregidos hasta hoy, con su etiqueta,
-        procedencia y evidencia. No cambia aunque después se revisen más casos.
+        procedencia y evidencia, guardados con el estándar de comun_v1: cada noticia en fragmentos
+        de 100 a 200 palabras que terminan en punto. No cambia aunque después se revisen más casos.
       </p>
       {preview.error ? <ErrorState error={preview.error} onRetry={preview.reload} />
         : !preview.data ? <Loader code="Calculando" label="Calculando la vista previa" rows={1} />
