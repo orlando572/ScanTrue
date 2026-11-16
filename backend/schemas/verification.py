@@ -8,8 +8,8 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-# Tope por caso propuesto en el plan (docs/llm/PLAN_INCREMENTO_2.md, 4.5); se ajusta en la Fase 5.
-MAX_CLAIMS = 5
+# Tope por caso. El plan proponía 5 (docs/llm/PLAN_INCREMENTO_2.md, 4.5); se bajó a 3 (docs/llm/FUENTE_PREVIA.md).
+MAX_CLAIMS = 3
 # Pasajes que el juicio puede citar como respaldo de su veredicto.
 MAX_CITED_PASSAGES = 3
 
@@ -27,6 +27,14 @@ class ClaimExtraction(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     afirmaciones: list[Claim] = Field(max_length=MAX_CLAIMS)
+
+
+class ShortQuery(BaseModel):
+    """Consulta corta (2 o 3 palabras clave) para la fuente previa; la de la búsqueda web no cambia."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    consulta: Annotated[str, StringConstraints(min_length=2, max_length=60)]
 
 
 class SearchQueries(BaseModel):

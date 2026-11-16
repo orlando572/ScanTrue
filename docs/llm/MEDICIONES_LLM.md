@@ -2,7 +2,7 @@
 
 **Fecha:** 15 nov 2026. **Plan:** [PLAN_INCREMENTO_2.md](PLAN_INCREMENTO_2.md), Fase 1 (D1, D2 y D8).
 **Decisión (D1): se usa `Qwen3-4B-Instruct-2507-Q8_0.gguf`** con `llama-server -c 8192 -np 1`. La eligió el usuario a partir de estos resultados.
-**Es una variante de 8 bits** (cuantización Q8_0). [INCREMENTOS.md](../INCREMENTOS.md) sigue diciendo «cuantizado a 4 bits»: está desactualizado y se corregirá más adelante, por indicación del usuario.
+**Es una variante de 8 bits** (cuantización Q8_0). [INCREMENTOS.md](../INCREMENTOS.md) decía «cuantizado a 4 bits» y se corrigió el 15 nov 2026 por indicación del usuario.
 
 ## 1. Resumen
 

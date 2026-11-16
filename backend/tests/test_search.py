@@ -1,4 +1,4 @@
-"""Proveedores de búsqueda web (Brave y Tavily) con transporte simulado: sin internet ni claves.
+"""Proveedores de búsqueda web (Brave y Tavily) y la fuente previa (Google Fact Check Tools) con transporte simulado: sin internet ni claves.
 
 Uso:
     PYTHONPATH=. backend/.venv/Scripts/python.exe -m unittest backend.tests.test_search
@@ -9,11 +9,13 @@ import unittest
 
 import httpx
 
-from backend.core.config import SearchSettings
+from backend.core.config import FactCheckSettings, SearchSettings
 from backend.services.verification.search import (
     BraveSearch,
+    FactCheckSearch,
     SearchError,
     TavilySearch,
+    build_factcheck_provider,
     build_search_provider,
     clean_query,
     domain_of,
@@ -129,6 +131,80 @@ class TavilyTests(unittest.TestCase):
         tavily, requests = provider(TavilySearch, json_response(TAVILY_BODY))
         tavily.search("puente")
         self.assertNotIn("exclude_domains", json.loads(requests[0].content))
+
+
+FACTCHECK_BODY = {"claims": [
+    {"text": "El puente abrió en 2020", "claimant": "Alguien", "claimDate": "2026-01-01T00:00:00Z", "claimReview": [
+        {"publisher": {"name": "Medio", "site": "verifica.test"}, "url": "https://www.verifica.test/puente", "title": " El  puente ",
+         "reviewDate": "2026-02-01T00:00:00Z", "textualRating": "Falso", "languageCode": "es"},
+        {"publisher": {"name": "Otro", "site": "maldita.es"}, "url": "https://maldita.es/puente", "title": "Puente", "textualRating": "Engañoso"},
+    ]},
+    {"text": "Otra afirmación", "claimReview": [
+        {"url": "https://www.verifica.test/puente", "title": "repetida"},
+        {"url": "ftp://x.test/a", "title": "no es http"},
+        {"url": "https://tercero.test/p"},
+        "no es un objeto",
+    ]},
+    "no es un objeto",
+]}
+
+
+class FactCheckTests(unittest.TestCase):
+    def test_pide_en_espanol_con_la_clave_en_la_cabecera_y_lee_las_verificaciones(self):
+        search, requests = provider(FactCheckSearch, json_response(FACTCHECK_BODY))
+        results = search.search("puente nuevo ciudad", max_results=3)
+        request = requests[0]
+        self.assertEqual((request.method, request.url.path), ("GET", "/v1alpha1/claims:search"))
+        self.assertEqual(request.url.host, "factchecktools.googleapis.com")
+        self.assertEqual(dict(request.url.params), {"query": "puente nuevo ciudad", "languageCode": "es", "pageSize": "3"})
+        self.assertEqual(request.headers["x-goog-api-key"], KEY)
+        self.assertNotIn(KEY, str(request.url))  # la clave nunca va en la dirección
+        self.assertEqual([r.url for r in results], ["https://www.verifica.test/puente", "https://maldita.es/puente", "https://tercero.test/p"])
+        self.assertEqual((results[0].titulo, results[0].fragmento, results[0].dominio), ("El puente", "El puente abrió en 2020", "verifica.test"))
+        self.assertEqual(results[2].titulo, "Otra afirmación")  # sin título de la revisión, el de la afirmación revisada
+
+    def test_la_calificacion_de_la_api_no_pasa_a_los_resultados(self):
+        search, _ = provider(FactCheckSearch, json_response(FACTCHECK_BODY))
+        for result in search.search("puente"):
+            self.assertNotIn("Falso", f"{result.titulo} {result.fragmento}")
+            self.assertNotIn("Engañoso", f"{result.titulo} {result.fragmento}")
+
+    def test_excluye_dominios_no_repite_y_respeta_el_tope(self):
+        search, _ = provider(FactCheckSearch, json_response(FACTCHECK_BODY))
+        urls = [r.url for r in search.search("puente", exclude_domains=["maldita.es"])]
+        self.assertEqual(urls, ["https://www.verifica.test/puente", "https://tercero.test/p"])
+        self.assertEqual(len(search.search("puente", max_results=1)), 1)
+
+    def test_sin_verificaciones_o_sin_consulta_no_hay_resultados(self):
+        search, _ = provider(FactCheckSearch, json_response({}))
+        self.assertEqual(search.search("puente"), [])
+        search, requests = provider(FactCheckSearch, json_response(FACTCHECK_BODY))
+        self.assertEqual(search.search("  http://solo.una.url  "), [])
+        self.assertEqual(requests, [])
+
+    def test_los_errores_se_reportan_sin_la_clave(self):
+        for status, code in ((403, "busqueda_no_autorizada"), (429, "busqueda_cupo_agotado"), (400, "busqueda_fallida")):
+            search, requests = provider(FactCheckSearch, httpx.Response(status))
+            with self.assertRaises(SearchError) as caught:
+                search.search("puente")
+            self.assertEqual(caught.exception.code, code)
+            self.assertNotIn(KEY, str(caught.exception))
+            self.assertEqual(len(requests), 1)
+
+    def test_configuracion_desde_el_entorno(self):
+        import os
+        from unittest import mock
+
+        with mock.patch.dict(os.environ, {"FACTCHECK_API_KEY": KEY, "FACTCHECK_TIMEOUT": ""}), mock.patch("backend.core.config.load_dotenv"):
+            settings = FactCheckSettings.from_environment()
+        self.assertEqual((settings.api_key, settings.timeout), (KEY, 10.0))
+        self.assertIsInstance(build_factcheck_provider(settings), FactCheckSearch)
+        with mock.patch.dict(os.environ, {"FACTCHECK_API_KEY": ""}), mock.patch("backend.core.config.load_dotenv"):
+            self.assertIsNone(FactCheckSettings.from_environment())
+        for bad in ("0", "x", "500"):
+            with mock.patch.dict(os.environ, {"FACTCHECK_API_KEY": KEY, "FACTCHECK_TIMEOUT": bad}), mock.patch("backend.core.config.load_dotenv"):
+                with self.assertRaises(ValueError):
+                    FactCheckSettings.from_environment()
 
 
 class ErrorTests(unittest.TestCase):

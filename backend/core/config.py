@@ -178,6 +178,29 @@ class SearchSettings:
         return cls(provider=provider, api_key=api_key, timeout=timeout)
 
 
+@dataclass(frozen=True)
+class FactCheckSettings:
+    """Fuente previa: Google Fact Check Tools (docs/llm/FUENTE_PREVIA.md). Sin FACTCHECK_API_KEY no se usa."""
+
+    api_key: str
+    timeout: float
+
+    @classmethod
+    def from_environment(cls) -> "FactCheckSettings | None":
+        load_dotenv(ENV_FILE, override=False)
+        api_key = os.getenv("FACTCHECK_API_KEY", "").strip()
+        if not api_key:
+            return None
+        raw_timeout = os.getenv("FACTCHECK_TIMEOUT", "").strip() or "10"
+        try:
+            timeout = float(raw_timeout)
+        except ValueError:
+            raise ValueError("FACTCHECK_TIMEOUT debe ser un número de segundos.") from None
+        if not 0 < timeout <= 120:
+            raise ValueError("FACTCHECK_TIMEOUT debe estar entre 0 y 120 segundos.")
+        return cls(api_key=api_key, timeout=timeout)
+
+
 def _bounded_number(name: str, default: float, low: float, high: float, kind=int):
     raw = os.getenv(name, "").strip()
     if not raw:
@@ -199,9 +222,11 @@ class EvidenceLimits:
     momento: nunca se queda colgada.
     """
 
-    queries_per_claim: int = 2
+    queries_per_claim: int = 1
     results_per_query: int = 5
     pages_per_claim: int = 4
+    # De esas páginas, las que como máximo salen de la fuente previa (el resto, de la búsqueda web).
+    previous_pages: int = 2
     per_domain: int = 2
     passages_per_claim: int = 6
     passages_per_page: int = 3

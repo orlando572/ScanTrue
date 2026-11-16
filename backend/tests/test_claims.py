@@ -71,14 +71,14 @@ class NameTests(unittest.TestCase):
 
 class CheckClaimsTests(unittest.TestCase):
     def test_descarta_y_renumera(self):
+        # Son 3 afirmaciones, el tope por caso (MAX_CLAIMS): dos se descartan y la que queda se renumera.
         result = check_claims(extraction(
-            "El presidente Pedro Sánchez habló en Valencia.",
             "El 70 por ciento de los casos eran graves.",
-            "El contrato de 100.000 euros se adjudicó a Actuaciones en Protección de Datos.",
             "El Gobierno de España pagó el contrato.",
+            "El contrato de 100.000 euros se adjudicó a Actuaciones en Protección de Datos.",
         ), TEXTO)
-        self.assertEqual([c.id for c in result.afirmaciones], [1, 2])
-        self.assertEqual(result.afirmaciones[1].texto,
+        self.assertEqual([c.id for c in result.afirmaciones], [1])
+        self.assertEqual(result.afirmaciones[0].texto,
                          "El contrato de 100.000 euros se adjudicó a Actuaciones en Protección de Datos.")
         self.assertEqual([(r.motivo, r.detalle) for r in result.rechazadas],
                          [("cifra_ausente", ["70"]), ("nombre_ausente", ["España"])])
@@ -159,7 +159,9 @@ class ExtractClaimsTests(unittest.TestCase):
 class PromptTests(unittest.TestCase):
     def test_version_y_reglas_clave(self):
         self.assertTrue(EXTRACTION_PROMPT_VERSION.startswith("extraccion-v"))
-        for regla in ("aunque parezca falsa", "no agregues cifras", "lista vacía", "como máximo 5"):
+        # «las 3 más importantes» es un cambio de comportamiento de extraccion-v2 que se mide en la Fase 7.
+        for regla in ("aunque parezca falsa", "no agregues cifras", "lista vacía", "como máximo 3", "las más importantes",
+                      "las más centrales de la noticia", "datos concretos"):
             self.assertIn(regla, EXTRACTION_SYSTEM_PROMPT)
 
     def test_el_texto_no_se_mezcla_con_las_instrucciones(self):

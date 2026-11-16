@@ -11,7 +11,7 @@ from unittest import mock
 from uuid import uuid4
 
 from backend.core.config import EvidenceLimits, LlmSettings, VerificationSettings
-from backend.schemas.verification import CaseSummary, ClaimExtraction, ClaimJudgment, SearchQueries
+from backend.schemas.verification import CaseSummary, ClaimExtraction, ClaimJudgment, SearchQueries, ShortQuery
 from backend.services.llm_client import LlmInvalidResponse, LlmUnavailable
 from backend.services.verification.case import (
     PROMPT_VERSIONS,
@@ -209,6 +209,8 @@ class FakeLlm:
             return ClaimExtraction(afirmaciones=[{"id": n, "texto": c} for n, c in enumerate(self.claims, start=1)])
         if model_type is SearchQueries:
             return SearchQueries(consultas=["consulta de prueba aquí"])
+        if model_type is ShortQuery:
+            return ShortQuery(consulta="consulta corta")
         if model_type is ClaimJudgment:
             return self.judgments.pop(0)
         if model_type is CaseSummary:
@@ -279,6 +281,14 @@ class VerifyCaseTests(unittest.TestCase):
         self.assertEqual(len(search.queries), 1)  # solo la segunda afirmación
         self.assertEqual(len(repo.saved), 1)  # lo reutilizado no se vuelve a guardar
         self.assertEqual(outcome.conclusion, "respaldada")
+
+    def test_la_fuente_previa_se_consulta_primero_y_si_basta_no_hay_busqueda_web(self):
+        previous, web = FakeSearch(), FakeSearch()
+        verifier_ = verifier(FakeRepository(), FakeLlm(judgments=[judgment()]), web, previous_search=previous)
+        outcome = verifier_.verify(uuid4())
+        self.assertEqual((outcome.conclusion, outcome.claims[0]["origen"]), ("respaldada", "busqueda"))
+        self.assertEqual((previous.queries, web.queries), (["consulta corta"], []))  # a la previa, la corta; la de la web no se usó
+        self.assertEqual(verifier_.trace[0].origen_busqueda, "verificadores")
 
     def test_una_contradiccion_domina_la_conclusion(self):
         llm = FakeLlm(claims=(CLAIM_A, CLAIM_B), judgments=[judgment("apoyada"), judgment("contradicha", "Premio Nobel de Literatura en 2010")])
@@ -423,7 +433,7 @@ class BuildTests(unittest.TestCase):
     ENV = {"LLM_BASE_URL": "http://127.0.0.1:8080/v1", "SEARCH_PROVIDER": "tavily", "SEARCH_API_KEY": "clave-de-prueba"}
 
     def build(self, **env):
-        base = {k: "" for k in ("LLM_BASE_URL", "SEARCH_PROVIDER", "SEARCH_API_KEY")}
+        base = {k: "" for k in ("LLM_BASE_URL", "SEARCH_PROVIDER", "SEARCH_API_KEY", "FACTCHECK_API_KEY", "FACTCHECK_TIMEOUT")}
         with mock.patch.dict(os.environ, {**base, **env}), mock.patch("backend.core.config.load_dotenv"):
             return build_case_verifier(FakeRepository(), VerificationSettings(True, 3, None, case_seconds=200))
 
@@ -431,6 +441,17 @@ class BuildTests(unittest.TestCase):
         built = self.build(**self.ENV)
         self.assertIsInstance(built, CaseVerifier)
         self.assertEqual(built.case_seconds, 200)
+
+    def test_la_fuente_previa_solo_existe_con_su_clave(self):
+        from backend.services.verification.search import FactCheckSearch
+
+        self.assertIsNone(self.build(**self.ENV).previous_search)
+        built = self.build(**self.ENV, FACTCHECK_API_KEY="clave-de-prueba")
+        self.assertIsInstance(built.previous_search, FactCheckSearch)
+
+    def test_una_configuracion_de_la_fuente_previa_invalida_no_arranca(self):
+        with self.assertLogs("backend.services.verification.case", "ERROR"):
+            self.assertIsNone(self.build(**self.ENV, FACTCHECK_API_KEY="clave-de-prueba", FACTCHECK_TIMEOUT="x"))
 
     def test_sin_llm_o_sin_busqueda_no_arranca(self):
         self.assertIsNone(self.build(**{**self.ENV, "LLM_BASE_URL": ""}))

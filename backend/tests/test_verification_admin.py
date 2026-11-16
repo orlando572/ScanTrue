@@ -113,7 +113,9 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual({k: stats[k] for k in ("pendiente", "en_proceso", "fallida", "completada")},
                          {"pendiente": 2, "en_proceso": 1, "fallida": 4, "completada": 9})
         self.assertEqual(stats["duracion_media_segundos"], 35.0)
-        params = dict(repo.requests[-1][2]["params"])
+        # Las cinco consultas corren a la vez (hilos): la de las duraciones es la única GET, pero no necesariamente la última.
+        (duraciones,) = [request for request in repo.requests if request[0] == "GET"]
+        params = dict(duraciones[2]["params"])
         self.assertEqual(params["copiada_de"], "is.null")  # las copias no cuentan
         self.assertEqual(params["estado"], "eq.completada")
 

@@ -17,7 +17,7 @@ from urllib.parse import urlsplit
 
 import httpx
 
-from backend.core.config import SearchSettings
+from backend.core.config import FactCheckSettings, SearchSettings
 
 logger = logging.getLogger(__name__)
 
@@ -218,6 +218,51 @@ class TavilySearch(_HttpSearch):
         return [r for r in results if r is not None][:max_results]
 
 
+class FactCheckSearch(_HttpSearch):
+    """Google Fact Check Tools (GET /v1alpha1/claims:search): verificaciones ya publicadas por medios de verificación.
+
+    Es la **fuente previa** (docs/llm/FUENTE_PREVIA.md): la API solo devuelve el enlace de cada artículo de
+    verificación y qué afirmación revisó. El backend descarga ese artículo como cualquier otra página y la
+    cita se comprueba contra su texto; la calificación que trae la API (`textualRating`) no se usa nunca
+    como evidencia, y por eso no se copia a los resultados. Como solo devuelve medios de verificación, al
+    evaluar (D7) esos dominios se excluyen y la fuente no aporta resultados.
+    """
+
+    name = "factcheck"
+    URL = "https://factchecktools.googleapis.com/v1alpha1/claims:search"
+    LANGUAGE = "es"
+
+    def search(
+        self, query: str, *, max_results: int = 5, exclude_domains: Sequence[str] = ()
+    ) -> list[SearchResult]:
+        text = clean_query(query)
+        if not text:
+            return []
+        request = self._client.build_request(
+            "GET",
+            self.URL,
+            params={"query": text, "languageCode": self.LANGUAGE, "pageSize": min(max(max_results, 1), 20)},
+            headers={"X-Goog-Api-Key": self._api_key},
+        )
+        data = self._send(request)
+        results: list[SearchResult] = []
+        seen: set[str] = set()
+        for claim in data.get("claims") or []:
+            if not isinstance(claim, dict):
+                continue
+            reviewed = claim.get("text")
+            for review in claim.get("claimReview") or []:
+                if not isinstance(review, dict):
+                    continue
+                item = {"url": review.get("url"), "title": review.get("title") or reviewed, "claim": reviewed}
+                result = self._result(item, len(results) + 1, "claim")
+                if result is None or result.url in seen or is_excluded(result.dominio, exclude_domains):
+                    continue
+                seen.add(result.url)
+                results.append(result)
+        return results[:max_results]
+
+
 PROVIDERS: dict[str, type[_HttpSearch]] = {"brave": BraveSearch, "tavily": TavilySearch}
 
 
@@ -225,3 +270,9 @@ def build_search_provider(
     settings: SearchSettings, *, transport: httpx.BaseTransport | None = None
 ) -> SearchProvider:
     return PROVIDERS[settings.provider](settings.api_key, settings.timeout, transport=transport)
+
+
+def build_factcheck_provider(
+    settings: FactCheckSettings, *, transport: httpx.BaseTransport | None = None
+) -> SearchProvider:
+    return FactCheckSearch(settings.api_key, settings.timeout, transport=transport)

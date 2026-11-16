@@ -65,9 +65,8 @@ def effective_verdict(result: ClaimResult) -> str:
     return result.veredicto
 
 
-def conclude(results: Sequence[ClaimResult]) -> str:
-    """Conclusión del caso según la tabla de 4.5; sin afirmaciones, `evidencia_insuficiente`."""
-    verdicts = [effective_verdict(r) for r in results]
+def conclude_verdicts(verdicts: Sequence[str]) -> str:
+    """La tabla de 4.5 aplicada a los veredictos de cada afirmación (`apoyada`, `contradicha`, …)."""
     if not verdicts:
         return "evidencia_insuficiente"
     if "contradicha" in verdicts:
@@ -77,6 +76,11 @@ def conclude(results: Sequence[ClaimResult]) -> str:
     if "fuera_de_contexto" in verdicts and all(v in ("apoyada", "fuera_de_contexto") for v in verdicts):
         return "fuera_de_contexto"
     return "evidencia_insuficiente"
+
+
+def conclude(results: Sequence[ClaimResult]) -> str:
+    """Conclusión del caso según la tabla de 4.5; sin afirmaciones, `evidencia_insuficiente`."""
+    return conclude_verdicts([effective_verdict(r) for r in results])
 
 
 def template_summary(conclusion: str, results: Sequence[ClaimResult], rejected: int = 0) -> str:

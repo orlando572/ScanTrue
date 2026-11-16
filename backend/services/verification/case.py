@@ -16,7 +16,7 @@ from dataclasses import dataclass, replace
 from typing import Protocol
 from uuid import UUID
 
-from backend.core.config import EvidenceLimits, LlmSettings, SearchSettings, VerificationSettings
+from backend.core.config import EvidenceLimits, FactCheckSettings, LlmSettings, SearchSettings, VerificationSettings
 from backend.services.llm_client import LlmClient
 from backend.services.verification.claims import ExtractionResult, extract_claims
 from backend.services.verification.conclusion import (
@@ -34,15 +34,16 @@ from backend.services.verification.prompts import (
     EXTRACTION_PROMPT_VERSION,
     JUDGE_PROMPT_VERSION,
     QUERY_PROMPT_VERSION,
+    SHORT_QUERY_PROMPT_VERSION,
     SUMMARY_PROMPT_VERSION,
 )
-from backend.services.verification.search import SearchProvider, build_search_provider
+from backend.services.verification.search import SearchProvider, build_factcheck_provider, build_search_provider
 from backend.services.verification.worker import VerificationOutcome
 
 logger = logging.getLogger(__name__)
 
 PROMPT_VERSIONS = "+".join(
-    (EXTRACTION_PROMPT_VERSION, QUERY_PROMPT_VERSION, JUDGE_PROMPT_VERSION, SUMMARY_PROMPT_VERSION, CONCLUSION_VERSION)
+    (EXTRACTION_PROMPT_VERSION, QUERY_PROMPT_VERSION, SHORT_QUERY_PROMPT_VERSION, JUDGE_PROMPT_VERSION, SUMMARY_PROMPT_VERSION, CONCLUSION_VERSION)
 )
 EXPIRED = "tiempo_agotado"
 
@@ -111,15 +112,21 @@ class CaseVerifier:
         case_seconds: float = 300.0,
         exclude_domains: Sequence[str] = (),
         clock: Callable[[], float] = time.monotonic,
+        previous_search: SearchProvider | None = None,
     ) -> None:
         self.repository = repository
         self.llm = llm
         self.search = search
+        self.previous_search = previous_search
         self.fetcher = fetcher
         self.limits = limits or EvidenceLimits()
         self.case_seconds = case_seconds
         self.exclude_domains = exclude_domains
         self._clock = clock
+        # Lo que pasó en el último caso, para la evaluación (Fase 7): la extracción y, por cada
+        # afirmación, su verificación (None si se reutilizó de la base o se acabó el tiempo).
+        self.extraction: ExtractionResult | None = None
+        self.trace: list[ClaimVerification | None] = []
 
     def __call__(self, analysis_id: UUID) -> VerificationOutcome:
         return self.verify(analysis_id)
@@ -130,6 +137,7 @@ class CaseVerifier:
         if not text:
             raise AnalysisNotFound(f"El análisis {analysis_id} no existe o no tiene texto.")
         extraction = extract_claims(self.llm, text)
+        self.extraction, self.trace = extraction, []
         if extraction.ordenes_descartadas:
             logger.warning(
                 "Caso %s: se quitaron %d frases del texto que parecían órdenes al modelo",
@@ -148,15 +156,18 @@ class CaseVerifier:
     def _verify_claim(self, claim: str, analysis_id: UUID, case_started: float) -> ClaimResult:
         known = find_known_claim(self.repository, claim)
         if known is not None:
+            self.trace.append(None)
             return ClaimResult(claim, known.veredicto, [dict(s) for s in known.fuentes if isinstance(s, dict)], "base_anterior")
         remaining = self.case_seconds - (self._clock() - case_started)
         if remaining <= 0:
+            self.trace.append(None)
             return ClaimResult(claim, "insuficiente", motivo=EXPIRED)
         limits = replace(self.limits, claim_seconds=min(self.limits.claim_seconds, remaining))
         verification = verify_claim(
             claim, llm=self.llm, search=self.search, fetcher=self.fetcher, limits=limits,
-            exclude_domains=self.exclude_domains, clock=self._clock,
+            exclude_domains=self.exclude_domains, clock=self._clock, previous_search=self.previous_search,
         )
+        self.trace.append(verification)
         sources = [source_dict(source) for source in verification.fuentes]
         self._remember(verification, sources, analysis_id)
         return ClaimResult(claim, verification.veredicto, sources, "busqueda", verification.motivo)
@@ -185,9 +196,10 @@ def build_case_verifier(repository: CaseRepository, verification: VerificationSe
     try:
         llm_settings = LlmSettings.from_environment()
         search_settings = SearchSettings.from_environment()
+        factcheck_settings = FactCheckSettings.from_environment()
         limits = EvidenceLimits.from_environment()
     except ValueError:
-        logger.exception("La configuración de la verificación (LLM, búsqueda o límites) no es válida")
+        logger.exception("La configuración de la verificación (LLM, búsqueda, fuente previa o límites) no es válida")
         return None
     if llm_settings is None:
         logger.error("VERIFICATION_ENABLED requiere LLM_BASE_URL; la cola no arranca")
@@ -195,7 +207,10 @@ def build_case_verifier(repository: CaseRepository, verification: VerificationSe
     if search_settings is None:
         logger.error("VERIFICATION_ENABLED requiere SEARCH_PROVIDER y SEARCH_API_KEY; la cola no arranca")
         return None
+    previous = build_factcheck_provider(factcheck_settings) if factcheck_settings else None
+    if previous is None:
+        logger.info("Sin fuente previa (FACTCHECK_API_KEY vacía): solo búsqueda web")
     return CaseVerifier(
         repository, LlmClient(llm_settings), build_search_provider(search_settings), PageFetcher(limits),
-        limits=limits, case_seconds=verification.case_seconds,
+        limits=limits, case_seconds=verification.case_seconds, previous_search=previous,
     )
