@@ -104,3 +104,32 @@ Cualquier cambio de la regla de conclusión es una decisión de diseño que conv
 **Qué espero (anotado antes):** el recall de `respaldada` sube desde 0; el de `fuera_de_contexto` cae a 0 (hoy 2 de 10), lo que por sí solo le resta al F1 macro hasta unos 0,06. El efecto neto puede ser pequeño o incluso negativo.
 
 **Criterio de decisión:** se considera mejora si **el F1 macro sube y el error grave «`respaldada` cuando era `contradicha`» sigue en 0**. **Una sola evaluación, sin probar variantes.** Si no hay mejora, la regla no se adopta. El resultado se documenta igual, sea mejor, igual o peor. Adoptarla en producción es una decisión posterior de Evelyn y de Orlando.
+
+## 8. Resultado de la ronda de ajuste 1 (conclusion-v2 frente a conclusion-v1)
+
+**Método comprobado:** recalculando con la regla antigua los veredictos por afirmación guardados, se reproducen **las 33 predicciones del sistema y las 33 de la referencia B** de `ajuste_1`. Después se aplicó la regla v2 a los mismos veredictos. No se encendió el LLM y **Tavily no se tocó** (créditos usados este mes: 231 de 1.000, igual que antes). Los datos están en `corridas/ajuste_1/recalculo_v2.json`.
+
+| Medida | Antes (v1) | Después (v2) |
+| --- | ---: | ---: |
+| **F1 macro** | **0,144** [0,036; 0,248] | **0,146** [0,033; 0,245] |
+| Aciertos | 5 de 33 | 5 de 33 |
+| Casos que terminan en «evidencia insuficiente» | 57,6 % | 63,6 % |
+| Error grave: «`respaldada`» cuando era `contradicha` | **0** | **1** (vv1-009) |
+| Error grave inverso: «`contradicha`» cuando era `respaldada` | 2 | 2 |
+| Referencia B (misma regla) | 0,183 | 0,162 |
+| Diferencia sistema − B | -0,038 [-0,169; 0,101] | -0,017 [-0,141; 0,108] |
+
+| Clase | F1 antes | F1 después |
+| --- | ---: | ---: |
+| `respaldada` | 0,000 | 0,250 |
+| `contradicha` | 0,250 | 0,250 |
+| `fuera_de_contexto` | 0,235 | 0,000 |
+| `evidencia_insuficiente` | 0,091 | 0,083 |
+
+**Qué cambió caso por caso (10 casos):** 3 pasan de error a acierto (vv1-006 y vv1-048, `respaldada`; vv1-063, `evidencia_insuficiente`) y 3 pasan de acierto a error (vv1-004 y vv1-025, que eran `fuera_de_contexto` y ya no pueden serlo; vv1-003, `evidencia_insuficiente`, que ahora sale `respaldada`). El resto (vv1-009, 012, 046, 062) sigue mal, y **vv1-009 cambia a la peor clase de error**: una noticia que debía salir `contradicha` sale `respaldada`.
+
+**Decisión según el criterio anotado antes** (el F1 macro sube **y** el error grave sigue en 0): **no se cumple.** El F1 macro apenas se mueve (+0,002, dentro del ruido) y aparece un error grave que no existía. **La regla v2 no se adopta.** `conclusion-v1` queda en producción y el código no se tocó.
+
+**Lectura:** la regla de conclusión **no es el cuello de botella principal**. Relajar `respaldada` rescata 2 casos, pero a cambio deja pasar como «respaldada» afirmaciones que el juez de 4B da por `apoyada` sin serlo (vv1-009, vv1-062, vv1-003); y quitar `fuera_de_contexto` pierde los 2 aciertos de esa clase sin ganar nada a cambio. Los problemas que quedan son del **juez** (confunde hechos ciertos con «fuera de contexto» y a veces apoya o contradice mal) y de la **evidencia** (muchas afirmaciones sin páginas útiles). Seguir ajustando solo la regla con estos 33 casos tendría más riesgo de sobreajuste que de mejora real, así que **no se hicieron más variantes**.
+
+**Qué quedaría para después (sin aplicar):** mejorar el juez o usar un modelo mayor (por ejemplo Qwen3-8B), mejorar cómo se elige y entrega la evidencia, y volver a medir con un conjunto de ajuste más grande y con la clase `evidencia_insuficiente` completa.
