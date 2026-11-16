@@ -22,7 +22,10 @@ ROOT = Path(__file__).resolve().parents[1]
 CONJUNTO = ROOT / "datasets/comun_v1"
 PLIEGUES = {"F1": "v1", "F2": "fakedes", "F3": "polyglot"}
 BRAZOS = {"satira": "ablacion_satira.csv", "usmsc": "ablacion_usmsc.csv",
-          "politica": "ablacion_politica.csv"}
+          "politica": "ablacion_politica.csv",
+          # Noticias del panel de un conjunto combinado (backend/services/combined_sets.py): solo
+          # se suman al entrenamiento, como los brazos de ablación. comun_v1 no lo trae.
+          "panel": "extra_panel.csv"}
 SEMILLA_INTERNA = 42
 FRACCION_INTERNA = 0.10
 

@@ -259,6 +259,17 @@ export default function Calibration() {
     } catch (error) { setState({ busy: null, error, saved: null }); }
   }
 
+  async function deploy(version) {
+    const saved = state.saved;
+    setState({ busy: 'Cargando y comprobando la pareja calibrada', error: null, saved, deployed: null });
+    try {
+      await adminApi('/admin/modelos/desplegar-calibracion', { method: 'POST', body: { version }, timeout: 180_000 });
+      setState({ busy: null, error: null, saved: null, deployed: version });
+      options.reload();
+      list.reload();
+    } catch (error) { setState({ busy: null, error, saved, deployed: null }); }
+  }
+
   async function show(version) {
     setState({ busy: 'Leyendo la calibración', error: null, saved: null });
     try {
@@ -311,7 +322,7 @@ export default function Calibration() {
         <p className="muted" style={{ margin: 0, fontSize: 13 }}>
           Calibrar ajusta la temperatura de cada modelo con sus predicciones fuera de pliegue y fija los pesos de la combinación.
           Guardar crea una versión calibrada nueva (contratos que usan los mismos pesos del modelo): no cambia lo desplegado.
-          Se despliega desde <Link className="text-link" to="/admin/modelos">Modelos</Link>.
+          «Desplegar» pone la pareja y sus pesos en un solo cambio, que se deshace con «Volver atrás» en <Link className="text-link" to="/admin/modelos">Modelos</Link>.
         </p>
       </section>
 
@@ -372,7 +383,16 @@ export default function Calibration() {
               Calibración <span className="mono">{state.saved.version}</span> guardada. Sus contratos calibrados
               ({Object.values(state.saved.contratos ?? {}).join(' + ')}) ya aparecen en Modelos como «Disponible»; lo desplegado no cambió.
             </span>
-            <Link className="text-link" to="/admin/modelos">Desplegar desde Modelos →</Link>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button type="button" className="btn btn--small" disabled={busy} onClick={() => deploy(state.saved.version)}>Desplegar esta calibración</button>
+              <Link className="text-link" to="/admin/modelos">Ver en Modelos →</Link>
+            </div>
+          </div>
+        )}
+        {state.deployed && (
+          <div className="alert alert--info" role="status">
+            Calibración <span className="mono">{state.deployed}</span> desplegada: los análisis nuevos usan su pareja y sus pesos.
+            Para deshacerlo, «Volver atrás» en <Link className="text-link" to="/admin/modelos">Modelos</Link>.
           </div>
         )}
       </section>
@@ -399,7 +419,12 @@ export default function Calibration() {
                     <td className="num">{temp(item.temperaturas?.bilstm)}{item.temperaturas_manuales?.includes('bilstm') ? ' ✎' : ''}</td>
                     <td className="num">{temp(item.temperaturas?.mbert)}{item.temperaturas_manuales?.includes('mbert') ? ' ✎' : ''}</td>
                     <td className="num">{Math.round((item.pesos?.bilstm ?? 0) * 100)}/{Math.round((item.pesos?.mbert ?? 0) * 100)}</td>
-                    <td><button type="button" className="text-link" disabled={busy} onClick={() => show(item.version)}>Ver</button></td>
+                    <td style={{ whiteSpace: 'nowrap' }}>
+                      <button type="button" className="text-link" disabled={busy} onClick={() => show(item.version)}>Ver</button>
+                      {current?.version !== item.version && (
+                        <> · <button type="button" className="text-link" disabled={busy} onClick={() => deploy(item.version)}>Desplegar</button></>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

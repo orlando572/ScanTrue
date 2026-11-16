@@ -51,7 +51,7 @@ TYPE_NAMES = {"bilstm": "BiLSTM", "mbert": "BETO / mBERT"}
 BASE_NAMES = {"beto": "BETO", "mbert": "mBERT"}
 HISTORY_LIMIT = 50
 # Carpetas de datasets/ que no tienen modelos (o son copias de seguridad) y no se recorren.
-SKIP_DIRS = {".venv", "node_modules", "embeddings", "fuentes", "unificado", "comun_v1",
+SKIP_DIRS = {".venv", "node_modules", "embeddings", "fuentes", "unificado", "comun_v1", "conjuntos",
              "modelos_base", "archivo_octubre", "__pycache__"}
 MAX_ZIP_BYTES = 2 * 1024 ** 3
 MAX_UNZIPPED_BYTES = 4 * 1024 ** 3
@@ -552,6 +552,24 @@ def calibration_for(versions: dict[str, str], calibrations_dir: Path = CALIBRATI
     return None
 
 
+def find_calibration(version: str, calibrations_dir: Path = CALIBRATIONS_DIR) -> tuple[Combination, Path] | None:
+    """La combinación con esa versión (la de producción o una del panel) y su carpeta."""
+    for path in calibration_files(calibrations_dir):
+        try:
+            combination = Combination.load(path)
+        except Exception:
+            continue
+        if combination.version == version:
+            return combination, path.parent
+    return None
+
+
+def _not_deployable(entry: ModelEntry) -> ModelVersionError:
+    code = {"archivado": "modelo_archivado", "pendiente_calibrar": "pendiente_calibrar"}.get(
+        entry.estado, "modelo_no_valido")
+    return ModelVersionError(code, entry.motivo or "Ese modelo no se puede desplegar.")
+
+
 def default_weights() -> dict[str, float]:
     try:
         return dict(Combination.load(COMBINATION_FILE).weights)
@@ -691,10 +709,7 @@ class ModelDeploymentManager:
             for tipo in required:
                 model = selection[tipo]
                 if model is not None and not model.deployable:
-                    raise ModelVersionError(
-                        "modelo_archivado" if model.estado == "archivado" else "modelo_no_valido",
-                        model.motivo or "Ese modelo no se puede desplegar.",
-                    )
+                    raise _not_deployable(model)
             if not any(selection.values()):
                 raise ModelVersionError(
                     "ultimo_modelo", "Debe quedar al menos un modelo desplegado.", 409)
@@ -730,15 +745,48 @@ class ModelDeploymentManager:
         if entry is None:
             raise ModelVersionError("modelo_desconocido", "Ese modelo no existe.", 404)
         if not entry.deployable:
-            raise ModelVersionError(
-                "modelo_archivado" if entry.estado == "archivado" else "modelo_no_valido",
-                entry.motivo or "Ese modelo no se puede desplegar.",
-            )
+            raise _not_deployable(entry)
         if self.state.deployed.get(tipo) == model_id and tipo in self.loaded:
             raise ModelVersionError("ya_desplegado", "Ese modelo ya está desplegado.", 409)
         deployed = {**self.state.deployed, tipo: model_id}
         self._apply(deployed, self.state.weights, {tipo},
                     {"accion": "desplegar", "tipo": tipo, "version": model_id, "por": actor})
+
+    def _calibrated_entry(self, tipo: str, version: str, folder: Path,
+                          temperature: float) -> ModelEntry:
+        """El modelo de una calibración: el contrato con esa versión, mejor el de su carpeta y
+        con su temperatura (por si hubiera otro con la misma versión)."""
+        found = [entry for entry in self.catalog.entries() if entry.tipo == tipo and entry.version == version]
+        if not found:
+            raise ModelVersionError(
+                "modelo_desconocido", f"El modelo {version} de esa calibración ya no está en el catálogo.", 404)
+
+        def score(entry: ModelEntry) -> tuple:
+            inside = entry.contrato is not None and entry.contrato.is_relative_to(folder.resolve())
+            same_t = entry.temperatura is not None and abs(entry.temperatura - temperature) < 1e-9
+            return inside, same_t, entry.deployable
+
+        return max(found, key=score)
+
+    def deploy_calibration(self, version: str, actor: str | None) -> None:
+        """Despliega de una vez la pareja de una calibración, con sus pesos: un solo cambio en el
+        historial, así que «Volver atrás» deshace la pareja entera."""
+        found = find_calibration(version, self.catalog.calibrations_dir)
+        if found is None:
+            raise ModelVersionError("calibracion_no_encontrada", "Calibración no encontrada.", 404)
+        combination, folder = found
+        entries = {tipo: self._calibrated_entry(tipo, model_version, folder, combination.temperatures[tipo])
+                   for tipo, model_version in combination.model_versions.items() if tipo in TYPES}
+        for entry in entries.values():
+            if not entry.deployable:
+                raise _not_deployable(entry)
+        deployed = {**self.state.deployed, **{tipo: entry.id for tipo, entry in entries.items()}}
+        weights = {name: combination.weights[name] for name in TYPES}
+        if deployed == self.state.deployed and set(entries) <= self.loaded and all(
+                abs(weights[name] - self.state.weights[name]) < 1e-9 for name in TYPES):
+            raise ModelVersionError("ya_desplegado", "Esa calibración ya está desplegada.", 409)
+        self._apply(deployed, weights, set(entries),
+                    {"accion": "desplegar_calibracion", "tipo": None, "version": version, "por": actor})
 
     def retire(self, tipo: str, actor: str | None) -> None:
         if tipo not in TYPES:
@@ -784,9 +832,3 @@ class ModelDeploymentManager:
                 "modelo_en_uso",
                 "Está desplegado o es al que se volvería con «Volver atrás»; no se puede borrar.", 409)
         self.catalog.delete_imported(entry)
-
-    # ── Métricas ────────────────────────────────────────────────────
-
-    def active_metrics(self, tipo: str) -> MetricsResponse | None:
-        entry = self.catalog.get(tipo, self.state.deployed.get(tipo))
-        return entry.load_metrics() if entry else None

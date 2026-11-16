@@ -16,7 +16,7 @@ const STATES = {
   archivado: { label: 'Archivado', tag: '' },
 };
 const ORIGINS = { repositorio: 'Repositorio', entrenamiento: 'Entrenamiento', importado: 'Importado', calibracion: 'Calibración' };
-const ACTIONS = { desplegar: 'Desplegar', retirar: 'Retirar', pesos: 'Pesos', revertir: 'Volver atrás' };
+const ACTIONS = { desplegar: 'Desplegar', desplegar_calibracion: 'Desplegar calibración', retirar: 'Retirar', pesos: 'Pesos', revertir: 'Volver atrás' };
 const REFRESH_MS = 30_000;
 
 const toNumber = (text) => (text ? Number.parseInt(text, 10) : 0);
@@ -235,12 +235,13 @@ function History({ entries, data }) {
   const detail = (entry) => {
     if (entry.accion === 'pesos') return `BiLSTM ${percent(entry.pesos?.bilstm)} · BETO / mBERT ${percent(entry.pesos?.mbert)}`;
     if (entry.accion === 'revertir') return 'Estado anterior al último cambio';
+    if (entry.accion === 'desplegar_calibracion') return `Pareja y pesos de ${entry.version}`;
     return `${TYPE_NAMES[entry.tipo] ?? ''}: ${name(entry.tipo, entry.version) ?? '—'}`;
   };
   const before = (entry) => {
     const previous = entry.anterior;
     if (!previous) return '—';
-    if (entry.accion === 'pesos' || entry.accion === 'revertir') {
+    if (entry.accion === 'pesos' || entry.accion === 'revertir' || entry.accion === 'desplegar_calibracion') {
       return `${TYPES.map((type) => name(type, previous.desplegados?.[type]) ?? 'retirado').join(' + ')} · ${percent(previous.pesos?.bilstm)}/${percent(previous.pesos?.mbert)}`;
     }
     return name(entry.tipo, previous.desplegados?.[entry.tipo]) ?? 'retirado';

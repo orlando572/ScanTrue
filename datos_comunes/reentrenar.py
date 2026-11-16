@@ -73,9 +73,14 @@ def archivos_del_conjunto(conjunto: Path) -> set[str]:
 
 
 def brazos_disponibles(brazos: list[str], conjunto: Path) -> tuple[list[str], list[str]]:
-    """Separa los brazos de la receta en los que el conjunto trae y los que no (se omiten)."""
+    """Separa los brazos de la receta en los que el conjunto trae y los que no (se omiten).
+
+    Un conjunto combinado trae `extra_panel.csv`: el brazo «panel» se usa siempre, aunque la receta
+    no lo pida (son las noticias del panel que se suman a comun_v1)."""
     archivos = archivos_del_conjunto(conjunto)
     usados = [b for b in brazos if BRAZOS.get(b) in archivos]
+    if BRAZOS["panel"] in archivos and "panel" not in usados:
+        usados.append("panel")
     return usados, [b for b in brazos if b not in usados]
 
 
@@ -144,7 +149,8 @@ def metricas_prueba(modelo: str, version: str, prueba: pd.DataFrame, logits: np.
         }],
         "limitaciones": [
             "Prueba del panel: noticias revisadas que no comparten grupo con el entrenamiento.",
-            f"Solo {n} noticias: las cifras tienen mucha incertidumbre." if n < 200 else
+            f"Solo {n} {'noticia' if n == 1 else 'noticias'}: las cifras tienen mucha incertidumbre."
+            if n < 200 else
             "La prueba sale de las mismas fuentes que el entrenamiento.",
             "Temperatura provisional (1,0): falta la calibración conjunta; el umbral 0,5 no cambia.",
         ],

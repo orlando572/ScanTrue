@@ -110,7 +110,7 @@ def cargador(frame, vocab, max_len, lote, mezclar, semilla):
 # =========================================================================== vectores fastText
 
 ARCHIVOS_DE_ENTRENAMIENTO = ("fragmentos_desarrollo.csv", "ablacion_satira.csv", "ablacion_usmsc.csv",
-                             "ablacion_politica.csv")
+                             "ablacion_politica.csv", "extra_panel.csv")
 
 
 def palabras_del_conjunto(conjunto: Path) -> set[str]:
@@ -672,8 +672,8 @@ def opciones_de_corrida(parser: argparse.ArgumentParser, completa: bool) -> None
         parser.add_argument("--dispositivo", choices=("cuda", "cpu"), default="cuda")
         parser.add_argument("--vectores", type=Path, default=VECTORES)
         parser.add_argument("--cache", type=Path, default=CORRIDAS / "cache_fasttext_cc300.npz")
-    parser.add_argument("--brazo", choices=("satira", "usmsc", "politica"), nargs="*", default=[],
-                        help="brazos de ablación que se añaden al entrenamiento")
+    parser.add_argument("--brazo", choices=("satira", "usmsc", "politica", "panel"), nargs="*", default=[],
+                        help="brazos que se añaden al entrenamiento (panel: el de un conjunto combinado)")
     parser.add_argument("--pooling", choices=POOLINGS, default="final")
     parser.add_argument("--congelar-embeddings", type=int, default=0,
                         help="épocas con embeddings congelados; después lr × --lr-embeddings")

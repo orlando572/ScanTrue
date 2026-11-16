@@ -183,6 +183,27 @@ def conjunto_panel(carpeta: Path, origen: Path) -> Path:
     return conjunto
 
 
+def conjunto_combinado(carpeta: Path, origen: Path) -> Path:
+    """Como un conjunto combinado de Datasets: comun sin cambios + extra_panel.csv + prueba."""
+    conjunto = carpeta / "combinado"
+    conjunto.mkdir()
+    manifest = json.loads((origen / "manifest.json").read_text())
+    for nombre in manifest["archivos"]:
+        (conjunto / nombre).write_bytes((origen / nombre).read_bytes())
+    extra = pd.DataFrame([{"id_fragmento": f"nota_panel{i}#0", "id_articulo": f"nota_panel{i}", "grupo": f"gp{i}",
+                           "fuente": "panel", "dominio": "", "texto": ("bulo panel " if i % 2 else "informe panel ") * 5,
+                           "etiqueta_falsa": i % 2, "peso": 1.0, "tokens_bilstm": 10, "pliegue": "panel"}
+                          for i in range(6)], columns=COLUMNAS)
+    prueba = extra.assign(id_fragmento=lambda f: "t" + f.id_fragmento, id_articulo=lambda f: "t" + f.id_articulo,
+                          grupo=lambda f: "t" + f.grupo, pliegue="prueba_panel")
+    for nombre, frame in (("extra_panel.csv", extra), ("fragmentos_prueba.csv", prueba)):
+        frame.to_csv(conjunto / nombre, index=False)
+        manifest["archivos"][nombre] = {"sha256": hashlib.sha256((conjunto / nombre).read_bytes()).hexdigest()}
+    manifest.update(version="conjunto_combinado_v1", nombre="combinado")
+    (conjunto / "manifest.json").write_text(json.dumps(manifest))
+    return conjunto
+
+
 class ReentrenarTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -235,6 +256,24 @@ class ReentrenarTests(unittest.TestCase):
         self.assertEqual(evaluacion["n"], 40)  # 40 noticias de la prueba (2 fragmentos cada una)
         self.assertEqual(sum(map(sum, evaluacion["matriz_confusion"])), 40)
         self.assertEqual(metricas["orden_clases"], ["falsa", "real"])
+
+    def test_combinado_suma_el_panel_solo_al_entrenamiento(self):
+        combinado = conjunto_combinado(self.dir, self.conjunto)
+        salida = self.dir / "modelos/v_combinado"
+        resultado = self.reentrenar(combinado, salida, "--epocas", "1", "--pliegues",
+                                    "--cache", str(self.dir / "cache_combinado.npz"))
+        self.assertEqual(resultado["brazos_omitidos"], [])
+        procedencia = json.loads((salida / "entrenamiento.json").read_text())
+        self.assertEqual(procedencia["brazos"], ["usmsc", "panel"])
+        contrato = json.loads((salida / "contrato.json").read_text())
+        # El desarrollo es el de comun sin cambios: la calibración lo trata como comun.
+        sha_comun = json.loads((self.conjunto / "manifest.json").read_text())["archivos"]["fragmentos_desarrollo.csv"]
+        self.assertEqual(contrato["sha256_conjunto"], sha_comun["sha256"])
+        # Las predicciones fuera de pliegue son solo de comun: el panel nunca valida.
+        oof = pd.read_csv(salida / "predicciones_fuera_de_pliegue.csv")
+        self.assertEqual(len(oof), 240)
+        self.assertFalse(oof.id_articulo.astype(str).str.startswith("nota_panel").any())
+        self.assertEqual(json.loads((salida / "metricas.json").read_text())["evaluaciones"][0]["n"], 6)
 
     def test_no_sobrescribe_y_limpia_lo_parcial(self):
         salida = self.dir / "modelos/v_prueba"

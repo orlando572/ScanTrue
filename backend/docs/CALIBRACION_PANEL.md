@@ -8,7 +8,7 @@ En **Administración → Calibración** (`/admin/calibracion`) se calibra una pa
 - **Combinación:** `p_falsa = sigmoide(w_bilstm · z_bilstm / T_bilstm + w_mbert · z_mbert / T_mbert)`. Los pesos son una decisión de diseño; el vigente es 0,20/0,80.
 - **Validación:** como en `datos_comunes/calibrar_conjunto.py`, por fuente (se ajusta con dos fuentes y se mide en la tercera). Incluye los niveles de la extensión, la regla de discrepancia (evaluada, no aplicada) y la comparación por bootstrap.
 
-**El mismo resultado que hoy:** con la pareja B6 + M3b, peso 0,20 y temperaturas ajustadas sale exactamente la calibración de producción:
+**El mismo resultado que hoy:** con la pareja B6 + M3b, peso 0,20 y temperaturas ajustadas sale exactamente la calibración de producción (también con un B6 reentrenado desde el panel **en la GPU**; uno entrenado en CPU da otra T, ver [ENTRENAMIENTO_PANEL.md](ENTRENAMIENTO_PANEL.md)):
 - T 8,4468 y 2,1347, y pesos 0,2/0,8;
 - el `metricas.json` de `comun_v1_corridas/calibracion/`, idéntico número a número;
 - desplegar esos contratos calibrados da en `POST /analisis` las mismas probabilidades, nivel y comparación. Solo cambian los nombres de versión (`version_combinacion` y la versión de cada modelo).
@@ -53,7 +53,7 @@ No se modifica ningún contrato existente ni lo desplegado. Se escribe en una ca
 
 ## Cómo llega a los análisis
 
-1. **Modelos** muestra los contratos calibrados como «Disponible», con origen *Calibración*, y se despliegan como cualquier otro.
+1. **Desplegar** (en Calibración, junto a cada calibración guardada y al guardarla) pone la pareja calibrada y sus pesos en **un solo cambio**: una entrada en el historial, y «Volver atrás» en Modelos la deshace entera. Modelos también muestra los contratos calibrados como «Disponible», con origen *Calibración*, y se pueden desplegar uno a uno; mientras falte el segundo, `version_combinacion` es `panel: …`.
 2. Al desplegar una pareja, la API busca su combinación calibrada (`calibration_for` en `backend/services/model_registry.py`) entre la de producción y las de `datasets/calibraciones/`. Si los contratos, las temperaturas y los pesos coinciden, `version_combinacion` es la de esa calibración. Si no (por ejemplo, otros pesos en el deslizador), es `panel: …`, como antes.
 3. «Volver a los calibrados», en Modelos, usa los pesos de la calibración de la pareja desplegada.
 
@@ -66,5 +66,6 @@ No se modifica ningún contrato existente ni lo desplegado. Se escribe en una ca
 | `POST /admin/calibraciones` | Lo mismo + `motivo` → 201 con la versión guardada |
 | `GET /admin/calibraciones` | La de producción, las guardadas y la vigente |
 | `GET /admin/calibraciones/{versión}` | Una calibración con su informe |
+| `POST /admin/modelos/desplegar-calibracion` | `{"version"}` → despliega la pareja y los pesos de esa calibración (también la de producción) en un solo cambio. 404 `calibracion_no_encontrada`, 409 `ya_desplegado` |
 
 Código: `backend/services/calibration.py`. Motor: `calibrar_predicciones` en `datos_comunes/calibrar_conjunto.py`; la CLI sigue igual y da el mismo resultado. Pruebas: `backend/tests/test_calibration.py`, que incluye la comparación con producción.

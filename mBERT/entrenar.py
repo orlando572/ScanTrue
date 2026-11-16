@@ -724,8 +724,8 @@ def opciones_de_corrida(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--ruta-modelo", type=Path, default=None,
                         help="carpeta local de un modelo base fuera del registro (solo para pruebas)")
     parser.add_argument("--modelo", choices=tuple(bases.MODELOS), default="mbert")
-    parser.add_argument("--brazo", choices=("satira", "usmsc", "politica"), nargs="*", default=[],
-                        help="brazos de ablación que se añaden al entrenamiento")
+    parser.add_argument("--brazo", choices=("satira", "usmsc", "politica", "panel"), nargs="*", default=[],
+                        help="brazos que se añaden al entrenamiento (panel: el de un conjunto combinado)")
     parser.add_argument("--max-length", type=int, default=256, help="tokens, incluidos [CLS] y [SEP]")
     parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--epocas", type=int, default=3)
