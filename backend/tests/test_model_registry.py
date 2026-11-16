@@ -19,6 +19,7 @@ from fastapi.testclient import TestClient
 
 from backend.api.admin_routes import router as admin_router
 from backend.api.dependencies import identity_service, service_repository
+from backend.api.metrics_routes import router as metrics_router
 from backend.models.contrato import (
     COMBINATION_FILE, MODELOS_BASE_ADMITIDOS, Combination, ModelContract, UnsupportedBaseModel,
     resolve,
@@ -113,7 +114,8 @@ class Workspace(unittest.TestCase):
         self.released = []
 
     def catalog(self):
-        return ModelCatalog(self.manifests, self.datasets, self.imports)
+        # Todo dentro de la carpeta temporal: las calibraciones reales del equipo no cuentan.
+        return ModelCatalog(self.manifests, self.datasets, self.imports, self.datasets / "calibraciones")
 
     def manager(self, fail: set[str] = frozenset()):
         def builder(selection, weights, required):
@@ -449,6 +451,41 @@ class RouteTests(Workspace):
         self.assertNotIn("B6_20260601", [m["id"] for m in response.json()["modelos"]["bilstm"]])
         empty = self.client.post("/admin/modelos/importar", headers=self.auth, content=b"")
         self.assertEqual(empty.json()["detail"]["codigo"], "zip_vacio")
+
+
+class PublishedMetricsTests(Workspace):
+    """`GET /metricas` publica las del modelo desplegado de cada tipo, nunca las de otro."""
+
+    def setUp(self):
+        super().setUp()
+        self.app = FastAPI()
+        self.app.include_router(metrics_router)
+        self.manager_ = self.manager()
+        self.manager_.start()
+        self.app.state.model_versions = self.manager_
+        self.client = TestClient(self.app)
+
+    def metrics(self, modelo):
+        response = self.client.get("/metricas", params={"modelo": modelo})
+        self.assertEqual(response.status_code, 200, response.text)
+        return response.json()
+
+    def test_las_del_desplegado_o_vacias_con_el_motivo(self):
+        self.manager_.deploy("bilstm", "B2_20260201", None)  # trae metricas.json
+        self.assertEqual(self.metrics("bilstm")["version"], "B2_20260201")
+        self.manager_.deploy("bilstm", "B1_20260101", None)  # no trae métricas
+        data = self.metrics("bilstm")
+        self.assertEqual((data["version"], data["evaluaciones"]), ("B1_20260101", []))
+        self.assertIn("no tiene métricas publicadas", data["limitaciones"][0])
+        self.manager_.retire("mbert", None)
+        data = self.metrics("mbert")
+        self.assertEqual((data["version"], data["evaluaciones"]), ("ninguno", []))
+
+    def test_sin_gestor_las_de_produccion(self):
+        self.app.state.model_versions = None
+        data = self.metrics("bilstm")
+        self.assertEqual(data["version"], "comun_v1.1_B6_20261107")
+        self.assertTrue(data["evaluaciones"])
 
 
 if __name__ == "__main__":

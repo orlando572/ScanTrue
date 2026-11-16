@@ -784,9 +784,3 @@ class ModelDeploymentManager:
                 "modelo_en_uso",
                 "Está desplegado o es al que se volvería con «Volver atrás»; no se puede borrar.", 409)
         self.catalog.delete_imported(entry)
-
-    # ── Métricas ────────────────────────────────────────────────────
-
-    def active_metrics(self, tipo: str) -> MetricsResponse | None:
-        entry = self.catalog.get(tipo, self.state.deployed.get(tipo))
-        return entry.load_metrics() if entry else None

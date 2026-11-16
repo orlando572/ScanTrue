@@ -484,5 +484,35 @@ class DatasetTests(unittest.TestCase):
         self.assertIn("0.9", lines[1])
 
 
+class ValidationErrorTests(unittest.TestCase):
+    """Los 422 de la API dicen qué campo falla, pero no repiten lo recibido."""
+
+    def setUp(self):
+        from backend.api.dependencies import identity_service as identity
+        from backend.app import app
+
+        app.dependency_overrides[identity] = lambda: SimpleNamespace()
+        self.addCleanup(app.dependency_overrides.pop, identity, None)
+        self.client = TestClient(app)  # sin `with`: no arranca modelos ni Supabase
+
+    def test_no_devuelve_la_contrasena(self):
+        response = self.client.post("/sesiones", json={"email": "admin@example.com",
+                                                        "password": "secreta-123"})
+        self.assertEqual(response.status_code, 422)
+        self.assertNotIn("secreta-123", response.text)
+        self.assertNotIn("admin@example.com", response.text)
+        errors = response.json()["detail"]
+        self.assertEqual({tuple(error["loc"]) for error in errors},
+                         {("body", "correo"), ("body", "contrasena")})
+        self.assertTrue(all(set(error) == {"type", "loc", "msg"} for error in errors))
+
+    def test_conserva_el_motivo(self):
+        response = self.client.post("/sesiones", json={"correo": "admin@example.com",
+                                                        "contrasena": "corta"})
+        self.assertEqual(response.status_code, 422)
+        self.assertNotIn("corta", json.dumps(response.json()).replace("contrasena", ""))
+        self.assertIn("8", response.json()["detail"][0]["msg"])
+
+
 if __name__ == "__main__":
     unittest.main()

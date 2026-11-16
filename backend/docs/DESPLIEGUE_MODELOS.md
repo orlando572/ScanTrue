@@ -51,7 +51,7 @@ Si dos modelos tienen la misma `version` y pesos distintos, los dos aparecen; el
 - **Modelos en memoria:** cambiar el BiLSTM no recarga BETO, y al revés. Los modelos que dejan de usarse se liberan.
 - **«Volver atrás»** restaura los modelos y los pesos de antes del último cambio. Un modelo importado que esté desplegado, o que sea al que se volvería, no se puede borrar.
 - **Dónde se guarda:** lo desplegado, los pesos y el historial (50 cambios) están en `backend/.local/modelos_desplegados.json`, fuera de Git. Al arrancar se carga lo guardado; si falta o está dañado, los predeterminados. Si un modelo guardado no carga, la API arranca con el otro y el panel lo marca «No cargó».
-- **`/salud`** indica en `modelos` qué tipos están cargados y en `desplegados` qué modelo hay en cada uno. **`GET /metricas?modelo=…`** sirve las métricas del modelo desplegado de ese tipo.
+- **`/salud`** indica en `modelos` qué tipos están cargados y en `desplegados` qué modelo hay en cada uno. **`GET /metricas?modelo=…`** sirve las métricas del modelo desplegado de ese tipo. Si ese modelo no trae `metricas.json` (por ejemplo, uno reentrenado con `comun_v1`, cuya prueba congelada no se abre) o el tipo está retirado, `evaluaciones` va vacía y `limitaciones` dice por qué: nunca se muestran las de otro modelo. La extensión lo muestra como «Aún no hay pruebas disponibles».
 
 ## API (todas con sesión de administrador)
 
