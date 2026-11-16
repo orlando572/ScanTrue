@@ -511,7 +511,7 @@ class SupabaseRepository:
         """Casos aprobados o corregidos, con lo necesario para armar un dataset."""
         select = (
             "decision,etiqueta_final,nota,evidencia,grupo_evento,fecha,"
-            "analisis!inner(id,fecha,url,texto,texto_original,hash_texto,comparacion,"
+            "analisis!inner(id,fecha,url,texto,texto_original,fragmentos,hash_texto,comparacion,"
             "resultado_unificado,resultados_modelo(modelo,version,probabilidad_falsa))"
         )
         cases: list[dict] = []

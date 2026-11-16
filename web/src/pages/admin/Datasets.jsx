@@ -18,21 +18,47 @@ function save(blob, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-// Qué entra en una versión y qué se separó: duplicados, conflictos, grupos y particiones.
+const EXCLUDED = {
+  no_espanol: 'no está en español',
+  sin_fin_de_oracion: 'sin ninguna oración terminada en punto',
+  menos_de_100_tokens: 'menos de 100 palabras en oraciones completas',
+  oraciones_demasiado_largas: 'oraciones de más de 200 palabras',
+};
+const CUTS = {
+  tope_noticia: 'cortadas al tope de palabras por noticia',
+  inicio_incompleto: 'sin la oración inicial cortada',
+  final_incompleto: 'sin la oración final cortada',
+  oraciones_sueltas: 'con alguna oración que no cabía en un fragmento',
+};
+
+const sum = (values) => Object.values(values ?? {}).reduce((total, value) => total + value, 0);
+
+// Qué entra en una versión y qué se separó: duplicados, conflictos, estándar, grupos y particiones.
 function Summary({ summary }) {
   const split = summary.por_particion_etiqueta ?? {};
   const cell = (partition, label) => split[partition]?.[label] ?? 0;
+  const standard = summary.estandar ?? {};
+  const excluded = Object.entries(summary.excluidas ?? {}).filter(([, count]) => count);
+  const cuts = Object.entries(summary.recortes ?? {}).filter(([, count]) => count);
   return (
     <>
       <div className="tiles">
         <div className="tile"><span className="label">Casos</span><b style={{ color: 'var(--color-acid)' }}>{summary.casos}</b><small>de {summary.candidatos} aprobados o corregidos</small></div>
         <div className="tile"><span className="label">Duplicados retirados</span><b>{summary.duplicados_retirados}</b><small>copias exactas del mismo texto</small></div>
         <div className="tile"><span className="label">Conflictos retirados</span><b style={{ color: summary.conflictos_retirados ? 'var(--color-false)' : undefined }}>{summary.conflictos_retirados}</b><small>mismo texto con etiquetas contrarias</small></div>
+        <div className="tile"><span className="label">Fuera por el estándar</span><b style={{ color: sum(summary.excluidas) ? 'var(--color-false)' : undefined }}>{sum(summary.excluidas)}</b><small>idioma, longitud u oraciones incompletas</small></div>
+        <div className="tile"><span className="label">Fragmentos</span><b>{summary.fragmentos ?? 0}</b><small>{standard.min_tokens ?? 100}–{standard.max_tokens_fragmento ?? 200} palabras, terminados en punto</small></div>
         <div className="tile"><span className="label">Grupos</span><b>{summary.grupos}</b><small>{summary.grupos_con_varios} con varios casos (misma página o evento)</small></div>
       </div>
+      {(excluded.length > 0 || cuts.length > 0) && (
+        <ul className="muted" style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 14 }}>
+          {excluded.map(([key, count]) => <li key={key}>{count} fuera: {EXCLUDED[key] ?? key}</li>)}
+          {cuts.map(([key, count]) => <li key={key}>{count} {CUTS[key] ?? key}</li>)}
+        </ul>
+      )}
       <div className="table-wrap" style={{ marginTop: 16 }}>
         <table className="data">
-          <thead><tr><th>Partición</th><th>Falsas</th><th>Reales</th><th>Total</th></tr></thead>
+          <thead><tr><th>Partición</th><th>Falsas</th><th>Reales</th><th>Noticias</th><th>Fragmentos</th></tr></thead>
           <tbody>
             {['entrenamiento', 'prueba'].map((partition) => (
               <tr key={partition}>
@@ -40,6 +66,7 @@ function Summary({ summary }) {
                 <td className="num">{cell(partition, 'falsa')}</td>
                 <td className="num">{cell(partition, 'real')}</td>
                 <td className="num">{summary.por_particion?.[partition] ?? 0}</td>
+                <td className="num">{summary.fragmentos_por_particion?.[partition] ?? 0}</td>
               </tr>
             ))}
           </tbody>
@@ -47,6 +74,7 @@ function Summary({ summary }) {
       </div>
       <p className="label" style={{ margin: '12px 0 0' }}>
         Cada grupo va entero a una partición · prueba ≈ {percent(summary.fraccion_prueba)} de los grupos
+        {standard.tope_noticia ? ` · máximo ${standard.tope_noticia} palabras por noticia` : ''}
       </p>
     </>
   );
@@ -129,13 +157,14 @@ function Items({ version }) {
     <>
       <div className="table-wrap">
         <table className="data">
-          <thead><tr><th>Partición</th><th>Etiqueta</th><th>Texto</th><th>Origen</th><th>Decisión</th><th>Grupo</th></tr></thead>
+          <thead><tr><th>Partición</th><th>Etiqueta</th><th>Texto</th><th>Palabras</th><th>Origen</th><th>Decisión</th><th>Grupo</th></tr></thead>
           <tbody>
             {data.elementos.map((item) => (
               <tr key={item.id}>
                 <td>{item.particion}</td>
                 <td><span className={`tag ${item.etiqueta === 'falsa' ? 'tag--fail' : 'tag--ok'}`}>{item.etiqueta}</span></td>
                 <td style={{ minWidth: 280 }}>{item.texto.length > 220 ? `${item.texto.slice(0, 219)}…` : item.texto}</td>
+                <td className="num">{item.tokens_bilstm ?? '—'}</td>
                 <td className="mono">{item.dominio ?? '—'}</td>
                 <td>{item.decision}</td>
                 <td className="mono">{shortId(item.grupo.replace('g_', ''))}</td>

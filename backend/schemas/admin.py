@@ -111,15 +111,30 @@ class DatasetSummary(BaseModel):
     """Qué entra en una versión y qué se separó o quedó fuera."""
 
     candidatos: int = 0
-    casos: int = 0
+    casos: int = Field(default=0, description="Noticias que entran (cada una da 1 o más fragmentos).")
+    fragmentos: int = Field(default=0, description="Filas del dataset: fragmentos de 100–200 tokens.")
     duplicados_retirados: int = 0
     conflictos_retirados: int = 0
+    excluidas: dict[str, int] = Field(
+        default_factory=dict,
+        description="Noticias fuera por el estándar: no_espanol, sin_fin_de_oracion, "
+                    "menos_de_100_tokens, oraciones_demasiado_largas.")
+    recortes: dict[str, int] = Field(
+        default_factory=dict,
+        description="Noticias recortadas: tope_noticia, inicio_incompleto, final_incompleto, "
+                    "oraciones_sueltas.")
+    filas_cambiadas_por_patron: dict[str, int] = Field(default_factory=dict)
     grupos: int = 0
     grupos_con_varios: int = 0
     por_etiqueta: dict[str, int] = Field(default_factory=dict)
     por_particion: dict[str, int] = Field(default_factory=dict)
     por_decision: dict[str, int] = Field(default_factory=dict)
     por_particion_etiqueta: dict[str, dict[str, int]] = Field(default_factory=dict)
+    fragmentos_por_particion: dict[str, int] = Field(default_factory=dict)
+    fragmentos_por_noticia: dict[int, int] = Field(default_factory=dict)
+    tokens_noticia: dict[str, float] = Field(default_factory=dict)
+    tokens_fragmento: dict[str, float] = Field(default_factory=dict)
+    estandar: dict = Field(default_factory=dict, description="Parámetros del estándar de fila.")
     fraccion_prueba: float = 0.2
 
 
@@ -144,6 +159,21 @@ class DatasetItem(BaseModel):
     decision: Literal["aprobado", "corregido"]
     procedencia: dict = Field(default_factory=dict)
     evidencia: list = Field(default_factory=list)
+    # Columnas del estándar (datos_comunes/estandar.py). Hasta la migración 008 se guardan
+    # en `procedencia.fragmento` y se leen de ahí.
+    id_fragmento: str | None = None
+    peso: float | None = None
+    tokens_bilstm: int | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _fragment_from_origin(cls, data):
+        if isinstance(data, dict):
+            fragment = (data.get("procedencia") or {}).get("fragmento") or {}
+            for name in ("id_fragmento", "peso", "tokens_bilstm"):
+                if data.get(name) is None and fragment.get(name) is not None:
+                    data = {**data, name: fragment[name]}
+        return data
 
 
 class DatasetDetail(DatasetVersion):

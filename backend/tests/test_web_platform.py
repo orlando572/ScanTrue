@@ -26,6 +26,7 @@ from backend.schemas.admin import AdminCaseDetail, AdminCasePage
 from backend.schemas.analysis import AnalysisRequest
 from backend.schemas.public import PublicAnalysis, PublicAnalysisDetail, PublicAnalysisPage
 from backend.services.analysis import clean_fragments
+from backend.schemas.admin import DatasetItem
 from backend.services.datasets import build_dataset, export_csv
 from backend.services.model_versions import ModelVersionError, ModelVersionManager
 
@@ -256,30 +257,41 @@ class RouteTests(unittest.TestCase):
         self.assertEqual(created.json()["detail"]["codigo"], "sin_casos_aprobados")
 
 
-def reviewed(text, label, *, url=None, event=None, decision="aprobado"):
+def reviewed(text, label, *, url=None, event=None, decision="aprobado", fragments=None):
     return {
         "decision": decision, "etiqueta_final": label, "nota": None, "evidencia": ["https://f.example"],
         "grupo_evento": event, "fecha": NOW.isoformat(),
         "analisis": {
             "id": str(uuid4()), "fecha": NOW.isoformat(), "url": url, "texto": text,
-            "texto_original": None, "hash_texto": "b" * 64, "comparacion": "coinciden",
+            "texto_original": None, "fragmentos": fragments, "hash_texto": "b" * 64,
+            "comparacion": "coinciden",
             "resultado_unificado": {"probabilidad_falsa": 0.9},
             "resultados_modelo": [{"modelo": "bilstm", "version": "B", "probabilidad_falsa": 0.8}],
         },
     }
 
 
+def news(topic, sentences=12, words=12):
+    """Noticia en español de `sentences` oraciones de `words` palabras sobre `topic`."""
+    body = " ".join(
+        f"El informe sobre {topic} dice que la medida {index} " + " ".join(
+            f"dato{index}x{word}" for word in range(words - 9)) + " para todos."
+        for index in range(sentences))
+    return body
+
+
 class DatasetTests(unittest.TestCase):
     def test_duplicados_conflictos_y_grupos(self):
+        alcalde, vacuna = news("el alcalde"), news("la vacuna")
         rows = [
-            reviewed("El alcalde anunció la obra.", "real"),
-            reviewed("EL ALCALDE anunció, la obra", "real", decision="corregido"),  # copia exacta
-            reviewed("La vacuna cambia el ADN.", "falsa"),
-            reviewed("La vacuna cambia el ADN", "real"),  # misma huella, etiqueta contraria
-            reviewed("Paro minero: primer párrafo.", "real", url="https://d.pe/paro?x=1"),
-            reviewed("Paro minero: segundo párrafo.", "real", url="https://d.pe/paro"),
-            reviewed("Otro medio sobre el paro.", "real", event=" Paro  Minero "),
-            reviewed("Más sobre el paro en otro sitio.", "falsa", event="paro minero"),
+            reviewed(alcalde, "real"),
+            reviewed(alcalde.upper().replace(" que", ", que"), "real", decision="corregido"),  # copia exacta
+            reviewed(vacuna, "falsa"),
+            reviewed(vacuna.replace(".", ""), "real"),  # misma huella, etiqueta contraria
+            reviewed(news("el paro minero primero"), "real", url="https://d.pe/paro?x=1"),
+            reviewed(news("el paro minero segundo"), "real", url="https://d.pe/paro"),
+            reviewed(news("otro medio y el paro"), "real", event=" Paro  Minero "),
+            reviewed(news("más sobre el paro"), "falsa", event="paro minero"),
             reviewed("Sin etiqueta", None),
         ]
         build = build_dataset(rows, 0.2)
@@ -292,29 +304,66 @@ class DatasetTests(unittest.TestCase):
         self.assertEqual(summary.grupos_con_varios, 2)
         self.assertEqual(summary.por_etiqueta, {"real": 4, "falsa": 1})
         # Se conserva la revisión más reciente de la copia exacta.
-        kept = next(item for item in build.items if "alcalde" in item.texto.casefold())
-        self.assertEqual(kept.decision, "corregido")
+        kept = {item.decision for item in build.items if "alcalde" in item.texto.casefold()}
+        self.assertEqual(kept, {"corregido"})
         # Ningún grupo cruza entre particiones.
         partitions = {}
         for item in build.items:
             partitions.setdefault(item.grupo, set()).add(item.particion)
         self.assertTrue(all(len(value) == 1 for value in partitions.values()))
-        self.assertEqual(len({item.grupo for item in build.items if "paro" in item.texto.casefold()}
-                             - {item.grupo for item in build.items if "párrafo" in item.texto}), 1)
+        self.assertEqual(len({item.grupo for item in build.items if "paro" in item.texto}), 2)
+
+    def test_estandar_fragmentos_de_oraciones_completas(self):
+        text = news("el puerto", sentences=50)  # ~600 tokens
+        build = build_dataset([reviewed(text, "falsa", url="https://www.d.pe/n")])
+        items, summary = build.items, build.summary
+        self.assertEqual(summary.casos, 1)
+        self.assertEqual(summary.fragmentos, len(items))
+        self.assertIn(len(items), (2, 3))
+        self.assertAlmostEqual(sum(item.peso for item in items), 1.0)
+        self.assertEqual(summary.recortes.get("tope_noticia"), 1)
+        self.assertLessEqual(sum(item.tokens_bilstm for item in items), 400)
+        for item in items:
+            self.assertTrue(100 <= item.tokens_bilstm <= 200)
+            self.assertTrue(item.texto.endswith("."))
+            self.assertTrue(item.id_fragmento.startswith(f"{item.analisis_id}#"))
+            self.assertEqual(item.procedencia["fragmento"]["id_fragmento"], item.id_fragmento)
+            self.assertEqual(item.procedencia["fuente"], "panel")
+        self.assertEqual(len({item.particion for item in items}), 1)
+        # Al leerlo de la base, las columnas del estándar salen de la procedencia.
+        stored = DatasetItem(**items[0].model_dump(exclude={"id_fragmento", "peso", "tokens_bilstm"}))
+        self.assertEqual((stored.id_fragmento, stored.peso), (items[0].id_fragmento, items[0].peso))
+
+    def test_estandar_excluye_y_recorta(self):
+        rows = [
+            reviewed("Una frase corta y nada más.", "real"),
+            reviewed(" ".join(["The government said that the law is in effect for all of them."] * 15), "real"),
+            reviewed(" ".join(f"palabra{i}" for i in range(150)), "falsa"),
+            # Fragmentos marcados: el primero empieza a media oración y el último no acaba.
+            reviewed("x", "falsa", fragments=[
+                "mitad de una oración que no empezó aquí. " + news("el río", sentences=10),
+                "Y un final que quedó sin"]),
+        ]
+        summary = build_dataset(rows).summary
+        self.assertEqual(summary.excluidas, {"menos_de_100_tokens": 1, "no_espanol": 1,
+                                             "sin_fin_de_oracion": 1})
+        self.assertEqual(summary.casos, 1)
+        self.assertEqual(summary.recortes, {"inicio_incompleto": 1, "final_incompleto": 1})
 
     def test_la_particion_es_estable_y_respeta_la_fraccion(self):
-        rows = [reviewed(f"Noticia número {index} sobre un tema distinto.", "real")
-                for index in range(400)]
+        rows = [reviewed(news(f"el tema {index}"), "real") for index in range(400)]
         first, second = build_dataset(rows, 0.2), build_dataset(list(reversed(rows)), 0.2)
         self.assertEqual({(i.texto, i.particion) for i in first.items},
                          {(i.texto, i.particion) for i in second.items})
         self.assertTrue(50 <= first.summary.por_particion["prueba"] <= 110)
 
     def test_csv_con_procedencia(self):
-        build = build_dataset([reviewed('Texto con "comillas", y coma.', "falsa", url="https://d.pe/n")])
+        text = 'El ministro dijo "basta", y coma. ' + news("el ministro")
+        build = build_dataset([reviewed(text, "falsa", url="https://d.pe/n")])
         lines = export_csv(build.items).splitlines()
         self.assertTrue(lines[0].startswith("id,particion,etiqueta,texto,"))
-        self.assertIn('"Texto con ""comillas"", y coma."', lines[1])
+        self.assertTrue(lines[0].endswith("hash_texto,id_fragmento,peso,tokens_bilstm"))
+        self.assertIn('"El ministro dijo ""basta"", y coma.', lines[1])
         self.assertIn("d.pe", lines[1])
         self.assertIn("0.9", lines[1])
 
