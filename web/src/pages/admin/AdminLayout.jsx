@@ -55,9 +55,11 @@ export default function AdminLayout() {
   return (
     <div className="shell">
       <nav className="subnav" aria-label="Administración">
-        {TABS.map((tab) => (
-          <NavLink key={tab.to} to={tab.to} end={tab.end} className={({ isActive }) => (isActive ? 'active' : undefined)}>{tab.label}</NavLink>
-        ))}
+        <div className="subnav-tabs">
+          {TABS.map((tab) => (
+            <NavLink key={tab.to} to={tab.to} end={tab.end} className={({ isActive }) => (isActive ? 'active' : undefined)}>{tab.label}</NavLink>
+          ))}
+        </div>
         <span className="who">
           <span>{session.correo}</span>
           <button type="button" className="text-link" onClick={logout}>Salir</button>

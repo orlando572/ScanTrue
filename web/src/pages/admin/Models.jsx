@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { presentMetrics } from '../../../../frontend/src/popup/metrics-presentation.js';
 import { CriterionIcon } from '../../components/Analysis.jsx';
 import { ErrorState, Loader, SegmentBar, Sweep } from '../../components/ui.jsx';
@@ -16,7 +17,7 @@ const STATES = {
   archivado: { label: 'Archivado', tag: '' },
 };
 const ORIGINS = { repositorio: 'Repositorio', entrenamiento: 'Entrenamiento', importado: 'Importado', calibracion: 'Calibración' };
-const ACTIONS = { desplegar: 'Desplegar', retirar: 'Retirar', pesos: 'Pesos', revertir: 'Volver atrás' };
+const ACTIONS = { desplegar: 'Desplegar', desplegar_calibracion: 'Desplegar calibración', retirar: 'Retirar', pesos: 'Pesos', revertir: 'Volver atrás' };
 const REFRESH_MS = 30_000;
 
 const toNumber = (text) => (text ? Number.parseInt(text, 10) : 0);
@@ -124,8 +125,8 @@ function WeightsPanel({ data, busy, onSave }) {
       </div>
       <p className="muted" style={{ margin: 0, fontSize: 13 }}>
         {both
-          ? 'Cada modelo aporta su probabilidad calibrada con la temperatura de su contrato; los pesos solo cambian cuánto cuenta cada uno. Los calibrados son los que se eligieron para B6 + BETO M3b.'
-          : 'Con un solo modelo desplegado, el resultado es su probabilidad: los pesos no se usan.'}
+          ? 'Cuánto cuenta cada modelo en el resultado. Los pesos calibrados son los elegidos para B6 + M3b.'
+          : 'Con un solo modelo desplegado no se usan pesos.'}
       </p>
     </section>
   );
@@ -162,7 +163,8 @@ function ModelCard({ model, data, busy, onDeploy, onRetire, onDelete }) {
           )}
         </div>
       </div>
-      {model.motivo && model.estado !== 'disponible' && (
+      {/* «Pendiente de calibrar» ya lo dice la etiqueta; el aviso va una vez por tipo. */}
+      {model.motivo && model.estado !== 'disponible' && model.estado !== 'pendiente_calibrar' && (
         <p className={`alert${model.estado === 'pendiente_calibrar' || model.estado === 'archivado' ? ' alert--info' : ''}`} style={{ margin: '12px 0 0' }}>{model.motivo}</p>
       )}
       {model.notas && <p className="muted" style={{ margin: '12px 0 0' }}>{model.notas}</p>}
@@ -202,7 +204,7 @@ function Compare({ models, type }) {
         ))}
       </div>
       <p className="muted" style={{ margin: '12px 0 0', fontSize: 13 }}>
-        Los porcentajes solo se pueden comparar directamente cuando la prueba tiene el mismo nombre y los mismos textos.
+        Solo es comparable la misma prueba (mismo nombre y textos).
       </p>
     </details>
   );
@@ -215,10 +217,8 @@ function ImportPanel({ busy, onUpload }) {
     <section className="panel" style={{ display: 'grid', gap: 12 }}>
       <h2 className="h-panel" style={{ margin: 0 }}>Importar un modelo de otro equipo</h2>
       <p className="muted" style={{ margin: 0, fontSize: 13 }}>
-        Los modelos que entrenas en este equipo aparecen solos al terminar el entrenamiento: no hace falta importarlos.
-        Para traer uno de otro equipo, sube un ZIP con su <span className="mono">contrato.json</span>, sus pesos
-        (y, si los tiene, <span className="mono">metricas.json</span>). Se comprueba el contrato y el SHA-256 de los pesos
-        antes de guardarlo en <span className="mono">datasets/modelos/</span>.
+        Los modelos entrenados aquí aparecen solos. Para traer uno de otro equipo, sube un ZIP con <span className="mono">contrato.json</span>,
+        los pesos y, si hay, <span className="mono">metricas.json</span>; se verifica antes de guardarlo.
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
         <input ref={input} type="file" accept=".zip,application/zip" className="input" style={{ maxWidth: 360 }}
@@ -235,12 +235,13 @@ function History({ entries, data }) {
   const detail = (entry) => {
     if (entry.accion === 'pesos') return `BiLSTM ${percent(entry.pesos?.bilstm)} · BETO / mBERT ${percent(entry.pesos?.mbert)}`;
     if (entry.accion === 'revertir') return 'Estado anterior al último cambio';
+    if (entry.accion === 'desplegar_calibracion') return `Pareja y pesos de ${entry.version}`;
     return `${TYPE_NAMES[entry.tipo] ?? ''}: ${name(entry.tipo, entry.version) ?? '—'}`;
   };
   const before = (entry) => {
     const previous = entry.anterior;
     if (!previous) return '—';
-    if (entry.accion === 'pesos' || entry.accion === 'revertir') {
+    if (entry.accion === 'pesos' || entry.accion === 'revertir' || entry.accion === 'desplegar_calibracion') {
       return `${TYPES.map((type) => name(type, previous.desplegados?.[type]) ?? 'retirado').join(' + ')} · ${percent(previous.pesos?.bilstm)}/${percent(previous.pesos?.mbert)}`;
     }
     return name(entry.tipo, previous.desplegados?.[entry.tipo]) ?? 'retirado';
@@ -327,8 +328,7 @@ export default function Models() {
       <div className="section-head" style={{ margin: 0 }}>
         <h1 className="display h-page" style={{ margin: 0 }}>Modelos</h1>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          <button type="button" className="btn btn--ghost" disabled={action.busy} onClick={reload}>Actualizar</button>
-          {data.anterior && <button type="button" className="btn btn--ghost" disabled={action.busy} onClick={revert}>Volver atrás</button>}
+          {data.anterior && <Confirm label="Volver atrás" confirmLabel="Volver al despliegue anterior" danger busy={action.busy} onConfirm={revert} />}
         </div>
       </div>
 
@@ -348,6 +348,15 @@ export default function Models() {
       {TYPES.map((type) => (
         <section key={type} className="stack" style={{ gap: 16 }}>
           <h2 className="h-panel" style={{ margin: '12px 0 0', color: CRITERIA[type].color }}>{TYPE_NAMES[type]}</h2>
+          {(() => {
+            const pending = data.modelos[type].filter((model) => model.estado === 'pendiente_calibrar').length;
+            return pending > 0 && (
+              <p className="alert alert--info" style={{ margin: 0 }}>
+                {pending === 1 ? '1 modelo pendiente de calibrar' : `${pending} modelos pendientes de calibrar`}: se calibran
+                en <Link className="text-link" to="/admin/calibracion">Calibración</Link> y la versión calibrada se despliega aquí.
+              </p>
+            );
+          })()}
           {data.modelos[type].length === 0
             ? <p className="muted" style={{ margin: 0 }}>No hay modelos de este tipo.</p>
             : data.modelos[type].map((model) => (

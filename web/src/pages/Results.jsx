@@ -49,7 +49,6 @@ export default function Results() {
   return (
     <div className="shell">
       <header className="page-head">
-        <span className="label label--accent">Registro público</span>
         <h1 className="display h-page" style={{ margin: '8px 0 10px' }}>Resultados</h1>
       </header>
 

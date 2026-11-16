@@ -24,6 +24,7 @@ from fastapi.testclient import TestClient
 from backend.api.admin_routes import router as admin_router
 from backend.api.dependencies import identity_service, service_repository
 from backend.schemas.admin import DatasetItem, DatasetSummary, DatasetVersion
+from backend.services.combined_sets import CombinedSetManager
 from backend.services.datasets import standard_csvs
 from backend.services.training import (
     PRODUCTION_RECIPES, ROOT, TrainingError, TrainingManager, overall_progress, parse_log,
@@ -80,6 +81,8 @@ class Workspace(unittest.TestCase):
         self.manager = TrainingManager(
             jobs_dir=self.root / "jobs", output_dir=self.root / "datasets/entrenamientos",
             comun_dir=self.comun, python="python-de-prueba", launcher=self.launch, cuda=lambda: False,
+            # Conjuntos combinados en la carpeta temporal: los del equipo no cuentan.
+            sets=CombinedSetManager(self.root / "conjuntos", self.comun),
         )
 
     def launch(self, command, log, env):
@@ -394,6 +397,7 @@ class RouteTests(Workspace):
         self.assertEqual(response.status_code, 202, response.text)
         job = response.json()
         self.assertEqual((job["estado"], job["epocas"], job["receta"]["configuracion"]), ("en_curso", 1, "B6"))
+        self.assertTrue(job["pliegues"])  # «Preparar para calibrar», activo por defecto como en el panel
         listing = self.client.get("/admin/entrenamientos", headers=self.auth).json()
         self.assertEqual(listing["activo"]["id"], job["id"])
         detail = self.client.get(f"/admin/entrenamientos/{job['id']}", headers=self.auth).json()

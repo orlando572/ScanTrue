@@ -41,7 +41,8 @@ function clock(seconds) {
 }
 
 const elapsed = (job, now) => ((job.fin ? Date.parse(job.fin) : now) - Date.parse(job.inicio)) / 1000;
-const sourceName = (fuente) => (fuente?.tipo === 'panel' ? `Panel · ${fuente.nombre}` : fuente?.nombre ?? 'comun_v1');
+const sourceName = (fuente) => (fuente?.tipo === 'panel' ? `Panel · ${fuente.nombre}`
+  : fuente?.tipo === 'conjunto' ? `Conjunto · ${fuente.nombre}` : fuente?.nombre ?? 'comun_v1');
 const recipeName = (type, recipe) => {
   const base = type === 'mbert' ? (BASE_NAMES[recipe?.modelo_base] ?? 'BETO / mBERT') : 'BiLSTM';
   return `${base} ${recipe?.configuracion ?? ''}`.trim();
@@ -225,7 +226,7 @@ function RunPanel({ job, busy, onCancel }) {
           <dl className="kv">
             <dt>Tiempo</dt><dd>{clock(elapsed(job, now))}</dd>
             <dt>Datos</dt><dd>{sourceName(job.fuente)} · {job.datos?.entrenamiento ?? '—'} fragmentos{job.datos?.prueba ? ` · ${job.datos.prueba} de prueba` : ''}</dd>
-            <dt>Receta</dt><dd>{job.receta?.configuracion} · {job.epocas} épocas · semilla {job.semilla}{job.receta?.brazo?.length && job.fuente?.tipo === 'comun_v1' ? ` · brazo ${job.receta.brazo.join(', ')}` : ''}</dd>
+            <dt>Receta</dt><dd>{job.receta?.configuracion} · {job.epocas} épocas · semilla {job.semilla}{job.receta?.brazo?.length && job.fuente?.tipo === 'comun_v1' ? ` · brazo ${job.receta.brazo.join(', ')}` : ''}{job.fuente?.tipo === 'conjunto' && job.datos?.incluye_comun ? ` · brazo ${[...(job.receta?.brazo ?? []), 'panel'].join(', ')}` : ''}</dd>
             <dt>Calibración</dt><dd>{job.pliegues ? 'Preparado: entrena también F1–F3 y guarda sus predicciones fuera de pliegue' : 'No preparado (sin pliegues)'}</dd>
             <dt>Equipo</dt><dd>{job.dispositivo === 'cuda' ? 'GPU (CUDA)' : 'Procesador (CPU)'}</dd>
           </dl>
@@ -271,13 +272,32 @@ function RunPanel({ job, busy, onCancel }) {
 // ── Formulario ──────────────────────────────────────────────────────
 
 function sourceKey(source) {
-  return source.tipo === 'panel' ? `panel:${source.version_id}` : 'comun_v1';
+  if (source.tipo === 'panel') return `panel:${source.version_id}`;
+  if (source.tipo === 'conjunto') return `conjunto:${source.version}`;
+  return 'comun_v1';
+}
+
+// comun_v1 siempre se puede usar; una versión del panel o un conjunto, solo si son aptos.
+const usableSource = (source) => source.tipo === 'comun_v1' || source.apta;
+
+function sourceBody(source) {
+  if (source.tipo === 'panel') return { tipo: 'panel', version_id: source.version_id };
+  if (source.tipo === 'conjunto') return { tipo: 'conjunto', version: source.version };
+  return { tipo: 'comun_v1' };
+}
+
+function sourceLabel(item) {
+  if (item.tipo === 'panel') return `Panel · ${item.nombre} · ${item.fragmentos ?? 0} fragmentos${item.apta ? '' : ' (anterior al estándar)'}`;
+  if (item.tipo === 'conjunto') {
+    return `Conjunto · ${item.nombre} · ${item.fragmentos ?? '—'} fragmentos${item.incluye_comun ? ' (comun_v1 + panel)' : ''}${item.apta ? '' : ' (incompleto)'}`;
+  }
+  return `${item.nombre} · ${item.fragmentos ?? '—'} fragmentos`;
 }
 
 function TrainForm({ options, busy, disabled, onStart }) {
   const [type, setType] = useState('bilstm');
   const sources = options.fuentes;
-  const firstUsable = sources.find((source) => source.tipo !== 'panel' || source.apta);
+  const firstUsable = sources.find(usableSource);
   const [key, setKey] = useState(firstUsable ? sourceKey(firstUsable) : '');
   const recipe = options.tipos[type];
   const [epochs, setEpochs] = useState('');
@@ -289,7 +309,7 @@ function TrainForm({ options, busy, disabled, onStart }) {
   const color = CRITERIA[type].color;
   const epochsValue = Number.parseInt(epochs, 10);
   const seedValue = Number.parseInt(seed, 10);
-  const valid = recipe && source && (source.tipo !== 'panel' || source.apta)
+  const valid = recipe && source && usableSource(source)
     && Number.isInteger(epochsValue) && epochsValue >= 1 && epochsValue <= 50
     && Number.isInteger(seedValue) && seedValue >= 0 && (device === 'cpu' || options.cuda);
   const arms = recipe?.brazo ?? [];
@@ -299,7 +319,7 @@ function TrainForm({ options, busy, disabled, onStart }) {
     if (!valid) return;
     onStart({
       tipo: type,
-      fuente: source.tipo === 'panel' ? { tipo: 'panel', version_id: source.version_id } : { tipo: 'comun_v1' },
+      fuente: sourceBody(source),
       epocas: epochsValue,
       semilla: seedValue,
       dispositivo: device,
@@ -330,11 +350,7 @@ function TrainForm({ options, busy, disabled, onStart }) {
           <select className="input" value={key} disabled={busy} onChange={(event) => setKey(event.target.value)}>
             {sources.length === 0 && <option value="">No hay conjuntos disponibles</option>}
             {sources.map((item) => (
-              <option key={sourceKey(item)} value={sourceKey(item)} disabled={item.tipo === 'panel' && !item.apta}>
-                {item.tipo === 'panel'
-                  ? `Panel · ${item.nombre} · ${item.fragmentos ?? 0} fragmentos${item.apta ? '' : ' (anterior al estándar)'}`
-                  : `${item.nombre} · ${item.fragmentos ?? '—'} fragmentos`}
-              </option>
+              <option key={sourceKey(item)} value={sourceKey(item)} disabled={!usableSource(item)}>{sourceLabel(item)}</option>
             ))}
           </select>
         </label>
@@ -371,9 +387,8 @@ function TrainForm({ options, busy, disabled, onStart }) {
         <span>
           <strong>Preparar para calibrar</strong>
           <span className="muted">
-            Entrena también los 3 pliegues (F1–F3) con la misma receta y guarda sus predicciones fuera de pliegue,
-            como se hizo con B6 y M3b. Sin esto el modelo no se puede calibrar ni desplegar.
-            Tarda unas 4 veces más{type === 'mbert' ? ' (con BETO, bastante tiempo: mejor en un equipo con GPU grande)' : ' (con el BiLSTM y comun_v1, cerca de un minuto en GPU)'}.
+            Entrena también los pliegues F1–F3 y guarda sus predicciones. Sin esto no se puede calibrar ni desplegar.
+            Tarda unas 4 veces más{type === 'mbert' ? ' (BETO: mejor con una GPU grande)' : ' (BiLSTM + comun_v1: ~1 min en GPU)'}.
           </span>
         </span>
       </label>
@@ -385,7 +400,11 @@ function TrainForm({ options, busy, disabled, onStart }) {
             {recipeName(type, recipe)} · {recipe.origen === 'desplegado' ? `del modelo desplegado (${recipe.modelo})` : 'del modelo de producción'}
           </dd>
           <dt>Brazos</dt>
-          <dd>{arms.length ? arms.join(', ') : 'ninguno'}{arms.length && source?.tipo === 'panel' ? ' · no se usan: la versión del panel no los trae' : ''}</dd>
+          <dd>
+            {arms.length ? arms.join(', ') : 'ninguno'}
+            {arms.length && (source?.tipo === 'panel' || (source?.tipo === 'conjunto' && !source.incluye_comun)) ? ' · no se usan: este conjunto no los trae' : ''}
+            {source?.tipo === 'conjunto' && source.incluye_comun ? ' · más «panel»: las noticias del conjunto, solo para entrenar' : ''}
+          </dd>
           <dt>Máx. tokens</dt><dd>{recipe.max_tokens ?? '—'}</dd>
           <dt>Parámetros</dt>
           <dd>{Object.entries(recipe.parametros ?? {}).map(([name, value]) => `${name} ${value}`).join(' · ') || '—'}</dd>
@@ -394,11 +413,10 @@ function TrainForm({ options, busy, disabled, onStart }) {
       {!recipe && options.errores_receta?.[type] && <p className="alert" style={{ margin: 0 }}>{options.errores_receta[type]}</p>}
 
       <ul className="muted" style={{ margin: 0, paddingLeft: 18, fontSize: 13, display: 'grid', gap: 4 }}>
-        <li>Se entrena desde cero, con todos los fragmentos de entrenamiento y las épocas de la receta.</li>
-        <li>El modelo se guarda como versión nueva en <span className="mono">{options.salida}/{type}/</span> y aparece en Modelos como «Pendiente de calibrar»; se calibra en <Link className="text-link" to="/admin/calibracion">Calibración</Link>. Aquí no se despliega, no se borra ni se sobrescribe ningún modelo.</li>
-        <li>{source?.tipo === 'panel'
-          ? (source.con_prueba ? 'Al terminar se evalúa con la prueba de la versión del panel.' : 'La versión no tiene prueba: el modelo saldrá sin métricas.')
-          : 'Con comun_v1 no se abre la prueba congelada: el modelo saldrá sin métricas.'}</li>
+        <li>Se entrena desde cero y se guarda como versión nueva en <span className="mono">{options.salida}/{type}/</span> («Pendiente de calibrar» en Modelos). No despliega ni sobrescribe nada.</li>
+        <li>{source?.tipo === 'panel' || source?.tipo === 'conjunto'
+          ? (source.con_prueba ? 'Al terminar se evalúa con la prueba de la versión.' : 'Sin prueba: saldrá sin métricas.')
+          : 'Con comun_v1 la prueba congelada no se abre: saldrá sin métricas.'}</li>
       </ul>
       {!options.cuda && (
         <p className="alert alert--info" style={{ margin: 0 }}>No hay GPU con CUDA en este equipo: solo se puede entrenar con el procesador.</p>
@@ -431,13 +449,13 @@ function History({ jobs, selected, onSelect }) {
           <tbody>
             {jobs.map((job) => (
               <tr key={job.id} aria-current={job.id === selected ? 'true' : undefined}>
-                <td className="mono">{formatDate(job.inicio)}</td>
-                <td style={{ color: CRITERIA[job.tipo].color }}>{recipeName(job.tipo, job.receta)}</td>
+                <td className="mono nowrap">{formatDate(job.inicio)}</td>
+                <td className="nowrap" style={{ color: CRITERIA[job.tipo].color }}>{recipeName(job.tipo, job.receta)}</td>
                 <td>{sourceName(job.fuente)}</td>
                 <td className="mono" style={{ overflowWrap: 'anywhere' }}>{job.version}</td>
                 <td><span className={`tag ${STATES[job.estado]?.tag ?? ''}`}>{STATES[job.estado]?.label ?? job.estado}</span></td>
                 <td className="num">{clock(elapsed(job, Date.now()))}</td>
-                <td>
+                <td className="nowrap">
                   <button type="button" className="text-link" onClick={() => onSelect(job.id)}>Ver</button>
                   {job.estado === 'completado' && <>{' · '}<Link className="text-link" to="/admin/modelos">Modelos</Link></>}
                 </td>
@@ -524,18 +542,14 @@ export default function Training() {
 
   return (
     <div className="stack" style={{ paddingTop: 24 }}>
-      <div className="section-head" style={{ margin: 0 }}>
-        <h1 className="display h-page" style={{ margin: 0 }}>Entrenamiento</h1>
-        <button type="button" className="btn btn--ghost" disabled={action.busy}
-          onClick={() => { options.reload(); list.reload(); }}>Actualizar</button>
-      </div>
+      <h1 className="display h-page" style={{ margin: 0 }}>Entrenamiento</h1>
 
       {action.error && <p className="alert" role="alert" style={{ margin: 0 }}>{action.error.message}</p>}
       {shown && <RunPanel key={shown.id} job={shown} busy={action.busy} onCancel={cancel} />}
       {options.data && <TrainForm options={options.data} busy={action.busy} disabled={Boolean(active)} onStart={start} />}
       {jobs.length > 0
         ? <History jobs={jobs} selected={shownId} onSelect={setSelected} />
-        : <Empty title="Sin entrenamientos">Lanza el primero con el formulario: el modelo nuevo aparecerá en Modelos al terminar.</Empty>}
+        : <Empty title="Sin entrenamientos">Lanza el primero con el formulario de arriba.</Empty>}
     </div>
   );
 }

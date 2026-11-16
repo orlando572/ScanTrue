@@ -75,16 +75,18 @@ export function ScanEye({ active = false }) {
 
 // Tira bajo la cabecera: una luz por servicio real de /salud y el resumen del estado de
 // la API con su latencia.
+// El detalle sale al instante en un tooltip propio (data-tip) al pasar el ratón o con el foco:
+// el title nativo tardaba y a veces no aparecía en el panel lateral.
 export function LedStrip({ health = 'checking', code, label, latency, services = [] }) {
   return <div className="led-strip">
     <ul className="service-lights" aria-label="Servicios">
-      {services.map((service) => <li key={service.key} className={`service-light service-light--${service.state}`} style={{ '--svc': service.color ?? undefined }} title={service.label}>
+      {services.map((service) => <li key={service.key} className={`service-light service-light--${service.state}`} style={{ '--svc': service.color ?? undefined }} data-tip={service.label} tabIndex={0}>
         <i aria-hidden="true" />
         <span className="service-name" aria-hidden="true">{service.short}</span>
         <span className="sr-only">{service.label}</span>
       </li>)}
     </ul>
-    <span className={`led-strip-status led-strip-status--${health}`} role="status" aria-live="polite" title={label}>
+    <span className={`led-strip-status led-strip-status--${health}`} role="status" aria-live="polite" data-tip={label} tabIndex={0}>
       <span className={`status-dot status-dot--${health}`} aria-hidden="true" />
       <span aria-hidden="true">{code}{latency != null && health !== 'unavailable' && health !== 'checking' ? <b className="latency"> · {latency} ms</b> : null}</span>
       <span className="sr-only">{label}</span>

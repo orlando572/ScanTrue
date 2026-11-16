@@ -5,6 +5,8 @@ import asyncio
 import logging
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -133,6 +135,15 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
     expose_headers=["Content-Disposition"],
 )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_handler(_request: Request, error: RequestValidationError):
+    """Como el 422 de FastAPI, pero sin repetir lo recibido (`input`, `ctx`): podría ser una
+    contraseña o un texto entero."""
+    detail = [{key: item[key] for key in ("type", "loc", "msg") if key in item}
+              for item in error.errors()]
+    return JSONResponse(status_code=422, content={"detail": jsonable_encoder(detail)})
 
 
 @app.exception_handler(InvalidSessionError)
