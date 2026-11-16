@@ -21,8 +21,8 @@ from backend.api.admin_routes import router as admin_router
 from backend.api.dependencies import identity_service, service_repository
 from backend.api.metrics_routes import router as metrics_router
 from backend.models.contrato import (
-    COMBINATION_FILE, MODELOS_BASE_ADMITIDOS, Combination, ModelContract, UnsupportedBaseModel,
-    resolve,
+    COMBINATION_FILE, COMBINATION_METHOD, MODELOS_BASE_ADMITIDOS, Combination, ModelContract,
+    UnsupportedBaseModel, resolve,
 )
 from backend.schemas.analysis import AnalysisRequest
 from backend.services.analysis import AnalysisService, InvalidAnalysisInput
@@ -440,6 +440,20 @@ class RouteTests(Workspace):
         data = self.client.post("/admin/modelos/revertir", headers=self.auth).json()
         self.assertEqual(data["pesos"], {"bilstm": 0.2, "mbert": 0.8})
 
+    def test_desplegar_calibracion_por_la_api(self):
+        write_calibration(self.datasets, "panel_conjunta_20260301_ab12")
+        response = self.client.post("/admin/modelos/desplegar-calibracion", headers=self.auth,
+                                    json={"version": "panel_conjunta_20260301_ab12"})
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()
+        self.assertEqual(data["desplegados"], {"bilstm": "B2_cal", "mbert": "M1_cal"})
+        self.assertEqual(data["pesos"], {"bilstm": 0.35, "mbert": 0.65})
+        self.assertEqual(data["historial"][0]["accion"], "desplegar_calibracion")
+        missing = self.client.post("/admin/modelos/desplegar-calibracion", headers=self.auth,
+                                   json={"version": "no_existe"})
+        self.assertEqual((missing.status_code, missing.json()["detail"]["codigo"]),
+                         (404, "calibracion_no_encontrada"))
+
     def test_importar_zip_por_la_api(self):
         source = write_model(self.root / "fuera/b6", "bilstm", "B6_20260601", weights=b"b6")
         response = self.client.post("/admin/modelos/importar", headers={
@@ -451,6 +465,60 @@ class RouteTests(Workspace):
         self.assertNotIn("B6_20260601", [m["id"] for m in response.json()["modelos"]["bilstm"]])
         empty = self.client.post("/admin/modelos/importar", headers=self.auth, content=b"")
         self.assertEqual(empty.json()["detail"]["codigo"], "zip_vacio")
+
+
+def write_calibration(datasets: Path, version: str, weights=(0.35, 0.65)) -> Path:
+    """Calibración como la deja el panel: combinacion.json y un contrato calibrado por tipo."""
+    folder = datasets / "calibraciones" / version
+    write_model(folder / "bilstm", "bilstm", "B2_cal", weights=b"b2")
+    write_model(folder / "mbert", "mbert", "M1_cal", weights=b"m1")
+    (folder / "combinacion.json").write_text(json.dumps({
+        "version": version, "metodo": COMBINATION_METHOD, "regla_discrepancia": None,
+        "pesos": {"bilstm": weights[0], "mbert": weights[1]}, "temperaturas": {"bilstm": 2.5, "mbert": 2.5},
+        "contratos": {"bilstm": "B2_cal", "mbert": "M1_cal"}, "umbral_falsa": 0.5}))
+    return folder
+
+
+class DeployCalibrationTests(Workspace):
+    def test_despliega_la_pareja_y_sus_pesos_en_un_solo_cambio(self):
+        write_calibration(self.datasets, "panel_conjunta_20260301_ab12")
+        manager = self.manager()
+        manager.start()
+        manager.deploy_calibration("panel_conjunta_20260301_ab12", "admin@example.com")
+        self.assertEqual(manager.state.deployed, {"bilstm": "B2_cal", "mbert": "M1_cal"})
+        self.assertEqual(manager.state.weights, {"bilstm": 0.35, "mbert": 0.65})
+        self.assertEqual(manager.loaded, {"bilstm", "mbert"})
+        self.assertEqual(len(self.swapped), 1)
+        self.assertEqual([(e["accion"], e["version"]) for e in manager.history()],
+                         [("desplegar_calibracion", "panel_conjunta_20260301_ab12")])
+        with self.assertRaises(ModelVersionError) as raised:
+            manager.deploy_calibration("panel_conjunta_20260301_ab12", None)
+        self.assertEqual(raised.exception.code, "ya_desplegado")
+        manager.revert(None)  # deshace la pareja entera y los pesos
+        self.assertEqual(manager.state.deployed, {"bilstm": "B1_20260101", "mbert": "M1_20260101"})
+        self.assertEqual(manager.state.weights, default_weights())
+
+    def test_calibracion_desconocida_o_con_modelos_que_faltan(self):
+        manager = self.manager()
+        manager.start()
+        with self.assertRaises(ModelVersionError) as raised:
+            manager.deploy_calibration("no_existe", None)
+        self.assertEqual((raised.exception.code, raised.exception.status_code),
+                         ("calibracion_no_encontrada", 404))
+        folder = write_calibration(self.datasets, "panel_conjunta_20260302_cd34")
+        (folder / "mbert" / "contrato.json").unlink()
+        with self.assertRaises(ModelVersionError) as raised:
+            manager.deploy_calibration("panel_conjunta_20260302_cd34", None)
+        self.assertEqual(raised.exception.code, "modelo_desconocido")
+        self.assertEqual(self.swapped, [])
+
+    def test_pendiente_de_calibrar_tiene_su_codigo(self):
+        write_model(self.datasets / "nuevo/bilstm", "bilstm", "B3_20260301", weights=b"b3", provisional=True)
+        manager = self.manager()
+        manager.start()
+        with self.assertRaises(ModelVersionError) as raised:
+            manager.deploy("bilstm", "B3_20260301", None)
+        self.assertEqual(raised.exception.code, "pendiente_calibrar")
 
 
 class PublishedMetricsTests(Workspace):

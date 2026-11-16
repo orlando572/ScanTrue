@@ -40,7 +40,7 @@ Si dos modelos tienen la misma `version` y pesos distintos, los dos aparecen; el
 | Estado | Significado |
 | --- | --- |
 | Disponible | Contrato válido, archivos presentes y SHA-256 correcto. Se puede desplegar |
-| Pendiente de calibrar | Temperatura provisional: falta calibrarlo (Administración → Calibración) |
+| Pendiente de calibrar | Temperatura provisional: falta calibrarlo (Administración → Calibración). Desplegarlo da 400 `pendiente_calibrar` |
 | No admitido | Transformer que no es BETO ni mBERT |
 | No válido | Contrato mal formado, faltan archivos o el SHA-256 no coincide (el motivo lo dice) |
 | Archivado | Sin contrato de inferencia: solo para comparar métricas |
@@ -59,6 +59,7 @@ Si dos modelos tienen la misma `version` y pesos distintos, los dos aparecen; el
 | --- | --- |
 | `GET /admin/modelos` | Catálogo por tipo, lo desplegado y cargado, pesos (actuales y calibrados), combinación activa, estado anterior e historial |
 | `POST /admin/modelos/desplegar` | `{"tipo", "id"}` |
+| `POST /admin/modelos/desplegar-calibracion` | `{"version"}`: la pareja y los pesos de una calibración, en un solo cambio ([CALIBRACION_PANEL.md](CALIBRACION_PANEL.md)) |
 | `POST /admin/modelos/retirar` | `{"tipo"}` |
 | `PUT /admin/modelos/pesos` | `{"bilstm", "mbert"}`, ≥ 0 y sumando 1 |
 | `POST /admin/modelos/revertir` | Vuelve al estado anterior al último cambio |

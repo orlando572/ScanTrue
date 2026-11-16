@@ -25,6 +25,7 @@ from backend.schemas.admin import (
     DatasetDetail,
     DatasetSummary,
     DatasetVersion,
+    DeployCalibrationRequest,
     DeploymentHistoryEntry,
     DeployRequest,
     ModelEntryInfo,
@@ -405,6 +406,19 @@ async def deploy_model(
     """Carga y comprueba el modelo; solo si responde bien sustituye al de su tipo."""
     manager = _versions(request)
     await _change(lambda: manager.deploy(payload.tipo, payload.id, user.email))
+    return await asyncio.to_thread(_models, request, repository)
+
+
+@router.post("/modelos/desplegar-calibracion", response_model=ModelsResponse)
+async def deploy_calibration(
+    payload: DeployCalibrationRequest,
+    request: Request,
+    user=Depends(admin_user),
+    repository: SupabaseRepository = Depends(service_repository),
+) -> ModelsResponse:
+    """Despliega la pareja de una calibración con sus pesos, en un solo cambio."""
+    manager = _versions(request)
+    await _change(lambda: manager.deploy_calibration(payload.version, user.email))
     return await asyncio.to_thread(_models, request, repository)
 
 

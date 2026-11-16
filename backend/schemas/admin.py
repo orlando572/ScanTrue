@@ -252,7 +252,7 @@ class Weights(BaseModel):
 
 
 class DeploymentHistoryEntry(BaseModel):
-    accion: Literal["desplegar", "retirar", "pesos", "revertir"]
+    accion: Literal["desplegar", "desplegar_calibracion", "retirar", "pesos", "revertir"]
     tipo: ModelType | None = None
     version: str | None = None
     pesos: dict[str, float] | None = None
@@ -277,6 +277,12 @@ class DeployRequest(BaseModel):
 
     tipo: ModelType
     id: str = Field(min_length=1, max_length=200)
+
+
+class DeployCalibrationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    version: str = Field(min_length=1, max_length=200)
 
 
 class RetireRequest(BaseModel):
