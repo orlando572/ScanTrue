@@ -36,7 +36,7 @@ function CaseRow({ item, current, onSelect }) {
         </span>
         <span className="side">
           <span>{view.level ? `${view.level.value} %` : '—'}</span>
-          <span className="label">{view.domain ?? 'sin origen'}</span>
+          {view.domain && <span className="label">{view.domain}</span>}
         </span>
       </button>
     </li>
@@ -80,12 +80,16 @@ function CaseDetail({ id, onChange, onDecided }) {
   const [evidence, setEvidence] = useState('');
   const [event, setEvent] = useState('');
   const [action, setAction] = useState({ busy: false, error: null });
+  // Los campos opcionales van plegados salvo que el caso ya tenga alguno.
+  const [extrasOpen, setExtrasOpen] = useState(false);
   const decideRef = useRef(null);
 
   useEffect(() => {
-    setNote(data?.revision?.nota ?? '');
-    setEvidence((data?.revision?.evidencia ?? []).join('\n'));
-    setEvent(data?.revision?.grupo_evento ?? '');
+    const review = data?.revision;
+    setNote(review?.nota ?? '');
+    setEvidence((review?.evidencia ?? []).join('\n'));
+    setEvent(review?.grupo_evento ?? '');
+    setExtrasOpen(Boolean(review?.nota || review?.evidencia?.length || review?.grupo_evento));
     setAction({ busy: false, error: null });
   }, [data?.id, data?.revision?.fecha]);
 
@@ -149,7 +153,7 @@ function CaseDetail({ id, onChange, onDecided }) {
           <span>{view.date}</span>
           <Source view={view} />
           {view.words && <span>{view.words}</span>}
-          <StatusTags view={view} />
+          <StatusTags view={view} chain={false} />
           <ReviewTag review={data.revision} />
         </div>
         <div style={{ display: 'grid', gap: 14, marginBottom: 18 }}>
@@ -167,21 +171,9 @@ function CaseDetail({ id, onChange, onDecided }) {
             : 'Este caso no tiene resultado combinado: indica la etiqueta correcta o descártalo.'}
         </p>
         <StandardPreview id={id} />
-        <div className="decide">
-          <button type="button" className="btn btn--tone tone-very-high" disabled={action.busy} onClick={() => decide('falsa')}>
-            Falsa <kbd>F</kbd>
-          </button>
-          <button type="button" className="btn btn--tone tone-very-low" disabled={action.busy} onClick={() => decide('real')}>
-            Real <kbd>R</kbd>
-          </button>
-          <button type="button" className="btn btn--ghost" disabled={action.busy} onClick={() => decide(null)}>
-            Descartar <kbd>D</kbd>
-          </button>
-        </div>
-        <p className="label" style={{ margin: '10px 0 16px' }}>
-          {model ? <><kbd>A</kbd> aprueba «{model}» · </> : null}<kbd>J</kbd> <kbd>K</kbd> siguiente y anterior
-        </p>
-        <div style={{ display: 'grid', gap: 12 }}>
+        <details className="tech case-extras" open={extrasOpen} onToggle={(toggle) => setExtrasOpen(toggle.currentTarget.open)}>
+          <summary className="text-link">Nota, evidencia y grupo de evento (opcional)</summary>
+          <div style={{ display: 'grid', gap: 12, marginTop: 14 }}>
           <label className="field">
             <span>Nota (opcional)</span>
             <textarea className="input" rows={2} maxLength={2000} value={note} onChange={(inputEvent) => setNote(inputEvent.target.value)} placeholder="Por qué se aprueba, corrige o descarta" />
@@ -194,7 +186,8 @@ function CaseDetail({ id, onChange, onDecided }) {
             <span>Grupo de evento (opcional)</span>
             <input className="input" maxLength={120} value={event} onChange={(inputEvent) => setEvent(inputEvent.target.value)} placeholder="Mismo nombre para noticias del mismo hecho" />
           </label>
-        </div>
+          </div>
+        </details>
         {action.error && <p className="alert" style={{ margin: '14px 0 0' }} role="alert">{action.error.message}</p>}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, marginTop: 16 }}>
           {data.revision && (
@@ -208,6 +201,27 @@ function CaseDetail({ id, onChange, onDecided }) {
         </div>
         {data.revision?.fecha && <p className="label" style={{ margin: '12px 0 0' }}>Revisado el {formatDate(data.revision.fecha)}</p>}
       </section>
+
+      {/* Siempre a mano: queda pegada al pie de la columna mientras se lee el caso. */}
+      <div className="decide-bar">
+        <p className="label" style={{ margin: '0 0 10px' }}>
+          {model ? <>El modelo dice: <strong style={{ color: 'var(--color-ink)' }}>{model}</strong></> : 'Sin resultado combinado'}
+        </p>
+        <div className="decide">
+          <button type="button" className="btn btn--tone tone-very-high" disabled={action.busy} onClick={() => decide('falsa')}>
+            Falsa <kbd>F</kbd>
+          </button>
+          <button type="button" className="btn btn--tone tone-very-low" disabled={action.busy} onClick={() => decide('real')}>
+            Real <kbd>R</kbd>
+          </button>
+          <button type="button" className="btn btn--ghost" disabled={action.busy} onClick={() => decide(null)}>
+            Descartar <kbd>D</kbd>
+          </button>
+        </div>
+        <p className="label" style={{ margin: '10px 0 0' }}>
+          {model ? <><kbd>A</kbd> aprueba «{model}» · </> : null}<kbd>J</kbd> <kbd>K</kbd> siguiente y anterior
+        </p>
+      </div>
 
       <div className="grid-3">
         {view.models.map((item) => (
@@ -231,12 +245,33 @@ export default function Cases() {
   const [more, setMore] = useState({ loading: false, error: null });
   const itemsRef = useRef(items);
   itemsRef.current = items;
+  const detailRef = useRef(null);
 
   const summary = useLoad((signal) => adminApi('/admin/resumen', { signal }), []);
   const first = useLoad(
     (signal) => adminApi(`/admin/casos${query({ ...toApiQuery(filters, 'admin'), limit: PAGE })}`, { signal }),
     [key],
   );
+
+  // La columna del caso mide lo que queda visible bajo su borde superior, para que la barra
+  // de decisión (pegada a su pie) se vea sin bajar. En móvil la columna no es fija.
+  useEffect(() => {
+    let frame = 0;
+    function fit() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const element = detailRef.current;
+        if (!element) return;
+        if (getComputedStyle(element).position !== 'sticky') { element.style.maxHeight = ''; return; }
+        const top = Math.max(element.getBoundingClientRect().top, 76);
+        element.style.maxHeight = `${Math.max(240, window.innerHeight - top - 16)}px`;
+      });
+    }
+    fit();
+    window.addEventListener('scroll', fit, { passive: true });
+    window.addEventListener('resize', fit);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', fit); window.removeEventListener('resize', fit); };
+  }, [first.loading, items.length > 0]);
 
   useEffect(() => {
     if (!first.data) return;
@@ -321,7 +356,7 @@ export default function Cases() {
                   </button>
                 )}
               </div>
-              <div className="case-detail">
+              <div className="case-detail" ref={detailRef}>
                 {selected && <CaseDetail key={selected} id={selected} onChange={update} onDecided={(id) => move(id, 1)} />}
               </div>
             </div>

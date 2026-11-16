@@ -35,7 +35,7 @@ export default function App() {
             <Route path="/resultados" element={<Results />} />
             <Route path="/resultados/:id" element={<ResultDetail />} />
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Dashboard health={health} />} />
+              <Route index element={<Dashboard />} />
               <Route path="casos" element={<Cases />} />
               <Route path="datasets" element={<Datasets />} />
               <Route path="entrenamiento" element={<Training />} />
