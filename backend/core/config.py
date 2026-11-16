@@ -180,7 +180,7 @@ class SearchSettings:
 
 @dataclass(frozen=True)
 class FactCheckSettings:
-    """Fuente previa: Google Fact Check Tools (docs/llm/FUENTE_PREVIA.md). Sin FACTCHECK_API_KEY no se usa."""
+    """Fuente previa: Google Fact Check Tools. Sin FACTCHECK_API_KEY no se usa."""
 
     api_key: str
     timeout: float

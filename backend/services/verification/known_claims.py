@@ -1,7 +1,7 @@
-"""Base de afirmaciones ya verificadas (incremento 2, Fase 3; ver docs/llm/BASE_AFIRMACIONES.md).
+"""Base de afirmaciones ya verificadas (incremento 2, Fase 3).
 
 Antes de buscar en internet, cada afirmación se busca aquí. **Solo se reutiliza la coincidencia
-exacta** del texto normalizado: la medición de docs/llm/BASE_AFIRMACIONES.md mostró que ningún
+exacta** del texto normalizado: la medición de la Fase 3 mostró que ningún
 umbral de similitud de trigramas separa una paráfrasis (similitud mediana 0,42) de un cambio de un
 solo dato como «Florida» por «Texas» o «dos» por «tres» (hasta 0,97), y reutilizar mal un
 veredicto es peor que no reutilizar. La búsqueda por similitud sigue disponible (`threshold`), con

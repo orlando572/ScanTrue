@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-# Tope por caso. El plan proponía 5 (docs/llm/PLAN_INCREMENTO_2.md, 4.5); se bajó a 3 (docs/llm/FUENTE_PREVIA.md).
+# Tope por caso. El plan proponía 5 (docs/llm/PLAN_INCREMENTO_2.md, 4.5); se bajó a 3 (las notas de la fuente previa).
 MAX_CLAIMS = 3
 # Pasajes que el juicio puede citar como respaldo de su veredicto.
 MAX_CITED_PASSAGES = 3
@@ -51,7 +51,7 @@ class ClaimJudgment(BaseModel):
     """Paso 4: veredicto de una afirmación ante los pasajes recuperados.
 
     El orden de los campos es el de la salida. Con el veredicto primero el modelo acertó más que con
-    la cita primero (18 de 22 frente a 15 de 22 en docs/llm/BUSQUEDA_Y_JUICIO.md): al escribir antes
+    la cita primero (18 de 22 frente a 15 de 22 en las notas de la Fase 4): al escribir antes
     los pasajes dejaba vacía la lista en veredictos «contradicha», que el backend descarta.
     """
 

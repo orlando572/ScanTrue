@@ -1,8 +1,8 @@
 """Instrucciones versionadas de la verificación (incremento 2).
 
 `EXTRACTION_PROMPT_VERSION` es lo que se guarda en `verificaciones_web.version_prompts`; hay que
-cambiarlo cada vez que cambie el texto. Cómo se eligió esta redacción: docs/llm/MEDICIONES_LLM.md
-(extracción) y docs/llm/BUSQUEDA_Y_JUICIO.md (consultas y juicio).
+cambiarlo cada vez que cambie el texto. Cómo se eligió esta redacción: las notas de la Fase 1
+(extracción) y las notas de la Fase 4 (consultas y juicio).
 """
 
 import re

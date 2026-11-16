@@ -8,7 +8,7 @@ backend **comprueba** antes de aceptarlo (docs/llm/PLAN_INCREMENTO_2.md, 4.5):
 (c) la URL es una de las recuperadas: el modelo no escribe ninguna, el enlace de cada fuente lo
     pone el backend a partir de la página que descargó, así que no puede inventar un enlace.
 
-Además (d), añadida tras medir (docs/llm/BUSQUEDA_Y_JUICIO.md): una afirmación solo queda `apoyada`
+Además (d), añadida tras medir (las notas de la Fase 4): una afirmación solo queda `apoyada`
 si todos sus nombres propios y cifras aparecen en los pasajes citados. Evita el error más grave,
 dar por apoyada una afirmación con un pasaje que habla de otra persona o de otra cifra.
 

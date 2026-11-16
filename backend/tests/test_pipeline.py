@@ -278,7 +278,7 @@ SUPPORTED = ClaimJudgment(pasajes=[1], cita=QUOTE, veredicto="apoyada")
 
 
 class PreviousSourceTests(unittest.TestCase):
-    """La fuente previa (docs/llm/FUENTE_PREVIA.md): primero ahí, y a la web solo si no basta."""
+    """La fuente previa: primero ahí, y a la web solo si no basta."""
 
     PREV, WEB = "https://verifica.test/nobel", "https://diario.test/nobel"
 
@@ -371,7 +371,7 @@ class PreviousSourceTests(unittest.TestCase):
         self.assertEqual((verification.veredicto, verification.origen_busqueda, web.calls), ("contradicha", "verificadores", []))
 
     def test_con_fuera_de_contexto_no_basta_y_el_juicio_final_no_recibe_las_paginas_de_la_previa(self):
-        # Caso Milei (docs/llm/FUENTE_PREVIA.md, 9.1): la previa devolvió verificaciones de OTRA afirmación y el juez dijo «fuera_de_contexto».
+        # Caso Milei (las notas de la fuente previa, 9.1): la previa devolvió verificaciones de OTRA afirmación y el juez dijo «fuera_de_contexto».
         fetcher = FakeFetcher({self.PREV: page(self.PREV, VARGAS), self.WEB: page(self.WEB, GARCIA)})
         web = FakeSearch(default=[result(self.WEB)])
         out_of_context = ClaimJudgment(pasajes=[1], cita="Premio Nobel de Literatura en 2010", veredicto="fuera_de_contexto")

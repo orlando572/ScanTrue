@@ -43,10 +43,10 @@ logger = logging.getLogger(__name__)
 QUERY_MAX_TOKENS = 300
 SHORT_QUERY_MAX_TOKENS = 60
 # Veredictos con los que la fuente previa basta y no se busca en la web. «fuera_de_contexto» no está: con este modelo es poco
-# fiable y salió también cuando la verificación hallada era de otra afirmación (docs/llm/FUENTE_PREVIA.md, sección 9).
+# fiable y salió también cuando la verificación hallada era de otra afirmación (las notas de la fuente previa, sección 9).
 PREVIOUS_STOPS = ("apoyada", "contradicha")
 # Sitios que en la medición con Tavily nunca entregaron texto (redes y video, todo con JavaScript) y
-# ocupaban hasta 1 de cada 4 páginas elegidas: no se descargan (docs/llm/BUSQUEDA_Y_JUICIO.md).
+# ocupaban hasta 1 de cada 4 páginas elegidas: no se descargan (las notas de la Fase 4).
 NO_TEXT_DOMAINS = (
     "facebook.com", "youtube.com", "youtu.be", "tiktok.com", "instagram.com", "x.com", "twitter.com",
     "linkedin.com", "dailymotion.com", "pinterest.com", "t.me",
@@ -196,7 +196,7 @@ def verify_claim(
 ) -> ClaimVerification:
     """Verifica una afirmación.
 
-    Con `previous_search` (la fuente previa, docs/llm/FUENTE_PREVIA.md) se busca primero ahí, con la
+    Con `previous_search` (la fuente previa) se busca primero ahí, con la
     consulta corta, y se descargan hasta `limits.previous_pages` páginas. Solo si con esa evidencia el
     juez da «apoyada» o «contradicha» (`PREVIOUS_STOPS`) no se busca en la web. Si no hay nada, o el
     juez dice «insuficiente» o «fuera_de_contexto», se busca en la web como siempre y **el juicio final

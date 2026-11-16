@@ -7,7 +7,7 @@ determinista que reconoce esas frases y las saca **antes** de que el modelo las 
 todas (quien parafrasee puede esquivarla); por eso nunca es la única defensa: el esquema forzado, la
 cita literal y la guarda de nombres y cifras de judge.py siguen valiendo aunque esta falle.
 
-Se mide en docs/llm/BUSQUEDA_Y_JUICIO.md: cuántas órdenes de prueba detecta y cuántas frases de
+Se mide en las notas de la Fase 4: cuántas órdenes de prueba detecta y cuántas frases de
 noticias reales descarta por error.
 """
 

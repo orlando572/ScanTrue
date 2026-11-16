@@ -221,7 +221,7 @@ class TavilySearch(_HttpSearch):
 class FactCheckSearch(_HttpSearch):
     """Google Fact Check Tools (GET /v1alpha1/claims:search): verificaciones ya publicadas por medios de verificación.
 
-    Es la **fuente previa** (docs/llm/FUENTE_PREVIA.md): la API solo devuelve el enlace de cada artículo de
+    Es la **fuente previa**: la API solo devuelve el enlace de cada artículo de
     verificación y qué afirmación revisó. El backend descarga ese artículo como cualquier otra página y la
     cita se comprueba contra su texto; la calificación que trae la API (`textualRating`) no se usa nunca
     como evidencia, y por eso no se copia a los resultados. Como solo devuelve medios de verificación, al

@@ -20,7 +20,7 @@ Todo en `backend/evaluacion/` (versionado). Los casos y la evidencia guardada vi
 
 ## 2. Cómo se usa
 
-Desde la raíz, con `llama-server` levantado como en [MEDICIONES_LLM.md](MEDICIONES_LLM.md) y `backend/.env.desarrollo` con las claves (las lee el ejecutor sin imprimirlas ni tocar `backend/.env`):
+Desde la raíz, con `llama-server` levantado como en las notas de la Fase 1 y `backend/.env.desarrollo` con las claves (las lee el ejecutor sin imprimirlas ni tocar `backend/.env`):
 
 ```bash
 # 1. Comprobar el conjunto (con --completo exige los 80 casos y su reparto; con --aprobados, la revisión humana)
