@@ -27,7 +27,7 @@ export function ServiceStrip({ health, names = true }) {
     <div className="service-strip">
       <ul aria-label="Estado de los servicios">
         {serviceLights(health).map((service) => (
-          <li key={service.key} title={service.label}>
+          <li key={service.key} data-tip={service.label} tabIndex={0}>
             <i
               className={`led${service.state === 'down' || service.state === 'checking' ? ' led--blink' : ''}`}
               style={{ '--led': service.color ?? undefined }}
@@ -66,7 +66,7 @@ export function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="shell">
-        <span>ScanTrue orienta con dos modelos de lenguaje. No verifica los hechos de una noticia.</span>
+        <span>© {new Date().getFullYear()} ScanTrue</span>
         <Link className="text-link" to="/admin">Acceso administrador</Link>
       </div>
     </footer>

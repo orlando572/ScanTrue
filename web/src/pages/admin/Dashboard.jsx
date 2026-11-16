@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { ServiceStrip } from '../../components/Shell.jsx';
 import { CountUp, ErrorState, Loader } from '../../components/ui.jsx';
 import { adminApi } from '../../lib/api.js';
 import { LEVELS } from '../../lib/filters.js';
@@ -16,9 +15,9 @@ function Tile({ label, value, note, color, suffix = '' }) {
   );
 }
 
-function Bars({ rows, total }) {
+function Bars({ rows, total, fill = false }) {
   return (
-    <ul className="rows">
+    <ul className={`rows${fill ? ' rows--fill' : ''}`}>
       {rows.map((row) => (
         <li key={row.label} className={`row-bar${row.tone ? ` tone-${row.tone}` : ''}`} style={{ '--c': row.color ?? (row.tone ? 'var(--tone)' : undefined) }}>
           <span>{row.label}</span>
@@ -30,7 +29,7 @@ function Bars({ rows, total }) {
   );
 }
 
-export default function Dashboard({ health }) {
+export default function Dashboard() {
   const { data, error, loading, reload } = useLoad((signal) => adminApi('/admin/resumen', { signal }), []);
   if (loading) return <div className="page-head"><Loader code="Consultando el registro" label="Cargando el panel" rows={2} /></div>;
   if (error) return <div className="page-head"><ErrorState error={error} onRetry={reload} /></div>;
@@ -41,10 +40,7 @@ export default function Dashboard({ health }) {
 
   return (
     <div className="stack boot" style={{ paddingTop: 24 }}>
-      <div className="section-head" style={{ margin: 0 }}>
-        <h1 className="display h-page" style={{ margin: 0 }}>Panel</h1>
-        <ServiceStrip health={health} />
-      </div>
+      <h1 className="display h-page" style={{ margin: 0 }}>Panel</h1>
 
       <div className="tiles">
         <Tile label="Análisis" value={data.total} note={`${data.ultimas_24h} en las últimas 24 h`} color="var(--color-acid)" />
@@ -61,21 +57,22 @@ export default function Dashboard({ health }) {
         </div>
       )}
 
-      <div className="grid-2">
-        <section className="panel">
+      <div className="dash-grid">
+        <section className="panel dash-panel">
           <h2 className="h-panel" style={{ margin: '0 0 16px' }}>Nivel del resultado</h2>
-          <Bars total={data.total} rows={LEVELS.map((level, index) => ({ label: level.short, value: data.niveles[index], tone: level.tone }))} />
-          <p className="label" style={{ margin: '16px 0 0' }}>Salida media para falsa · {percent(data.probabilidad_media)}</p>
+          <Bars fill total={data.total} rows={LEVELS.map((level, index) => ({ label: level.short, value: data.niveles[index], tone: level.tone }))} />
+          <p className="label dash-foot">Probabilidad media de ser falsa · {percent(data.probabilidad_media)}</p>
         </section>
 
-        <section className="panel">
-          <h2 className="h-panel" style={{ margin: '0 0 16px' }}>Acuerdo y revisión</h2>
+        <section className="panel dash-panel">
+          <h2 className="h-panel" style={{ margin: '0 0 16px' }}>Modelos y revisión</h2>
+          <p className="label dash-sub">Acuerdo entre BiLSTM y BETO</p>
           <Bars total={data.total} rows={[
             { label: 'Coinciden', value: data.comparacion.coinciden ?? 0, color: 'var(--color-real)' },
             { label: 'No coinciden', value: data.comparacion.discrepan ?? 0, color: '#ffb21e' },
             { label: 'Un solo modelo', value: data.comparacion.no_disponible ?? 0, color: 'var(--color-muted)' },
           ]} />
-          <div style={{ height: 18 }} />
+          <p className="label dash-sub dash-sub--split">Revisión de casos</p>
           <Bars total={data.total} rows={[
             { label: 'Aprobados', value: reviews.aprobado ?? 0, color: 'var(--color-real)' },
             { label: 'Corregidos', value: reviews.corregido ?? 0, color: 'var(--color-acid)' },
@@ -84,7 +81,7 @@ export default function Dashboard({ health }) {
           ]} />
         </section>
 
-        <section className="panel">
+        <section className="panel dash-panel">
           <h2 className="h-panel" style={{ margin: '0 0 16px' }}>Análisis por día · 30 días</h2>
           {data.por_dia.length > 0 ? (
             <>
@@ -98,7 +95,7 @@ export default function Dashboard({ health }) {
           ) : <p className="muted" style={{ margin: 0 }}>Sin análisis en los últimos 30 días.</p>}
         </section>
 
-        <section className="panel">
+        <section className="panel dash-panel">
           <h2 className="h-panel" style={{ margin: '0 0 16px' }}>Páginas de origen</h2>
           {data.dominios.length > 0
             ? <Bars total={Math.max(...data.dominios.map((item) => item.n))} rows={data.dominios.slice(0, 8).map((item) => ({ label: item.dominio, value: item.n }))} />

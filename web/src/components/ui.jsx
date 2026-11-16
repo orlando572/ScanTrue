@@ -22,6 +22,7 @@ const paths = {
   mbert: <><rect x="4" y="4" width="6" height="6" /><rect x="14" y="4" width="6" height="6" /><rect x="9" y="14" width="6" height="6" /><path d="M7 10v2h10v-2M12 12v2" /></>,
   web: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></>,
   download: <path d="M12 4v11m-5-5 5 5 5-5M5 20h14" />,
+  chain: <><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1" /><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" /></>,
 };
 
 export function Icon({ name }) {
@@ -67,9 +68,9 @@ export function ErrorState({ error, onRetry }) {
   );
 }
 
-export function Empty({ title, children }) {
+export function Empty({ title, children, compact = false }) {
   return (
-    <div className="panel empty">
+    <div className={`panel empty${compact ? ' empty--compact' : ''}`}>
       <Icon name="radar" />
       <h2 className="h-panel">{title}</h2>
       <div className="muted" style={{ maxWidth: 460 }}>{children}</div>

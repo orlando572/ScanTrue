@@ -387,9 +387,8 @@ function TrainForm({ options, busy, disabled, onStart }) {
         <span>
           <strong>Preparar para calibrar</strong>
           <span className="muted">
-            Entrena también los 3 pliegues (F1–F3) con la misma receta y guarda sus predicciones fuera de pliegue,
-            como se hizo con B6 y M3b. Sin esto el modelo no se puede calibrar ni desplegar.
-            Tarda unas 4 veces más{type === 'mbert' ? ' (con BETO, bastante tiempo: mejor en un equipo con GPU grande)' : ' (con el BiLSTM y comun_v1, cerca de un minuto en GPU)'}.
+            Entrena también los pliegues F1–F3 y guarda sus predicciones. Sin esto no se puede calibrar ni desplegar.
+            Tarda unas 4 veces más{type === 'mbert' ? ' (BETO: mejor con una GPU grande)' : ' (BiLSTM + comun_v1: ~1 min en GPU)'}.
           </span>
         </span>
       </label>
@@ -414,12 +413,10 @@ function TrainForm({ options, busy, disabled, onStart }) {
       {!recipe && options.errores_receta?.[type] && <p className="alert" style={{ margin: 0 }}>{options.errores_receta[type]}</p>}
 
       <ul className="muted" style={{ margin: 0, paddingLeft: 18, fontSize: 13, display: 'grid', gap: 4 }}>
-        <li>Se entrena desde cero, con todos los fragmentos de entrenamiento y las épocas de la receta.</li>
-        <li>El modelo se guarda como versión nueva en <span className="mono">{options.salida}/{type}/</span> y aparece en Modelos como «Pendiente de calibrar»; se calibra en <Link className="text-link" to="/admin/calibracion">Calibración</Link>. Aquí no se despliega, no se borra ni se sobrescribe ningún modelo.</li>
+        <li>Se entrena desde cero y se guarda como versión nueva en <span className="mono">{options.salida}/{type}/</span> («Pendiente de calibrar» en Modelos). No despliega ni sobrescribe nada.</li>
         <li>{source?.tipo === 'panel' || source?.tipo === 'conjunto'
-          ? (source.con_prueba ? `Al terminar se evalúa con la prueba ${source.tipo === 'panel' ? 'de la versión del panel' : 'del conjunto (sus versiones del panel)'}.`
-            : 'No tiene prueba: el modelo saldrá sin métricas.')
-          : 'Con comun_v1 no se abre la prueba congelada: el modelo saldrá sin métricas.'}</li>
+          ? (source.con_prueba ? 'Al terminar se evalúa con la prueba de la versión.' : 'Sin prueba: saldrá sin métricas.')
+          : 'Con comun_v1 la prueba congelada no se abre: saldrá sin métricas.'}</li>
       </ul>
       {!options.cuda && (
         <p className="alert alert--info" style={{ margin: 0 }}>No hay GPU con CUDA en este equipo: solo se puede entrenar con el procesador.</p>
@@ -452,13 +449,13 @@ function History({ jobs, selected, onSelect }) {
           <tbody>
             {jobs.map((job) => (
               <tr key={job.id} aria-current={job.id === selected ? 'true' : undefined}>
-                <td className="mono">{formatDate(job.inicio)}</td>
-                <td style={{ color: CRITERIA[job.tipo].color }}>{recipeName(job.tipo, job.receta)}</td>
+                <td className="mono nowrap">{formatDate(job.inicio)}</td>
+                <td className="nowrap" style={{ color: CRITERIA[job.tipo].color }}>{recipeName(job.tipo, job.receta)}</td>
                 <td>{sourceName(job.fuente)}</td>
                 <td className="mono" style={{ overflowWrap: 'anywhere' }}>{job.version}</td>
                 <td><span className={`tag ${STATES[job.estado]?.tag ?? ''}`}>{STATES[job.estado]?.label ?? job.estado}</span></td>
                 <td className="num">{clock(elapsed(job, Date.now()))}</td>
-                <td>
+                <td className="nowrap">
                   <button type="button" className="text-link" onClick={() => onSelect(job.id)}>Ver</button>
                   {job.estado === 'completado' && <>{' · '}<Link className="text-link" to="/admin/modelos">Modelos</Link></>}
                 </td>
@@ -545,18 +542,14 @@ export default function Training() {
 
   return (
     <div className="stack" style={{ paddingTop: 24 }}>
-      <div className="section-head" style={{ margin: 0 }}>
-        <h1 className="display h-page" style={{ margin: 0 }}>Entrenamiento</h1>
-        <button type="button" className="btn btn--ghost" disabled={action.busy}
-          onClick={() => { options.reload(); list.reload(); }}>Actualizar</button>
-      </div>
+      <h1 className="display h-page" style={{ margin: 0 }}>Entrenamiento</h1>
 
       {action.error && <p className="alert" role="alert" style={{ margin: 0 }}>{action.error.message}</p>}
       {shown && <RunPanel key={shown.id} job={shown} busy={action.busy} onCancel={cancel} />}
       {options.data && <TrainForm options={options.data} busy={action.busy} disabled={Boolean(active)} onStart={start} />}
       {jobs.length > 0
         ? <History jobs={jobs} selected={shownId} onSelect={setSelected} />
-        : <Empty title="Sin entrenamientos">Lanza el primero con el formulario: el modelo nuevo aparecerá en Modelos al terminar.</Empty>}
+        : <Empty title="Sin entrenamientos">Lanza el primero con el formulario de arriba.</Empty>}
     </div>
   );
 }

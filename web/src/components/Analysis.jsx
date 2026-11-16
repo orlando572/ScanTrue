@@ -10,13 +10,15 @@ function clampLines(count) {
 }
 
 // Fragmentos marcados por el usuario: no hay título separado, solo el texto.
+// Con una sola parte no se numera: no hay nada que ordenar.
 export function Fragments({ fragments, hidden = 0, clamp = false }) {
+  const single = fragments.length === 1 && hidden === 0;
   return (
     <>
       <ol className="fragments" style={clamp ? { '--lines': clampLines(fragments.length) } : undefined}>
         {fragments.map((fragment) => (
-          <li key={fragment.number} className={`fragment${clamp ? ' fragment--clamp' : ''}`}>
-            <span className="n" aria-hidden="true">#{fragment.number}</span>
+          <li key={fragment.number} className={`fragment${clamp ? ' fragment--clamp' : ''}${single ? ' fragment--single' : ''}`}>
+            {!single && <span className="n" aria-hidden="true">#{fragment.number}</span>}
             <p>{fragment.text}</p>
           </li>
         ))}
@@ -39,25 +41,27 @@ export function Source({ view }) {
 }
 
 // Espectro Real–Incierto–Falso: BETO arriba, BiLSTM abajo y el combinado como rombo.
-export function Spectrum({ view }) {
+// `ends` pone «Verdadera» y «Falsa» bajo los extremos (en el detalle).
+export function Spectrum({ view, ends = false }) {
   const marks = Object.fromEntries(view.models.map((model) => [model.key, model.value]));
   const summary = [
     view.level ? `Combinado ${view.level.value} %` : null,
     ...view.models.filter((model) => model.value !== null).map((model) => `${model.name} ${model.value} %`),
   ].filter(Boolean).join(', ');
   return (
-    <div className="spectrum" role="img" aria-label={`Salida para falsa. ${summary}`}>
+    <div className="spectrum" role="img" aria-label={`Probabilidad de ser falsa. ${summary}`}>
       <div className="spectrum-track">
         {LEVELS.map((level) => <i key={level.value} className={`tone-${level.tone}`} />)}
       </div>
       {marks.mbert != null && <span className="marker marker--top" style={{ '--at': `${marks.mbert}%`, '--c': CRITERIA.mbert.color }} />}
       {marks.bilstm != null && <span className="marker marker--bottom" style={{ '--at': `${marks.bilstm}%`, '--c': CRITERIA.bilstm.color }} />}
       {view.level && <span className="marker marker--main" style={{ '--at': `${view.level.value}%` }} />}
+      {ends && <span className="spectrum-ends label" aria-hidden="true"><span>Verdadera</span><span>Falsa</span></span>}
     </div>
   );
 }
 
-// Los tres criterios: BiLSTM, BETO y la verificación web (aún sin activar).
+// Los tres criterios: BiLSTM, BETO y la verificación web (apagada mientras no llegue).
 export function CriteriaList({ view }) {
   return (
     <ul className="criteria">
@@ -70,7 +74,7 @@ export function CriteriaList({ view }) {
             : <span className="off">No disponible</span>}
         </li>
       ))}
-      <li style={{ '--c': view.verification.state === 'none' ? 'var(--color-line-2)' : CRITERIA.web.color }}>
+      <li className={view.verification.state === 'none' ? 'is-off' : undefined} style={{ '--c': CRITERIA.web.color }}>
         <i className="led" />
         <span>Verif. web</span>
         <span className={view.verification.state === 'none' ? 'off' : 'v'}>{view.verification.label}</span>
@@ -82,11 +86,12 @@ export function CriteriaList({ view }) {
 const agreementTag = { agree: 'tag--ok', disagree: 'tag--warn', single: '' };
 const chainTag = { ok: 'tag--ok', wait: '', fail: 'tag--fail' };
 
-export function StatusTags({ view }) {
+// `chain={false}` oculta el estado del registro en blockchain (la tarjeta pública no lo muestra).
+export function StatusTags({ view, chain = true }) {
   return (
     <>
       <span className={`tag ${agreementTag[view.agreement.state]}`}>{view.agreement.label}</span>
-      <span className={`tag ${chainTag[view.chain.state]}`}>{view.chain.label}</span>
+      {chain && <span className={`tag ${chainTag[view.chain.state]}`}>{view.chain.label}</span>}
     </>
   );
 }
@@ -97,7 +102,7 @@ export function Verdict({ view }) {
       <span className="pct">{view.level ? view.level.value : '—'}<small> %</small></span>
       <span>
         <span className="lvl">{view.level?.label ?? 'Sin resultado unificado'}</span>
-        <span className="label" style={{ display: 'block', marginTop: 4 }}>Salida para falsa</span>
+        <span className="label" style={{ display: 'block', marginTop: 4 }}>Probabilidad de ser falsa</span>
       </span>
     </div>
   );
@@ -108,12 +113,11 @@ export function ResultCard({ view, to }) {
     <article className={`panel panel--tone card tone-${view.tone}`}>
       <div>
         <div className="card-meta">
-          <span className="code">ID {view.code}</span>
           <span>{view.date}</span>
           <Source view={view} />
           {view.words && <span>{view.words}</span>}
-          {view.truncated && <span className="tag" title="El texto superaba lo que leen los modelos; se analizó el comienzo.">Recortado</span>}
         </div>
+        <h3 className="h-panel card-text-label">Texto de la noticia</h3>
         <Fragments fragments={view.fragments} hidden={view.hiddenFragments} clamp />
       </div>
       <div className="readout">
@@ -121,10 +125,12 @@ export function ResultCard({ view, to }) {
         <Spectrum view={view} />
         <CriteriaList view={view} />
         <div className="card-foot">
-          <span className="chips"><StatusTags view={view} /></span>
-          <Link className="text-link" to={to}>Ver detalle <span aria-hidden="true">→</span></Link>
+          <span className="chips"><StatusTags view={view} chain={false} /></span>
+          <Link className="btn btn--small card-link" to={to}>Ver detalle</Link>
         </div>
       </div>
+      {/* Capa que hace clicable toda la tarjeta; el botón de arriba es el enlace accesible. */}
+      <Link className="card-hit" to={to} tabIndex={-1} aria-hidden="true" />
     </article>
   );
 }
@@ -136,7 +142,7 @@ export function Dial({ view }) {
   const value = view.level?.value ?? 0;
   const lit = Math.round((value / 100) * SEGMENTS);
   return (
-    <div className="dial" role="img" aria-label={view.level ? `${view.level.value} % de salida para falsa: ${view.level.label}` : 'Sin resultado unificado'}>
+    <div className="dial" role="img" aria-label={view.level ? `${view.level.value} % de probabilidad de ser falsa: ${view.level.label}` : 'Sin resultado unificado'}>
       <svg viewBox="-110 -110 220 220">
         {Array.from({ length: SEGMENTS }, (_, index) => {
           const angle = -225 + (270 / (SEGMENTS - 1)) * index;
@@ -154,7 +160,7 @@ export function Dial({ view }) {
       </svg>
       <div className="dial-value">
         <b>{view.level ? view.level.value : '—'}<small> %</small></b>
-        <span className="label" style={{ marginTop: 6 }}>Salida para falsa</span>
+        <span className="label" style={{ marginTop: 6 }}>Probabilidad de ser falsa</span>
       </div>
     </div>
   );
