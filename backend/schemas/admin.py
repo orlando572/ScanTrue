@@ -1,4 +1,4 @@
-"""Contratos del panel de administración: casos, revisión, datasets y modelos."""
+"""Contratos del panel de administración: casos, revisión, datasets, modelos y entrenamiento."""
 
 from datetime import datetime
 from typing import Literal
@@ -225,7 +225,7 @@ class ModelEntryInfo(BaseModel):
     version: str
     nombre: str
     fecha: str | None = None
-    origen: Literal["repositorio", "entrenamiento", "importado"]
+    origen: Literal["repositorio", "entrenamiento", "importado", "calibracion"]
     ruta: str | None = Field(default=None, description="Carpeta del contrato, relativa a la raíz del repositorio.")
     estado: Literal["disponible", "pendiente_calibrar", "no_admitido", "no_valido", "archivado"]
     motivo: str | None = None
@@ -283,3 +283,109 @@ class RetireRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     tipo: ModelType
+
+
+# ── Entrenamiento ───────────────────────────────────────────────────
+
+
+class TrainingSource(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tipo: Literal["comun_v1", "panel"]
+    version_id: UUID | None = Field(default=None, description="Versión del panel (solo con tipo panel).")
+
+    @model_validator(mode="after")
+    def panel_needs_version(self):
+        if self.tipo == "panel" and self.version_id is None:
+            raise ValueError("Elige la versión del panel")
+        return self
+
+
+class TrainingRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tipo: ModelType
+    fuente: TrainingSource
+    epocas: int | None = Field(default=None, ge=1, le=50, description="Por defecto, las de la receta.")
+    semilla: int = Field(default=42, ge=0, le=2**31 - 1)
+    dispositivo: Literal["cuda", "cpu"] | None = Field(
+        default=None, description="cuda (GPU) o cpu (procesador). Por defecto, la GPU si hay CUDA.")
+    pliegues: bool = Field(
+        default=False, description="Preparar para calibrar: entrena también F1–F3 y guarda sus "
+                                   "predicciones fuera de pliegue.")
+
+
+class TrainingRecipe(BaseModel):
+    configuracion: str | None = None
+    origen: Literal["desplegado", "produccion"]
+    modelo: str | None = Field(default=None, description="Modelo desplegado del que sale la receta.")
+    ruta: str | None = None
+    epocas: int | None = None
+    brazo: list[str] = Field(default_factory=list)
+    max_tokens: int | None = None
+    modelo_base: str | None = None
+    parametros: dict = Field(default_factory=dict)
+
+
+class TrainingJob(BaseModel):
+    id: str
+    tipo: ModelType
+    fuente: dict
+    receta: TrainingRecipe
+    epocas: int
+    semilla: int
+    dispositivo: Literal["cuda", "cpu"]
+    version: str = Field(description="Versión del modelo que se crea (no sobrescribe ninguno).")
+    salida: str | None = None
+    inicio: datetime
+    fin: datetime | None = None
+    por: str | None = None
+    datos: dict = Field(default_factory=dict, description="Fragmentos de entrenamiento y prueba.")
+    estado: Literal["en_curso", "completado", "fallido", "cancelado"]
+    fase: str | None = None
+    progreso: float = Field(ge=0, le=1)
+    epoca: int | None = None
+    epocas_corrida: int | None = Field(default=None, description="Épocas máximas de la corrida en curso.")
+    lote: int | None = None
+    lotes: int | None = None
+    pliegues: bool = False
+    corrida: int | None = None
+    corridas: int | None = None
+    corrida_nombre: str | None = Field(default=None, description="F1, F2, F3 o final.")
+    perdidas: list[dict] = Field(default_factory=list)
+    error: str | None = None
+    metricas: MetricsResponse | None = None
+    registro: list[str] = Field(default_factory=list, description="Últimas líneas del registro.")
+
+
+class TrainingList(BaseModel):
+    activo: TrainingJob | None = None
+    entrenamientos: list[TrainingJob]
+
+
+class TrainingOptions(BaseModel):
+    tipos: dict[str, TrainingRecipe | None]
+    errores_receta: dict[str, str] = Field(default_factory=dict)
+    fuentes: list[dict]
+    cuda: bool
+    salida: str
+
+
+# ── Calibración ─────────────────────────────────────────────────────
+
+
+class CalibrationTemperatures(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    bilstm: float | None = Field(default=None, gt=0, le=100, description="A mano; null = ajustada.")
+    mbert: float | None = Field(default=None, gt=0, le=100, description="A mano; null = ajustada.")
+
+
+class CalibrationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    bilstm: str = Field(min_length=1, max_length=200, description="Id del BiLSTM en el catálogo.")
+    mbert: str = Field(min_length=1, max_length=200, description="Id del BETO / mBERT en el catálogo.")
+    peso_bilstm: float = Field(default=0.2, ge=0, le=1)
+    temperaturas: CalibrationTemperatures = Field(default_factory=CalibrationTemperatures)
+    motivo: str | None = Field(default=None, max_length=2000)

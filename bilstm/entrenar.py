@@ -1,18 +1,21 @@
 """Entrenamiento del BiLSTM de ScanTrue con el conjunto común `datasets/comun_v1/`.
 
-Es el único script de entrenamiento del BiLSTM. Tiene cinco subcomandos, en el orden en
-que se usan (detalle en bilstm/README.md):
+Es el único script de entrenamiento del BiLSTM. Tiene seis subcomandos; los cinco primeros, en
+el orden en que se usan (detalle en bilstm/README.md):
 
   corrida      Entrena un pliegue con una semilla y guarda sus predicciones.
   experimento  Lanza una configuración en 3 pliegues × 3 semillas y la evalúa.
   plan         Ejecuta B0–B8 en orden y aplica la regla de decisión fijada.
   decidir      Compara dos configuraciones ya evaluadas con la regla de decisión.
   final        Entrena el modelo final con todo el desarrollo, ajusta T y escribe el contrato.
+  reentrenar   Entrena desde cero con la receta de otro modelo y otro conjunto (lo usa el panel).
 
 Ejemplos:
   bilstm/.venv/bin/python bilstm/entrenar.py experimento B6 --brazo usmsc
   bilstm/.venv/bin/python bilstm/entrenar.py plan
   bilstm/.venv/bin/python bilstm/entrenar.py final --ganador B6 --motivo "…"
+  bilstm/.venv/bin/python bilstm/entrenar.py reentrenar --receta datasets/bilstm_produccion/modelo/config.json \
+      --conjunto datasets/comun_v1 --salida datasets/entrenamientos/bilstm/V --version V
 
 Convenciones:
 - Etiqueta `etiqueta_falsa`: la salida 1 del modelo es «falsa» y la 0 es «real».
@@ -30,8 +33,10 @@ import gzip
 import json
 import math
 import random
+import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -50,6 +55,7 @@ from evaluar_comun import (  # noqa: E402
     por_articulo, softmax_falsa, tabla_niveles,
 )
 from modelo import POOLINGS, BiLSTM, construir_vocabulario, tokenize  # noqa: E402
+import reentrenar as reent  # noqa: E402
 
 VECTORES = ROOT / "datasets/embeddings/cc.es.300.vec.gz"
 CORRIDAS = ROOT / "datasets/comun_v1_corridas"
@@ -103,10 +109,18 @@ def cargador(frame, vocab, max_len, lote, mezclar, semilla):
 
 # =========================================================================== vectores fastText
 
+ARCHIVOS_DE_ENTRENAMIENTO = ("fragmentos_desarrollo.csv", "ablacion_satira.csv", "ablacion_usmsc.csv",
+                             "ablacion_politica.csv")
+
+
 def palabras_del_conjunto(conjunto: Path) -> set[str]:
+    """Palabras de lo que se puede entrenar (nunca de una prueba). Con comun_v1 son sus cuatro
+    CSV; una versión del panel solo trae `fragmentos_desarrollo.csv`."""
     palabras: set[str] = set()
-    for nombre in ("fragmentos_desarrollo.csv", "ablacion_satira.csv", "ablacion_usmsc.csv",
-                   "ablacion_politica.csv"):
+    presentes = set(manifiesto(conjunto)["archivos"])
+    for nombre in ARCHIVOS_DE_ENTRENAMIENTO:
+        if nombre not in presentes:
+            continue
         for texto in leer(nombre, conjunto).texto:
             palabras.update(tokenize(texto))
     return palabras
@@ -240,6 +254,7 @@ def corrida(args: argparse.Namespace) -> dict:
     (args.salida / "config.json").write_text(json.dumps(config, ensure_ascii=False, indent=2), "utf-8")
 
     epocas = args.epocas_fijas or args.epocas
+    progreso = getattr(args, "progreso", None)  # solo lo pone `reentrenar`
     mejor, mejor_epoca, mejor_estado, quietas, historial = -math.inf, 0, None, 0, []
     for epoca in range(1, epocas + 1):
         congelado = epoca <= args.congelar_embeddings
@@ -249,7 +264,8 @@ def corrida(args: argparse.Namespace) -> dict:
                                                  optimizador.param_groups[0]["lr"] * args.lr_embeddings)
         modelo.train()
         total = 0.0
-        for ids, largos, etiquetas, pesos in carga_entreno:
+        avisar = progreso.lotes(epoca, epocas, len(carga_entreno)) if progreso else None
+        for numero, (ids, largos, etiquetas, pesos) in enumerate(carga_entreno, 1):
             optimizador.zero_grad(set_to_none=True)
             logits = modelo(ids.to(dispositivo), largos)
             perdida = perdida_ponderada(logits, etiquetas.to(dispositivo), pesos.to(dispositivo), pesos_clase)
@@ -257,7 +273,9 @@ def corrida(args: argparse.Namespace) -> dict:
             nn.utils.clip_grad_norm_(modelo.parameters(), 1.0)
             optimizador.step()
             total += float(perdida.item()) * len(etiquetas)
-        registro = {"epoca": epoca, "perdida": total / len(entreno), "embeddings_congelados": congelado}
+            if avisar:
+                avisar(numero)
+        registro ={"epoca": epoca, "perdida": total / len(entreno), "embeddings_congelados": congelado}
         if args.pliegue != "todo":
             f1 = f1_articulo(interna, predecir(modelo, carga_interna, dispositivo))
             registro["f1_macro_articulo_interna"] = f1
@@ -514,6 +532,129 @@ def final(ganador_manual: str | None, motivo: str, corridas: Path = CORRIDAS) ->
     return resumen
 
 
+# =========================================================================== reentrenar (panel)
+
+# Campo del config.json de una corrida → opción de `corrida`. El brazo va aparte.
+RECETA = {"pooling": "pooling", "congelar_embeddings_epocas": "congelar-embeddings",
+          "lr_embeddings_factor": "lr-embeddings", "max_tokens": "max-tokens", "hidden_dim": "hidden-dim",
+          "dropout": "dropout", "lr": "lr", "weight_decay": "weight-decay", "lote": "lote"}
+
+
+def opciones_de_receta(receta: dict, brazos: list[str]) -> list[str]:
+    salida = ["--brazo", *brazos] if brazos else []
+    for campo, opcion in RECETA.items():
+        if receta.get(campo) is not None:
+            salida += [f"--{opcion}", str(receta[campo])]
+    return salida
+
+
+def predecir_guardado(pesos: Path, frame: pd.DataFrame, dispositivo: torch.device) -> np.ndarray:
+    """Logits de `frame` con el modelo.pt ya guardado (así se evalúa lo que se va a desplegar)."""
+    guardado = torch.load(pesos, map_location="cpu", weights_only=False)
+    config, vocab = guardado["config"], guardado["vocab"]
+    modelo = BiLSTM(len(vocab), config["embedding_dim"], config["hidden_dim"], config["dropout"],
+                    config["pooling"])
+    modelo.load_state_dict(guardado["state_dict"])
+    modelo.to(dispositivo)
+    return predecir(modelo, cargador(frame, vocab, config["max_len"], 256, False, 0), dispositivo)
+
+
+def reentrenar(args: argparse.Namespace) -> dict:
+    """Modelo desde cero con la receta (`config.json`) de otro y el conjunto que se pase.
+
+    Entrena con todo el desarrollo y las épocas de la receta, evalúa `fragmentos_prueba.csv` si
+    el conjunto lo trae y escribe el contrato con temperatura provisional. Ver
+    datos_comunes/reentrenar.py."""
+    progreso = reent.Progreso(args.progreso)
+    progreso("preparando")
+    reent.comprobar_conjunto(args.conjunto)
+    receta = reent.leer_receta(args.receta)
+    if receta.get("modelo", "bilstm") != "bilstm":
+        raise ValueError(f"La receta {args.receta} no es de un BiLSTM")
+    epocas = reent.epocas_de(receta, args.epocas)
+    brazos, omitidos = reent.brazos_disponibles(list(receta.get("brazo") or []), args.conjunto)
+    dispositivo = torch.device(args.dispositivo)
+    inicio = time.time()
+    parcial = reent.carpeta_parcial(args.salida)
+    try:
+        comunes = ["--semilla", str(args.semilla), "--configuracion", str(receta["configuracion"]),
+                   "--conjunto", str(args.conjunto), "--dispositivo", args.dispositivo,
+                   "--vectores", str(args.vectores), "--cache", str(args.cache),
+                   *opciones_de_receta(receta, brazos)]
+        pliegues = reent.pliegues_del_conjunto(args.conjunto) if args.pliegues else []
+        corridas = len(pliegues) + 1
+        # Preparar para calibrar: los pliegues, como en `experimento` (parada temprana con la
+        # validación interna), y sus predicciones fuera de pliegue.
+        rutas = []
+        for numero, pliegue in enumerate(pliegues, 1):
+            progreso.contexto = {"corrida": numero, "corridas": corridas, "nombre": pliegue}
+            salida = parcial / "pliegues" / f"{pliegue}_s{args.semilla}"
+            pliegue_args = parse_args([
+                "corrida", "--pliegue", pliegue, "--salida", str(salida), "--no-guardar-modelo",
+                "--epocas", str(receta.get("epocas_max", 20)), "--paciencia", str(receta.get("paciencia", 5)),
+                *comunes,
+            ])
+            pliegue_args.progreso = progreso
+            progreso("entrenando", epoca=0, epocas=pliegue_args.epocas, lote=0, lotes=0)
+            corrida(pliegue_args)
+            rutas.append(salida / "predicciones.csv")
+        if rutas:
+            reent.escribir_fuera_de_pliegue(rutas, args.conjunto, parcial / reent.OOF)
+
+        carpeta = f"todo_s{args.semilla}"
+        corrida_args = parse_args(["corrida", "--pliegue", "todo", "--salida", str(parcial / carpeta),
+                                   "--epocas-fijas", str(epocas), *comunes])
+        corrida_args.progreso = progreso
+        progreso.contexto = {"corrida": corridas, "corridas": corridas, "nombre": "final"} if pliegues else {}
+        progreso("entrenando", epoca=0, epocas=epocas, lote=0, lotes=0)
+        resultado = corrida(corrida_args)
+        progreso.contexto = {}
+        pesos = parcial / carpeta / "modelo.pt"
+
+        prueba = reent.leer_prueba(args.conjunto)
+        if prueba is not None:
+            progreso("evaluando", fragmentos=len(prueba))
+            logits = predecir_guardado(pesos, prueba, dispositivo)
+            reent.escribir_json(parcial / "metricas.json",
+                                reent.metricas_prueba("bilstm", args.version, prueba, logits))
+
+        progreso("guardando")
+        contrato = {
+            "modelo": "bilstm",
+            "version": args.version,
+            "eleccion": {"ganador_regla": receta["configuracion"], "manual": False,
+                         "origen": "reentrenar"},
+            "etiquetas": ETIQUETAS,
+            "max_tokens": int(receta.get("max_tokens", 192)),
+            "pooling": receta.get("pooling", "final"), "hidden_dim": int(receta.get("hidden_dim", 64)),
+            "temperatura": 1.0, "temperatura_provisional": True,
+            "nota_temperatura": "Sin calibrar: modelo reentrenado (subcomando reentrenar). Falta la "
+                                "calibración conjunta antes de usarlo en el backend.",
+            "umbral_falsa": 0.5,
+            "semillas": [args.semilla], "promediar_logits_semillas": False,
+            "epocas": epocas,
+            "checkpoints": {f"s{args.semilla}": {"ruta": reent.ruta_contrato(args.salida, f"{carpeta}/modelo.pt"),
+                                                 "sha256": sha256(pesos)}},
+            "sha256_conjunto": manifiesto(args.conjunto)["archivos"]["fragmentos_desarrollo.csv"]["sha256"],
+            "procedencia": "entrenamiento.json",
+        }
+        if pliegues:
+            contrato["predicciones_fuera_de_pliegue"] = reent.OOF
+        reent.escribir_json(parcial / "entrenamiento.json", {
+            **reent.procedencia(args.conjunto, args.receta, receta, args.semilla, epocas, brazos, omitidos,
+                                time.time() - inicio, pliegues),
+            "perdida_final": resultado["historial"][-1]["perdida"] if resultado["historial"] else None,
+        })
+        reent.escribir_json(parcial / "contrato.json", contrato)
+        reent.cerrar(parcial, args.salida)
+    except BaseException:
+        reent.descartar(parcial)
+        raise
+    progreso("terminado", version=args.version, salida=str(args.salida))
+    return {"version": args.version, "salida": str(args.salida), "epocas": epocas,
+            "brazos_omitidos": omitidos, "evaluada": prueba is not None, "pliegues": pliegues}
+
+
 # =========================================================================== línea de comandos
 
 def opciones_de_corrida(parser: argparse.ArgumentParser, completa: bool) -> None:
@@ -566,6 +707,20 @@ def parse_args(argv=None) -> argparse.Namespace:
     p = sub.add_parser("final", help="modelo final, temperatura y contrato")
     p.add_argument("--ganador", help="ID del registro (p. ej. B6) que sustituye al ganador de la regla")
     p.add_argument("--motivo", default="", help="motivo de la elección manual (obligatorio con --ganador)")
+    p = sub.add_parser("reentrenar", help="desde cero con la receta de otro modelo y otro conjunto")
+    p.add_argument("--receta", type=Path, required=True, help="config.json de la corrida que se repite")
+    p.add_argument("--conjunto", type=Path, default=CONJUNTO)
+    p.add_argument("--salida", type=Path, required=True, help="carpeta del modelo nuevo (no debe existir)")
+    p.add_argument("--version", required=True, help="versión del contrato nuevo")
+    p.add_argument("--epocas", type=int, default=0, help="por defecto, las épocas fijas de la receta")
+    p.add_argument("--semilla", type=int, default=42)
+    p.add_argument("--dispositivo", choices=("cuda", "cpu"), default="cuda")
+    p.add_argument("--vectores", type=Path, default=VECTORES)
+    p.add_argument("--cache", type=Path, default=CORRIDAS / "cache_fasttext_cc300.npz",
+                   help="caché de fastText (una por conjunto)")
+    p.add_argument("--progreso", action="store_true", help="líneas JSON de progreso para el panel")
+    p.add_argument("--pliegues", action="store_true",
+                   help="entrena también F1–F3 y guarda sus predicciones fuera de pliegue (para calibrar)")
     return parser.parse_args(argv)
 
 
@@ -582,6 +737,10 @@ def main(argv=None) -> None:
         r = fila(args.referencia, cargar(args.referencia, args.corridas))
         print(json.dumps({"candidata": c, "referencia": r, "decision": decidir(c, r, args.brazo)},
                          ensure_ascii=False, indent=2))
+    elif args.comando == "reentrenar":
+        # Cancelar desde el panel envía SIGTERM: así se borra la carpeta parcial antes de salir.
+        signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+        print(json.dumps(reentrenar(args), ensure_ascii=False))
     else:
         final(args.ganador, args.motivo, args.corridas)
 

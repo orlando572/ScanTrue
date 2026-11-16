@@ -15,7 +15,7 @@ const STATES = {
   no_valido: { label: 'No válido', tag: 'tag--fail' },
   archivado: { label: 'Archivado', tag: '' },
 };
-const ORIGINS = { repositorio: 'Repositorio', entrenamiento: 'Entrenamiento', importado: 'Importado' };
+const ORIGINS = { repositorio: 'Repositorio', entrenamiento: 'Entrenamiento', importado: 'Importado', calibracion: 'Calibración' };
 const ACTIONS = { desplegar: 'Desplegar', retirar: 'Retirar', pesos: 'Pesos', revertir: 'Volver atrás' };
 const REFRESH_MS = 30_000;
 
@@ -35,7 +35,7 @@ function Evaluation({ evaluation, color }) {
   );
 }
 
-function Metrics({ model }) {
+export function Metrics({ model }) {
   const color = CRITERIA[model.tipo].color;
   const metrics = model.metricas ? presentMetrics(model.metricas) : null;
   if (!metrics) return <p className="muted" style={{ margin: 0 }}>Sin métricas publicadas.</p>;

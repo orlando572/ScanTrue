@@ -17,6 +17,10 @@ Los modelos de producción están en `datasets/bilstm_produccion/modelo/` y `dat
 
 Desde **Administración → Modelos** se elige el modelo de cada tipo, se retira uno de los dos y se editan los pesos, sin reiniciar la API. Los modelos que deja el entrenamiento bajo `datasets/` aparecen solos; los de otro equipo se importan en ZIP y se guardan en `datasets/modelos/`, fuera de Git. Detalle: [backend/docs/DESPLIEGUE_MODELOS.md](backend/docs/DESPLIEGUE_MODELOS.md).
 
+Desde **Administración → Entrenamiento** se reentrena un BiLSTM o un BETO/mBERT desde cero con la receta del modelo desplegado y `comun_v1` o una versión del panel de Datasets, con su avance en vivo. El modelo nuevo se guarda en `datasets/entrenamientos/` y aparece en Modelos como «Pendiente de calibrar»: Entrenamiento no despliega ni borra nada. Detalle: [backend/docs/ENTRENAMIENTO_PANEL.md](backend/docs/ENTRENAMIENTO_PANEL.md).
+
+En **Administración → Calibración** se calibra una pareja de modelos con sus predicciones fuera de pliegue. Se pueden editar la pareja, el peso y las temperaturas. Con los valores por defecto (B6 + M3b, 20/80) sale exactamente la calibración de producción. Guardar crea contratos calibrados nuevos (mismos pesos, sin copiarlos) que se despliegan desde Modelos. Detalle: [backend/docs/CALIBRACION_PANEL.md](backend/docs/CALIBRACION_PANEL.md).
+
 ## Requisitos
 
 - Python 3.14

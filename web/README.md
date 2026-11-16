@@ -7,7 +7,7 @@ Plataforma web de ScanTrue (incrementos 1 y 3 de [`docs/INCREMENTOS.md`](../docs
 | Inicio | `/` | Cualquiera | Qué es ScanTrue, los tres criterios, estado de los servicios y totales. |
 | Resultados | `/resultados` | Cualquiera | Todos los análisis: fragmentos, salida de cada modelo, buscador y filtros. |
 | Detalle | `/resultados/:id` | Cualquiera | Dial, fragmentos completos, qué leyó cada modelo y registro en blockchain. |
-| Administración | `/admin` | Solo administradores | Panel, casos y revisión, versiones de dataset y versiones de modelos. |
+| Administración | `/admin` | Solo administradores | Panel, casos y revisión, versiones de dataset, entrenamiento, calibración y versiones de modelos. |
 
 Los visitantes no inician sesión: los resultados son públicos y nunca muestran quién hizo cada análisis. La única sesión es la del administrador y vive en `sessionStorage` (se pierde al cerrar la pestaña).
 
@@ -46,6 +46,8 @@ Si la cuenta no existe, la crea y pide la contraseña por teclado; si existe, la
   - Retira copias exactas y textos con etiquetas contrarias, y retira también las noticias que ya están en la prueba congelada de comun_v1. Las que están en su desarrollo van siempre a entrenamiento.
   - Agrupa los casos de la misma página, del mismo evento o casi iguales, y manda cada grupo entero a entrenamiento o a prueba. La prueba se toma por clase (≈20 % de las falsas y de las reales).
   - Se descarga como CSV con toda la procedencia o como **ZIP para entrenar**: `fragmentos_entrenamiento.csv` y `fragmentos_prueba.csv` con las columnas de comun_v1, `procedencia.csv` y `manifest.json` con el SHA-256 de cada archivo. `datos_comunes/comun.py:leer()` carga esos CSV directamente.
+- **Entrenamiento:** reentrena un BiLSTM o un BETO/mBERT desde cero con la receta del modelo desplegado y `comun_v1` o una versión de Datasets. Se elige GPU o procesador y si se prepara para calibrar (entrena también los 3 pliegues). Muestra el avance en vivo: anillo de progreso, fases, cada corrida y época con su pérdida, y el registro. Se puede cancelar. El modelo nuevo aparece en Modelos como «Pendiente de calibrar»; desde aquí no se despliega ni se borra nada. Ver [backend/docs/ENTRENAMIENTO_PANEL.md](../backend/docs/ENTRENAMIENTO_PANEL.md).
+- **Calibración:** calibra una pareja BiLSTM + BETO/mBERT con sus predicciones fuera de pliegue. Se editan la pareja, el peso y las temperaturas (ajustadas o a mano). Muestra la validación por fuente, los niveles de la extensión y si coincide con la calibración de producción. Guardar crea contratos calibrados nuevos que se despliegan en Modelos. Ver [backend/docs/CALIBRACION_PANEL.md](../backend/docs/CALIBRACION_PANEL.md).
 - **Modelos:** un modelo desplegado por tipo (BiLSTM y BETO/mBERT). Lista los del repositorio, los que deja el entrenamiento (aparecen solos; «Pendiente de calibrar» hasta la calibración conjunta) y los importados en ZIP, con sus métricas y una comparación dentro de cada tipo. **Desplegar** carga y comprueba el modelo antes de sustituir al de su tipo; **Retirar** deja el análisis con el otro (debe quedar uno). Los pesos se editan con un deslizador (por defecto los calibrados, 20/80). **Volver atrás** deshace el último cambio. Ver [backend/docs/DESPLIEGUE_MODELOS.md](../backend/docs/DESPLIEGUE_MODELOS.md).
 
 ## Tercer criterio (incremento 2)

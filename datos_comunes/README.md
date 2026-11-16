@@ -14,6 +14,7 @@ datos_comunes/
 ├── evaluar_comun.py     Métricas por artículo, bootstrap, temperatura y niveles de la extensión
 ├── referencias.py       Referencias: solo longitud y TF-IDF de caracteres
 ├── calibrar_conjunto.py Calibración conjunta: temperaturas, combinación BiLSTM + mBERT y niveles
+├── reentrenar.py        Partes comunes del subcomando `reentrenar` de los dos scripts (panel de Entrenamiento)
 ├── publicar_metricas.py Métricas de producción que muestra la extensión (backend/metrics/)
 ├── prueba_congelada.py  Evaluación única de la prueba congelada con el código del backend (ya hecha)
 └── tests/               Pruebas
@@ -37,6 +38,6 @@ bilstm/.venv/bin/python datos_comunes/calibrar_conjunto.py --sobrescribir
 bilstm/.venv/bin/python -m unittest discover -s datos_comunes/tests
 ```
 
-`calibrar_conjunto.py` lee las predicciones fuera de pliegue de los dos modelos finales y escribe `datasets/comun_v1_corridas/calibracion/`. Decisiones y cifras en [docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md](../docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md).
+`calibrar_conjunto.py` lee las predicciones fuera de pliegue de los dos modelos finales y escribe `datasets/comun_v1_corridas/calibracion/`. Su motor, `calibrar_predicciones`, es el que usa el panel (Administración → Calibración): admite cualquier pareja con predicciones fuera de pliegue y temperaturas a mano, y con B6 + M3b da el mismo resultado. Decisiones y cifras en [docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md](../docs/mejora_modelos/04_CALIBRACION_CONJUNTA.md).
 
 `construir_comun.py` usa el tokenizador de `bilstm/modelo.py`, para que el mínimo de 100 tokens coincida con el del backend.

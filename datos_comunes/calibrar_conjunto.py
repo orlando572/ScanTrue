@@ -252,8 +252,13 @@ def resumen_md(resultado: dict) -> str:
         f"mBERT **{c['temperaturas']['mbert']:.4f}**.",
         f"- Combinación: `{c['formula']}` con pesos BiLSTM **{c['pesos']['bilstm']:.2f}** y mBERT "
         f"**{c['pesos']['mbert']:.2f}**. Umbral 0,5.",
-        f"- Semillas de mBERT: promediar sube el F1 {s['ganancia']:+.4f} (umbral +{s['umbral']}), "
-        f"así que {'se promedian' if s['promediar'] else 'se usa una sola semilla'}.", "",
+        (f"- Semillas de mBERT: promediar sube el F1 {s['ganancia']:+.4f} (umbral +{s['umbral']}), "
+         f"así que {'se promedian' if s['promediar'] else 'se usa una sola semilla'}." if s else
+         f"- Semillas: las de cada contrato (BiLSTM {c['semillas']['bilstm']}, mBERT {c['semillas']['mbert']})."),
+        *([f"- Temperaturas a mano: {', '.join(c['temperaturas_manuales'])} (ajustadas: BiLSTM "
+           f"{c['temperaturas_ajustadas']['bilstm']:.4f}, mBERT {c['temperaturas_ajustadas']['mbert']:.4f})."]
+          if c.get("temperaturas_manuales") else []),
+        "",
         "## Validación por fuente", "",
         "La temperatura (y los pesos aprendidos) se ajustan con dos fuentes y se miden en la tercera.", "",
         tabla, "",
@@ -277,60 +282,168 @@ def resumen_md(resultado: dict) -> str:
 
 # --------------------------------------------------------------------------- principal
 
-def calibrar(bilstm_final: Path, mbert_final: Path, peso_bilstm: float, semilla_mbert: int | None,
-             motivo: str = "") -> dict:
-    desarrollo = leer("fragmentos_desarrollo.csv")
-    contrato_b = json.loads((bilstm_final / "contrato.json").read_text("utf-8"))
-    contrato_m = json.loads((mbert_final / "contrato.json").read_text("utf-8"))
+COLUMNAS_ETIQUETA = ("id_articulo", "fuente", "etiqueta_falsa")
+
+
+def cargar_autonomo(ruta: Path, semilla: int | None) -> pd.DataFrame:
+    """Predicciones fuera de pliegue que traen sus propias etiquetas (las que deja `reentrenar
+    --pliegues`): sirven aunque su conjunto ya no esté en el equipo."""
+    pred = pd.read_csv(ruta, dtype={"id_fragmento": str, "modelo": str, "configuracion": str, "pliegue": str,
+                                    "id_articulo": str, "fuente": str})
+    faltan = (set(COLUMNAS_PRED) | set(COLUMNAS_ETIQUETA)) - set(pred.columns)
+    if faltan:
+        raise ValueError(f"{ruta}: faltan columnas {sorted(faltan)}")
+    if (pred.pliegue == "congelada").any():
+        raise PermissionError("Las predicciones de la prueba congelada no se usan para calibrar")
+    if semilla is not None:
+        pred = pred[pred.semilla == semilla]
+    if pred.empty:
+        raise ValueError(f"{ruta}: no hay predicciones de la semilla {semilla}")
+    if pred.duplicated(["semilla", "id_fragmento"]).any():
+        raise ValueError(f"{ruta}: fragmentos repetidos dentro de una semilla")
+    pred = pred[list(COLUMNAS_PRED) + list(COLUMNAS_ETIQUETA)].copy()
+    pred["etiqueta_falsa"] = pred.etiqueta_falsa.astype(int)
+    pred["z"] = pred.logit_falsa - pred.logit_real
+    return pred.reset_index(drop=True)
+
+
+def tiene_etiquetas(ruta: Path) -> bool:
+    columnas = pd.read_csv(ruta, nrows=0).columns
+    return set(COLUMNAS_ETIQUETA) <= set(columnas)
+
+
+def cargar_modelo(ruta: Path, semilla: int, contrato: dict, desarrollo: pd.DataFrame | None,
+                  sha_desarrollo: str | None) -> pd.DataFrame:
+    """Une con el conjunto común si el contrato es de ese conjunto; si no, usa las etiquetas del CSV."""
+    if desarrollo is not None and contrato.get("sha256_conjunto") == sha_desarrollo:
+        return cargar_fuera_de_pliegue(ruta, semilla, desarrollo)
+    if tiene_etiquetas(ruta):
+        return cargar_autonomo(ruta, semilla)
+    raise ValueError(f"{ruta}: no trae etiquetas y su conjunto no es el común de este equipo")
+
+
+def calibrar_predicciones(ruta_b: Path, ruta_m: Path, contrato_b: dict, contrato_m: dict, peso_bilstm: float,
+                          motivo: str = "", temperaturas: dict[str, float | None] | None = None,
+                          version: str | None = None, desarrollo: pd.DataFrame | None = None,
+                          semilla_mbert: int | None = None) -> dict:
+    """Calibración de una pareja a partir de sus predicciones fuera de pliegue.
+
+    - Cada temperatura se ajusta con las predicciones de su modelo; `temperaturas` permite fijarla a mano.
+    - Si los dos modelos comparten conjunto, se evalúa la combinación (validación por fuente, niveles,
+      regla de discrepancia y bootstrap). Si no, cada modelo se evalúa por su lado.
+    - Con la pareja B6 + M3b, peso 0,2 y temperaturas ajustadas da exactamente la calibración de producción.
+    """
+    if not 0.0 <= peso_bilstm <= 1.0:
+        raise ValueError("El peso del BiLSTM debe estar entre 0 y 1")
     for contrato in (contrato_b, contrato_m):
-        if contrato["sha256_conjunto"] != manifiesto()["archivos"]["fragmentos_desarrollo.csv"]["sha256"]:
-            raise ValueError(f"El contrato de {contrato['modelo']} es de otro conjunto")
         if contrato["etiquetas"] != {"real": 0, "falsa": 1}:
             raise ValueError(f"Etiquetas inesperadas en el contrato de {contrato['modelo']}")
+    manuales = {k: float(v) for k, v in (temperaturas or {}).items() if v is not None}
+    for nombre, valor in manuales.items():
+        if nombre not in ("bilstm", "mbert") or not np.isfinite(valor) or valor <= 0:
+            raise ValueError(f"Temperatura no válida para {nombre}: {valor}")
+    sha_dev = None
+    if desarrollo is not None:
+        sha_dev = manifiesto()["archivos"]["fragmentos_desarrollo.csv"]["sha256"]
 
-    ruta_b = bilstm_final / "predicciones_fuera_de_pliegue.csv"
-    ruta_m = mbert_final / "predicciones_fuera_de_pliegue.csv"
-    semillas = promedio_semillas(ruta_m, desarrollo)
-    if semillas["promediar"]:
-        raise NotImplementedError("Promediar semillas de mBERT compensa: hay que calibrar la media de logits")
     semilla_b = int(contrato_b["semillas"][0])
     semilla_m = semilla_mbert if semilla_mbert is not None else int(contrato_m["semillas"][0])
-    d = emparejar(cargar_fuera_de_pliegue(ruta_b, semilla_b, desarrollo),
-                  cargar_fuera_de_pliegue(ruta_m, semilla_m, desarrollo), desarrollo)
-    y = d.etiqueta_falsa.to_numpy()
+    b = cargar_modelo(ruta_b, semilla_b, contrato_b, desarrollo, sha_dev)
+    m = cargar_modelo(ruta_m, semilla_m, contrato_m, desarrollo, sha_dev)
+    if desarrollo is not None and contrato_m.get("sha256_conjunto") == sha_dev:
+        semillas = promedio_semillas(ruta_m, desarrollo)
+    else:
+        semillas = None
 
-    t_b, t_m = temperatura(d.z_bilstm, y), temperatura(d.z_mbert, y)
-    final = combinar(d.z_bilstm, d.z_mbert, t_b, t_m, peso_bilstm)
-    probs = por_fuente(d, metodos(peso_bilstm))
-    elegido = f"combinacion_bilstm_{peso_bilstm:.2f}"
-    validacion = {nombre: resumen_metodo(d, p) for nombre, p in probs.items()}
+    mismo_conjunto = (contrato_b.get("sha256_conjunto") == contrato_m.get("sha256_conjunto")
+                      and set(b.id_fragmento) == set(m.id_fragmento))
+    if mismo_conjunto:
+        base = desarrollo if (desarrollo is not None and contrato_b.get("sha256_conjunto") == sha_dev) \
+            else b[["id_fragmento"]]
+        d = emparejar(b, m, base)
+        y = d.etiqueta_falsa.to_numpy()
+        # Mismo orden de filas que antes del panel: las temperaturas salen idénticas.
+        t_b_ajustada, t_m_ajustada = temperatura(d.z_bilstm, y), temperatura(d.z_mbert, y)
+    else:
+        t_b_ajustada = temperatura(b.z, b.etiqueta_falsa.to_numpy())
+        t_m_ajustada = temperatura(m.z, m.etiqueta_falsa.to_numpy())
+    t_b = manuales.get("bilstm", t_b_ajustada)
+    t_m = manuales.get("mbert", t_m_ajustada)
 
-    # Regla de discrepancia, con las probabilidades calibradas de cada modelo por fuente.
-    p_b, p_m = probs["bilstm_calibrado"], probs["mbert_calibrado"]
-    regla = {}
-    for umbral in UMBRALES_DISCREPANCIA:
-        marca = discrepancia(p_b, p_m, umbral)
-        p = probs[elegido].copy()
-        p[marca] = np.clip(p[marca], 0.4, 0.6)
-        r = resumen_metodo(d, p)
-        regla[str(umbral)] = {"fragmentos": int(marca.sum()), "f1_articulo": round(r["articulo"]["f1_macro"], 3),
-                              "auc_fragmento": round(r["fragmento"]["auc_roc"], 3),
-                              "brier_fragmento": round(r["fragmento"]["brier"], 3)}
-    regla["sin regla"] = {"fragmentos": 0, "f1_articulo": round(validacion[elegido]["articulo"]["f1_macro"], 3),
-                          "auc_fragmento": round(validacion[elegido]["fragmento"]["auc_roc"], 3),
-                          "brier_fragmento": round(validacion[elegido]["fragmento"]["brier"], 3)}
+    resultado: dict = {"semillas_mbert": semillas, "conjunto_comun": mismo_conjunto}
+    final = None
+    if mismo_conjunto:
+        final = combinar(d.z_bilstm, d.z_mbert, t_b, t_m, peso_bilstm)
+        metodos_usados = metodos(peso_bilstm)
+        elegido = f"combinacion_bilstm_{peso_bilstm:.2f}"
+        if manuales:
+            # Con temperaturas a mano, la combinación elegida usa esas T fijas en cada fuente.
+            elegido = "combinacion_elegida"
+            metodos_usados[elegido] = lambda tr, te: combinar(te.z_bilstm, te.z_mbert, t_b, t_m, peso_bilstm)
+            metodos_usados["bilstm_elegido"] = lambda tr, te: sigmoide(te.z_bilstm / t_b)
+            metodos_usados["mbert_elegido"] = lambda tr, te: sigmoide(te.z_mbert / t_m)
+        probs = por_fuente(d, metodos_usados)
+        validacion = {nombre: resumen_metodo(d, p) for nombre, p in probs.items()}
 
-    marco = d.assign(p=0.0)
-    comparar = {
-        "combinación − mBERT calibrado": ("mbert_calibrado",),
-        "combinación − BiLSTM calibrado": ("bilstm_calibrado",),
-        "combinación − media 70/30 actual": ("media_70_30_actual",),
-    }
-    pareadas = {nombre: bootstrap_pareado(marco.assign(p=probs[elegido]), marco.assign(p=probs[otro]))
-                for nombre, (otro,) in comparar.items()}
+        # Regla de discrepancia, con las probabilidades calibradas de cada modelo por fuente.
+        p_b = probs["bilstm_elegido" if manuales else "bilstm_calibrado"]
+        p_m = probs["mbert_elegido" if manuales else "mbert_calibrado"]
+        regla = {}
+        for umbral in UMBRALES_DISCREPANCIA:
+            marca = discrepancia(p_b, p_m, umbral)
+            p = probs[elegido].copy()
+            p[marca] = np.clip(p[marca], 0.4, 0.6)
+            r = resumen_metodo(d, p)
+            regla[str(umbral)] = {"fragmentos": int(marca.sum()),
+                                  "f1_articulo": round(r["articulo"]["f1_macro"], 3),
+                                  "auc_fragmento": round(r["fragmento"]["auc_roc"], 3),
+                                  "brier_fragmento": round(r["fragmento"]["brier"], 3)}
+        regla["sin regla"] = {"fragmentos": 0,
+                              "f1_articulo": round(validacion[elegido]["articulo"]["f1_macro"], 3),
+                              "auc_fragmento": round(validacion[elegido]["fragmento"]["auc_roc"], 3),
+                              "brier_fragmento": round(validacion[elegido]["fragmento"]["brier"], 3)}
 
+        marco = d.assign(p=0.0)
+        comparar = {
+            "combinación − mBERT calibrado": ("mbert_calibrado",),
+            "combinación − BiLSTM calibrado": ("bilstm_calibrado",),
+            "combinación − media 70/30 actual": ("media_70_30_actual",),
+        }
+        pareadas = {nombre: bootstrap_pareado(marco.assign(p=probs[elegido]), marco.assign(p=probs[otro]))
+                    for nombre, (otro,) in comparar.items()}
+        resultado.update({
+            "validacion_por_fuente": validacion,
+            "metodo_elegido": elegido,
+            "niveles": {"combinacion_por_fuente": tabla_niveles(probs[elegido], y),
+                        "combinacion_final": tabla_niveles(final, y),
+                        "media_70_30_actual": tabla_niveles(probs["media_70_30_actual"], y)},
+            "regla_discrepancia": regla,
+            "comparaciones_pareadas": pareadas,
+            "_predicciones": d.assign(p_bilstm=sigmoide(d.z_bilstm / t_b), p_mbert=sigmoide(d.z_mbert / t_m),
+                                      p_combinada=final, p_combinada_por_fuente=probs[elegido]),
+        })
+    else:
+        # Conjuntos distintos: cada modelo con su temperatura, sobre sus propias predicciones.
+        resultado.update({
+            "validacion_por_modelo": {
+                "bilstm": resumen_metodo(b, sigmoide(b.z / t_b)),
+                "mbert": resumen_metodo(m, sigmoide(m.z / t_m)),
+            },
+            "niveles": {"bilstm": tabla_niveles(sigmoide(b.z / t_b), b.etiqueta_falsa.to_numpy()),
+                        "mbert": tabla_niveles(sigmoide(m.z / t_m), m.etiqueta_falsa.to_numpy())},
+        })
+
+    def entrada(ruta: Path) -> dict:
+        try:
+            nombre = ruta.resolve().relative_to(ROOT.resolve()).as_posix()
+        except ValueError:
+            nombre = str(ruta)
+        return {"ruta": nombre, "sha256": sha256(ruta)}
+
+    conjunto_version = manifiesto()["version"] if sha_dev and contrato_b.get("sha256_conjunto") == sha_dev \
+        else "panel"
     combinacion = {
-        "version": f"{manifiesto()['version']}_conjunta_{dt.date.today():%Y%m%d}",
+        "version": version or f"{conjunto_version}_conjunta_{dt.date.today():%Y%m%d}",
         "metodo": "media_ponderada_logits_calibrados",
         "formula": "p_falsa = sigmoide(w_bilstm * z_bilstm / T_bilstm + w_mbert * z_mbert / T_mbert), "
                    "z = logit_falsa - logit_real",
@@ -343,24 +456,35 @@ def calibrar(bilstm_final: Path, mbert_final: Path, peso_bilstm: float, semilla_
         "semillas": {"bilstm": semilla_b, "mbert": semilla_m},
         "promediar_logits_semillas_mbert": False,
         "contratos": {"bilstm": contrato_b["version"], "mbert": contrato_m["version"]},
-        "entradas": {"bilstm": {"ruta": ruta_b.relative_to(ROOT).as_posix(), "sha256": sha256(ruta_b)},
-                     "mbert": {"ruta": ruta_m.relative_to(ROOT).as_posix(), "sha256": sha256(ruta_m)}},
-        "sha256_conjunto": manifiesto()["archivos"]["fragmentos_desarrollo.csv"]["sha256"],
+        "entradas": {"bilstm": entrada(ruta_b), "mbert": entrada(ruta_m)},
+        "sha256_conjunto": contrato_b.get("sha256_conjunto") if mismo_conjunto
+        else {"bilstm": contrato_b.get("sha256_conjunto"), "mbert": contrato_m.get("sha256_conjunto")},
         "sha256_script": sha256(Path(__file__)),
     }
-    return {
-        "combinacion": combinacion,
-        "semillas_mbert": semillas,
-        "validacion_por_fuente": validacion,
-        "metodo_elegido": elegido,
-        "niveles": {"combinacion_por_fuente": tabla_niveles(probs[elegido], y),
-                    "combinacion_final": tabla_niveles(final, y),
-                    "media_70_30_actual": tabla_niveles(probs["media_70_30_actual"], y)},
-        "regla_discrepancia": regla,
-        "comparaciones_pareadas": pareadas,
-        "_predicciones": d.assign(p_bilstm=sigmoide(d.z_bilstm / t_b), p_mbert=sigmoide(d.z_mbert / t_m),
-                                  p_combinada=final, p_combinada_por_fuente=probs[elegido]),
-    }
+    if manuales or not mismo_conjunto:
+        combinacion["temperaturas_ajustadas"] = {"bilstm": round(t_b_ajustada, 4), "mbert": round(t_m_ajustada, 4)}
+        combinacion["temperaturas_manuales"] = sorted(manuales)
+    return {"combinacion": combinacion, **resultado}
+
+
+def calibrar(bilstm_final: Path, mbert_final: Path, peso_bilstm: float, semilla_mbert: int | None,
+             motivo: str = "") -> dict:
+    """Calibración de los modelos finales de comun_v1_corridas (lo que hace la CLI)."""
+    desarrollo = leer("fragmentos_desarrollo.csv")
+    contrato_b = json.loads((bilstm_final / "contrato.json").read_text("utf-8"))
+    contrato_m = json.loads((mbert_final / "contrato.json").read_text("utf-8"))
+    for contrato in (contrato_b, contrato_m):
+        if contrato["sha256_conjunto"] != manifiesto()["archivos"]["fragmentos_desarrollo.csv"]["sha256"]:
+            raise ValueError(f"El contrato de {contrato['modelo']} es de otro conjunto")
+    ruta_m = mbert_final / "predicciones_fuera_de_pliegue.csv"
+    if promedio_semillas(ruta_m, desarrollo)["promediar"]:
+        raise NotImplementedError("Promediar semillas de mBERT compensa: hay que calibrar la media de logits")
+    resultado = calibrar_predicciones(
+        bilstm_final / "predicciones_fuera_de_pliegue.csv", ruta_m, contrato_b, contrato_m, peso_bilstm,
+        motivo, desarrollo=desarrollo, semilla_mbert=semilla_mbert)
+    # Mismo orden de claves que antes del panel (combinacion, semillas_mbert, validacion…).
+    resultado.pop("conjunto_comun")
+    return resultado
 
 
 def actualizar_contrato(ruta: Path, temperatura_nueva: float, version: str, extra: dict | None = None) -> None:

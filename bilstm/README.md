@@ -48,6 +48,15 @@ Todo se hace con `bilstm/entrenar.py`, desde la raíz del repositorio. Los resul
 | 4 | `bilstm/.venv/bin/python bilstm/entrenar.py decidir B6 B0 --brazo` | Compara dos configuraciones ya evaluadas |
 | 5 | `bilstm/.venv/bin/python bilstm/entrenar.py final --ganador B6 --motivo "…"` | Modelo final con todo el desarrollo, temperatura y `contrato.json`. Sin `--ganador` usa el de la regla |
 
+`reentrenar` repite una receta (`config.json` de una corrida) desde cero con otro conjunto, `comun_v1` o una versión del panel, y deja una versión nueva con contrato provisional. Es lo que lanza **Administración → Entrenamiento** ([backend/docs/ENTRENAMIENTO_PANEL.md](../backend/docs/ENTRENAMIENTO_PANEL.md)):
+
+```bash
+bilstm/.venv/bin/python bilstm/entrenar.py reentrenar --receta datasets/bilstm_produccion/modelo/config.json \
+  --conjunto datasets/comun_v1 --salida datasets/entrenamientos/bilstm/mi_version --version mi_version --pliegues
+```
+
+Con `--pliegues` entrena también F1–F3 y guarda `predicciones_fuera_de_pliegue.csv`: así el modelo se puede calibrar en **Administración → Calibración** ([backend/docs/CALIBRACION_PANEL.md](../backend/docs/CALIBRACION_PANEL.md)).
+
 Las referencias (solo longitud y TF-IDF) se calculan con `datos_comunes/referencias.py`. Opciones del modelo: `bilstm/.venv/bin/python bilstm/entrenar.py corrida --help`.
 
 ## Pruebas

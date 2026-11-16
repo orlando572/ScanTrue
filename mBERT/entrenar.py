@@ -9,6 +9,7 @@ Es el único script de entrenamiento de mBERT. Tiene la misma forma que `bilstm/
   plan         Ejecuta M0 → M3c en orden (§7) y aplica la regla de decisión fijada.
   decidir      Compara dos configuraciones ya evaluadas con la regla de decisión.
   final        Entrena el ganador con todo el desarrollo y escribe el contrato (§8–§9).
+  reentrenar   Entrena desde cero con la receta de otro modelo y otro conjunto (lo usa el panel).
 
 Ejemplos (desde la raíz del repositorio):
   mBERT/.venv/Scripts/python.exe mBERT/entrenar.py corrida --pliegue F1 --configuracion prueba --salida X --epocas 1
@@ -32,6 +33,7 @@ import datetime as dt
 import json
 import math
 import random
+import signal
 import subprocess
 import sys
 import time
@@ -51,6 +53,7 @@ sys.path.insert(0, str(ROOT / "datos_comunes"))
 from comun import CONJUNTO, leer, manifiesto, particiones, sha256  # noqa: E402
 from evaluar_comun import COLUMNAS_PRED, cargar_predicciones, softmax_falsa  # noqa: E402
 import modelo as bases  # noqa: E402
+import reentrenar as reent  # noqa: E402
 
 CORRIDAS = ROOT / "datasets/comun_v1_corridas"
 ETIQUETAS = bases.ETIQUETAS
@@ -238,11 +241,13 @@ def _corrida(args: argparse.Namespace, dispositivo: torch.device, inicio: float)
 
     if dispositivo.type == "cuda":
         torch.cuda.reset_peak_memory_stats()
+    progreso = getattr(args, "progreso", None)  # solo lo pone `reentrenar`
     mejor, mejor_epoca, mejor_estado, historial = -math.inf, 0, None, []
     for epoca in range(1, epocas + 1):
         modelo.train()
         total, n, grupo = 0.0, 0, []
         lotes = len(carga_entreno)
+        avisar = progreso.lotes(epoca, epocas, lotes) if progreso else None
         for i, lote in enumerate(carga_entreno):
             lote = {k: v.to(dispositivo) for k, v in lote.items()}
             etiquetas, pesos = lote.pop("labels"), lote.pop("peso")
@@ -259,7 +264,9 @@ def _corrida(args: argparse.Namespace, dispositivo: torch.device, inicio: float)
                 optimizador.step()
                 planificador.step()
                 optimizador.zero_grad(set_to_none=True)
-        registro = {"epoca": epoca, "perdida": total / n, "lr_final": planificador.get_last_lr()[0]}
+            if avisar:
+                avisar(i + 1)
+        registro ={"epoca": epoca, "perdida": total / n, "lr_final": planificador.get_last_lr()[0]}
         if args.pliegue != "todo":
             f1 = f1_articulo(interna, predecir(modelo, carga_interna, dispositivo))
             registro["f1_macro_articulo_interna"] = f1
@@ -566,6 +573,141 @@ def final(ganador_manual: str | None, motivo: str, corridas: Path = CORRIDAS) ->
     return resumen
 
 
+# =========================================================================== reentrenar (panel)
+
+# Campo del config.json de una corrida → opción de `corrida`. El brazo va aparte.
+RECETA = {"modelo": "modelo", "max_length": "max-length", "lr": "lr", "weight_decay": "weight-decay",
+          "calentamiento": "calentamiento", "lote_efectivo": "lote-efectivo", "microlote": "microlote",
+          "gradient_checkpointing": "gradient-checkpointing"}
+
+
+def opciones_de_receta(receta: dict, brazos: list[str]) -> list[str]:
+    salida = ["--brazo", *brazos] if brazos else []
+    for campo, opcion in RECETA.items():
+        valor = receta.get(campo)
+        if valor is True:
+            salida.append(f"--{opcion}")
+        elif valor is not None and valor is not False:
+            salida += [f"--{opcion}", str(valor)]
+    return salida
+
+
+def predecir_guardado(carpeta: Path, frame: pd.DataFrame, max_length: int, lote: int,
+                      dispositivo: torch.device) -> np.ndarray:
+    """Logits de `frame` con el best_model/ ya guardado (se evalúa lo que se va a desplegar)."""
+    tokenizador = bases.cargar_tokenizador(carpeta)
+    modelo = bases.cargar_modelo(carpeta).to(dispositivo)
+    datos = Fragmentos(frame, tokenizador, max_length)
+    return predecir(modelo, cargador(datos, tokenizador, lote, False, 0), dispositivo)
+
+
+def reentrenar(args: argparse.Namespace) -> dict:
+    """Modelo desde cero (modelo base de la receta) con la receta de otro y el conjunto que se pase.
+
+    Igual que el del BiLSTM: todo el desarrollo, épocas de la receta, evaluación de
+    `fragmentos_prueba.csv` si la hay y contrato con temperatura provisional. Si el modelo base
+    no está en datasets/modelos_base/, lo descarga primero (revisión fijada en modelo.py)."""
+    progreso = reent.Progreso(args.progreso)
+    progreso("preparando")
+    reent.comprobar_conjunto(args.conjunto)
+    receta = reent.leer_receta(args.receta)
+    clave = receta.get("modelo") or (receta.get("modelo_base") or {}).get("clave")
+    if clave not in bases.MODELOS:
+        raise ValueError(f"La receta {args.receta} no es de un transformer conocido ({clave})")
+    receta = {**receta, "modelo": clave}
+    epocas = reent.epocas_de(receta, args.epocas)
+    brazos, omitidos = reent.brazos_disponibles(list(receta.get("brazo") or []), args.conjunto)
+    dispositivo = torch.device(args.dispositivo)
+    if not (bases.carpeta(clave) / "origen.json").exists():
+        progreso("descargando_base", modelo_base=clave)
+        bases.descargar(clave)
+    inicio = time.time()
+    parcial = reent.carpeta_parcial(args.salida)
+    try:
+        comunes = ["--semilla", str(args.semilla), "--configuracion", str(receta["configuracion"]),
+                   "--conjunto", str(args.conjunto), "--dispositivo", args.dispositivo,
+                   *opciones_de_receta(receta, brazos)]
+        pliegues = reent.pliegues_del_conjunto(args.conjunto) if args.pliegues else []
+        corridas = len(pliegues) + 1
+        # Preparar para calibrar: los pliegues, como en `experimento` (época elegida con la
+        # validación interna), y sus predicciones fuera de pliegue.
+        rutas = []
+        for numero, pliegue in enumerate(pliegues, 1):
+            progreso.contexto = {"corrida": numero, "corridas": corridas, "nombre": pliegue}
+            salida = parcial / "pliegues" / f"{pliegue}_s{args.semilla}"
+            pliegue_args = parse_args([
+                "corrida", "--pliegue", pliegue, "--salida", str(salida), "--no-guardar-modelo",
+                "--epocas", str(receta.get("epocas_max", 3)), *comunes,
+            ])
+            pliegue_args.progreso = progreso
+            progreso("entrenando", epoca=0, epocas=pliegue_args.epocas, lote=0, lotes=0)
+            corrida(pliegue_args)
+            rutas.append(salida / "predicciones.csv")
+        if rutas:
+            reent.escribir_fuera_de_pliegue(rutas, args.conjunto, parcial / reent.OOF)
+
+        carpeta = f"todo_s{args.semilla}"
+        corrida_args = parse_args(["corrida", "--pliegue", "todo", "--salida", str(parcial / carpeta),
+                                   "--epocas-fijas", str(epocas), *comunes])
+        corrida_args.progreso = progreso
+        progreso.contexto = {"corrida": corridas, "corridas": corridas, "nombre": "final"} if pliegues else {}
+        progreso("entrenando", epoca=0, epocas=epocas, lote=0, lotes=0)
+        resultado = corrida(corrida_args)
+        progreso.contexto = {}
+        modelo_dir = parcial / carpeta / "best_model"
+        max_length = int(corrida_args.max_length)
+
+        prueba = reent.leer_prueba(args.conjunto)
+        if prueba is not None:
+            progreso("evaluando", fragmentos=len(prueba))
+            logits = predecir_guardado(modelo_dir, prueba, max_length,
+                                       max(corrida_args.microlote, 16), dispositivo)
+            reent.escribir_json(parcial / "metricas.json",
+                                reent.metricas_prueba("mbert", args.version, prueba, logits))
+
+        progreso("guardando")
+        info = bases.resumen(clave, bases.carpeta(clave))
+        relativa = f"{carpeta}/best_model"
+        contrato = {
+            "modelo": "mbert",
+            "version": args.version,
+            "eleccion": {"ganador_regla": receta["configuracion"], "manual": False,
+                         "origen": "reentrenar"},
+            "modelo_base": {k: info[k] for k in ("clave", "hub_id", "revision", "sha256")},
+            "etiquetas": ETIQUETAS,
+            "max_tokens": max_length,
+            "entrada": "texto_unico",
+            "temperatura": 1.0, "temperatura_provisional": True,
+            "nota_temperatura": "Sin calibrar: modelo reentrenado (subcomando reentrenar). Falta la "
+                                "calibración conjunta antes de usarlo en el backend.",
+            "umbral_falsa": 0.5,
+            "semillas": [args.semilla], "promediar_logits_semillas": False,
+            "epocas": epocas,
+            "checkpoints": {f"s{args.semilla}": {"ruta": reent.ruta_contrato(args.salida, relativa),
+                                                 "sha256": sha256(modelo_dir / "model.safetensors")}},
+            "tokenizador": {"ruta": reent.ruta_contrato(args.salida, relativa),
+                            "sha256_tokenizer_json": sha256(modelo_dir / "tokenizer.json")},
+            "sha256_conjunto": manifiesto(args.conjunto)["archivos"]["fragmentos_desarrollo.csv"]["sha256"],
+            "procedencia": "entrenamiento.json",
+        }
+        if pliegues:
+            contrato["predicciones_fuera_de_pliegue"] = reent.OOF
+        reent.escribir_json(parcial / "entrenamiento.json", {
+            **reent.procedencia(args.conjunto, args.receta, receta, args.semilla, epocas, brazos, omitidos,
+                                time.time() - inicio, pliegues),
+            "perdida_final": resultado["historial"][-1]["perdida"] if resultado["historial"] else None,
+            "pico_cuda_gb": resultado.get("pico_cuda_gb"),
+        })
+        reent.escribir_json(parcial / "contrato.json", contrato)
+        reent.cerrar(parcial, args.salida)
+    except BaseException:
+        reent.descartar(parcial)
+        raise
+    progreso("terminado", version=args.version, salida=str(args.salida))
+    return {"version": args.version, "salida": str(args.salida), "epocas": epocas,
+            "brazos_omitidos": omitidos, "evaluada": prueba is not None, "pliegues": pliegues}
+
+
 # =========================================================================== línea de comandos
 
 def opciones_de_corrida(parser: argparse.ArgumentParser) -> None:
@@ -614,6 +756,17 @@ def parse_args(argv=None) -> argparse.Namespace:
     p = sub.add_parser("final", help="modelo final y contrato")
     p.add_argument("--ganador", help="ID del registro (p. ej. M1a) que sustituye al ganador de la regla")
     p.add_argument("--motivo", default="", help="motivo de la elección manual (obligatorio con --ganador)")
+    p = sub.add_parser("reentrenar", help="desde cero con la receta de otro modelo y otro conjunto")
+    p.add_argument("--receta", type=Path, required=True, help="config.json de la corrida que se repite")
+    p.add_argument("--conjunto", type=Path, default=CONJUNTO)
+    p.add_argument("--salida", type=Path, required=True, help="carpeta del modelo nuevo (no debe existir)")
+    p.add_argument("--version", required=True, help="versión del contrato nuevo")
+    p.add_argument("--epocas", type=int, default=0, help="por defecto, las épocas fijas de la receta")
+    p.add_argument("--semilla", type=int, default=42)
+    p.add_argument("--dispositivo", choices=("cuda", "cpu"), default="cuda")
+    p.add_argument("--progreso", action="store_true", help="líneas JSON de progreso para el panel")
+    p.add_argument("--pliegues", action="store_true",
+                   help="entrena también F1–F3 y guarda sus predicciones fuera de pliegue (para calibrar)")
     # Las opciones que `experimento` no conoce son las de `corrida` (p. ej. --modelo beto).
     args, resto = parser.parse_known_args(argv)
     if args.comando != "experimento" and resto:
@@ -638,6 +791,10 @@ def main(argv=None) -> None:
         r = fila(args.referencia, cargar(args.referencia, args.corridas))
         print(json.dumps({"candidata": c, "referencia": r, "decision": decidir(c, r, args.brazo)},
                          ensure_ascii=False, indent=2))
+    elif args.comando == "reentrenar":
+        # Cancelar desde el panel envía SIGTERM: así se borra la carpeta parcial antes de salir.
+        signal.signal(signal.SIGTERM, lambda *_: sys.exit(143))
+        print(json.dumps(reentrenar(args), ensure_ascii=False))
     else:
         final(args.ganador, args.motivo, args.corridas)
 
