@@ -111,7 +111,7 @@ test('rechaza un fragmento marcado en otra página y conserva la fuente', async 
   assert.equal(selection.text, 'Uno\n\nDos');
   assert.equal(selection.url, 'https://ejemplo.test/noticia');
   // Aviso en la página (cartel junto al texto) y en el panel.
-  assert.deepEqual(plain(worker.toTabs.at(-1)), { tabId: 3, type: 'SCANTRUE_NOTICE', level: 'error', title: 'No se añadió', text: 'Este texto es de otra página. Solo se analiza una noticia a la vez.' });
+  assert.deepEqual(plain(worker.toTabs.at(-1)), { tabId: 3, type: 'SCANTRUE_NOTICE', level: 'error', title: 'No se añadió', text: 'Ese texto es de otra noticia. Solo se analiza una a la vez.' });
   assert.equal(worker.values.selectionNotice.kind, 'rejected');
   assert.equal(worker.values.selectionNotice.reason, 'other_page');
 });
@@ -153,7 +153,7 @@ test('avisa si los fragmentos caen en bloques article distintos de la misma pág
   assert.equal(worker.values.pendingSelection.mixedArticles, false);
   await worker.send({ type: 'SELECTION_CAPTURED', text: 'Tres', article: 2 }, page);
   assert.equal(worker.values.pendingSelection.mixedArticles, true);
-  assert.ok(worker.toTabs.some((message) => message.type === 'SCANTRUE_NOTICE' && message.level === 'warn' && /otra nota/.test(message.text)));
+  assert.ok(worker.toTabs.some((message) => message.type === 'SCANTRUE_NOTICE' && message.level === 'warn' && /otra noticia/.test(message.text)));
 });
 
 test('si la pestaña pasa a otra página con fragmentos, termina el modo y deja un aviso', async () => {

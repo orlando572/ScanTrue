@@ -9,12 +9,12 @@ import MetricsScreen from './screens/MetricsScreen.jsx';
 import AccountScreen from './screens/AccountScreen.jsx';
 import RegisterScreen from './screens/RegisterScreen.jsx';
 import LoginScreen from './screens/LoginScreen.jsx';
-import ScreenHeader from './components/ScreenHeader.jsx';
+import ScreenHeader, { ChevronIcon } from './components/ScreenHeader.jsx';
 import { LedStrip, ScanEye, SegmentTrack } from './components/HudDecor.jsx';
 import { LoaderSweep } from './components/HudLoader.jsx';
 // El mismo fondo interactivo que la web.
 import VectorField from '../../../web/src/components/VectorField.jsx';
-import { countWords, hasSelectionText, meterState, presentFragments } from './selection-presentation.js';
+import { countWords, hasSelectionText, meterState, presentFragments, resultForSelection } from './selection-presentation.js';
 import { keepsSource, sourceOf } from '../shared/selection.js';
 import { presentServices } from './service-presentation.js';
 import scanTrueMark from './assets/scantrue-mark.svg';
@@ -57,6 +57,8 @@ const serviceLabels = {
   unknown: 'No se pudo confirmar el estado del servicio.',
 };
 const serviceCodes = { checking: 'Conectando…', available: 'En línea', degraded: 'Servicio limitado', unavailable: 'Sin conexión', unknown: 'Estado desconocido' };
+// Rótulo sobre el ojo del inicio: dice en palabras si se puede analizar ahora.
+const homeStatus = { checking: 'Conectando…', available: 'Listo para analizar', degraded: 'Funciona en parte', unavailable: 'Sin conexión', unknown: 'Estado sin confirmar' };
 
 // Aviso junto a la acción principal, solo cuando el servicio no está disponible.
 function ServiceAlert({ health, onRetry }) {
@@ -69,14 +71,16 @@ function ServiceAlert({ health, onRetry }) {
 }
 
 // Hay fragmentos de otra página: no se mezclan. Se elige entre empezar de nuevo aquí o conservarlos.
-// Alerta llamativa del panel: banda de advertencia, borde grueso y destello al aparecer.
-// Al mostrarse, el panel se desplaza hasta ella. `timedMs` la cierra sola con cuenta atrás.
+// Alerta del panel con el tono según la gravedad: coral para errores, ámbar para decisiones
+// (banda de advertencia, borde grueso y destello) e `info` para avisos sin peligro (violeta, sin
+// banda ni destello). Al mostrarse, el panel se desplaza hasta ella. `timedMs` la cierra sola.
 function Alarm({ title, tone = 'coral', timedMs, children }) {
   const element = useRef(null);
+  const info = tone === 'info';
   useEffect(() => { element.current?.scrollIntoView?.({ block: 'nearest' }); }, []);
-  return <div ref={element} className={`hud-panel hud-panel--alarm${tone === 'amber' ? ' hud-panel--alarm-amber' : ''}${timedMs ? ' notice-timed' : ''} mt-4`} style={timedMs ? { '--notice-ms': `${timedMs}ms` } : undefined} role="alert">
-    <div className="hazard-band" aria-hidden="true" />
-    <p className="alarm-title"><span aria-hidden="true">▲ </span>{title}</p>
+  return <div ref={element} className={`hud-panel hud-panel--alarm${tone === 'amber' ? ' hud-panel--alarm-amber' : info ? ' hud-panel--alarm-info' : ''}${timedMs ? ' notice-timed' : ''} mt-4`} style={timedMs ? { '--notice-ms': `${timedMs}ms` } : undefined} role={info ? 'status' : 'alert'}>
+    {!info && <div className="hazard-band" aria-hidden="true" />}
+    <p className="alarm-title">{!info && <span aria-hidden="true">▲ </span>}{title}</p>
     {children}
     {timedMs ? <span className="notice-timer" aria-hidden="true" /> : null}
   </div>;
@@ -84,31 +88,32 @@ function Alarm({ title, tone = 'coral', timedMs, children }) {
 
 function ConflictAlert({ conflict, busy, onRestart, onKeep }) {
   if (!conflict) return null;
+  const one = conflict.count === 1;
   const from = conflict.domain ? ` de ${conflict.domain}` : ' de otra página';
-  return <Alarm title="Esta es otra página">
-    <p className="mt-2 text-sm leading-5 text-ink">Tienes {conflict.count} {conflict.count === 1 ? 'fragmento' : 'fragmentos'}{from}. Solo se analiza una noticia a la vez.</p>
-    <button type="button" className="primary-button mt-3" onClick={onRestart} disabled={busy}>Empezar de nuevo aquí</button>
-    <button type="button" className="secondary-button mt-2" onClick={onKeep} disabled={busy}>Conservar lo que tengo</button>
+  return <Alarm title="Ya tienes texto de otra noticia" tone="amber">
+    <p className="mt-2 text-sm leading-5 text-ink">Tienes {conflict.count} {one ? 'fragmento' : 'fragmentos'}{from}. Solo se analiza una noticia a la vez.</p>
+    <button type="button" className="primary-button mt-3" onClick={onRestart} disabled={busy}>{one ? 'Borrarlo y empezar aquí' : 'Borrarlos y empezar aquí'}</button>
+    <button type="button" className="secondary-button mt-2" onClick={onKeep} disabled={busy}>{conflict.domain ? `Seguir con ${conflict.domain}` : 'Seguir con la anterior'}</button>
   </Alarm>;
 }
 
 const rejectionTexts = {
-  other_page: 'Ese texto es de otra página. Solo se analiza una noticia a la vez.',
-  duplicate: 'Ese texto ya estaba marcado.',
+  other_page: 'Ese texto es de otra noticia. Solo se analiza una a la vez.',
+  duplicate: 'Ese texto ya está en la lista.',
 };
 
 // Avisos de la selección que llegan del servicio: la pestaña cambió de página, se rechazó un
 // fragmento (se cierra solo) o se está mirando otra pestaña con el modo activo.
 function SelectionNotice({ notice, selectionMode, onDismiss, onStop }) {
-  if (notice?.kind === 'navigated') return <Alarm title="Cambiaste de página">
-    <p className="mt-2 text-sm leading-5 text-ink">La selección terminó. {notice.count === 1 ? 'Tu fragmento' : `Tus ${notice.count} fragmentos`}{notice.domain ? ` de ${notice.domain}` : ''} {notice.count === 1 ? 'sigue' : 'siguen'} aquí: puedes analizarlos o vaciar para empezar con otra noticia.</p>
+  if (notice?.kind === 'navigated') return <Alarm title="Saliste de la noticia" tone="info">
+    <p className="mt-2 text-sm leading-5 text-ink">La selección terminó. {notice.count === 1 ? 'Tu fragmento' : `Tus ${notice.count} fragmentos`}{notice.domain ? ` de ${notice.domain}` : ''} {notice.count === 1 ? 'sigue' : 'siguen'} aquí.</p>
     <button type="button" className="secondary-button mt-3" onClick={onDismiss}>Entendido</button>
   </Alarm>;
   if (notice?.kind === 'rejected') return <Alarm key={notice.at} title="No se añadió" timedMs={REJECTED_MS}>
     <p className="mt-2 text-sm leading-5 text-ink">{rejectionTexts[notice.reason] ?? 'Ese texto no se pudo añadir.'}</p>
   </Alarm>;
   if (notice?.kind === 'other_tab' && selectionMode) return <Alarm title="Estás en otra pestaña" tone="amber">
-    <p className="mt-2 text-sm leading-5 text-ink">La selección sigue en la otra pestaña{notice.domain ? ` (${notice.domain})` : ''}. Vuelve a ella, o termina la selección para analizar esta página.</p>
+    <p className="mt-2 text-sm leading-5 text-ink">Solo se marca texto en la pestaña{notice.domain ? ` de ${notice.domain}` : ' anterior'}. Vuelve a ella para seguir.</p>
     <button type="button" className="secondary-button mt-3" onClick={onStop}>Terminar selección</button>
   </Alarm>;
   return null;
@@ -132,21 +137,21 @@ function RemoveIcon() {
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square"><path d="M6 6l12 12M18 6 6 18" /></svg>;
 }
 
-function SelectionScreen({ selection, error, selecting, selectionMode, submitting, notice, conflict, onAnalyze, onAddText, onRestart, onKeep, onDismissNotice, onStop, onEdit, onBack, onRemoveFragment, onClear }) {
+function SelectionScreen({ selection, error, selecting, selectionMode, submitting, notice, conflict, hasResult, onViewResult, onAnalyze, onAddText, onRestart, onKeep, onDismissNotice, onStop, onEdit, onBack, onRemoveFragment, onClear }) {
   const domain = selectionDomain(selection.url);
   const fragments = presentFragments(selection);
   const meter = meterState(countWords(selection.text));
   return <>
-    <ScreenHeader title="Texto para analizar" onBack={onBack}>
+    <ScreenHeader title="Texto para analizar" onBack={onBack} action={hasResult && <button type="button" className="hud-back hud-forward" aria-label="Ver resultado" title="Ver resultado" onClick={onViewResult}><ChevronIcon /></button>}>
       {selectionMode && <span className="live-chip mt-2" role="status"><span aria-hidden="true">Seleccionando</span><span className="sr-only">Modo selección activo en la página</span></span>}
     </ScreenHeader>
     {domain
       ? <p className="hud-readout mt-4">Origen: <b>{domain}</b></p>
-      : hasSelectionText(selection) && <p className="hud-readout mt-4">Sin página de origen: hay texto escrito o pegado.</p>}
+      : hasSelectionText(selection) && <p className="hud-readout mt-4">Texto escrito o pegado a mano.</p>}
     {/* Las alertas van arriba, bajo el título: es lo primero que se ve. */}
     <ConflictAlert conflict={conflict} busy={selecting || submitting} onRestart={onRestart} onKeep={onKeep} />
     <SelectionNotice notice={notice} selectionMode={selectionMode} onDismiss={onDismissNotice} onStop={onStop} />
-    {selection.mixedArticles && <p className="alarm-note mt-4" role="status"><span aria-hidden="true">▲ </span>Parecen notas distintas de esta página. Revisa que todo sea de la misma noticia.</p>}
+    {selection.mixedArticles && <p className="alarm-note mt-4" role="status"><span aria-hidden="true">▲ </span>Parece que hay texto de dos noticias distintas. Quita lo que no sea de la misma.</p>}
 
     <div className={`word-meter word-meter--${meter.level} mt-4`}>
       <div className="flex items-baseline justify-between gap-2">
@@ -154,20 +159,28 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
         <span className="hud-readout"><b>{meter.words}</b> palabras</span>
       </div>
       <SegmentTrack value={meter.value} segments={24} marker={meter.marker} />
-      <p className="mt-1.5 text-[12px] leading-[18px] text-muted">{meter.message}</p>
+      <p id="word-meter-message" className="mt-1.5 text-[12px] leading-[18px] text-muted">{meter.message}</p>
     </div>
 
     {/* La acción principal va junto al medidor: no hay que bajar hasta el final de la lista. */}
     {error && <p className="hud-alert mt-3 text-[12px] leading-[18px]" role="alert">{error}</p>}
-    <button type="button" className="primary-button mt-4" onClick={onAnalyze} disabled={submitting || selecting || !selection.text.trim()}>{submitting ? 'Iniciando análisis…' : 'Analizar'}</button>
-    <p className="mt-2 text-[11px] leading-4 text-muted">Al analizar, el texto y su resultado se publican en la web de ScanTrue, sin identificarte.</p>
+    {/* Ya analizado y sin cambios: se vuelve al resultado en lugar de analizar otra vez (evita duplicados). */}
+    {hasResult
+      ? <>
+        <button type="button" className="primary-button mt-4" onClick={onViewResult}>Ver resultado<span className="size-5" aria-hidden="true"><ChevronIcon /></span></button>
+        <p className="mt-2 text-[11px] leading-4 text-muted">Ya analizaste este texto. Si lo cambias, podrás analizarlo de nuevo.</p>
+      </>
+      : <>
+        <button type="button" className="primary-button mt-4" onClick={onAnalyze} disabled={submitting || selecting || !meter.ready} aria-describedby="word-meter-message">{submitting ? 'Iniciando análisis…' : 'Analizar'}</button>
+        <p className="mt-2 text-[11px] leading-4 text-muted">Se publicará en la web de ScanTrue, sin tu nombre.</p>
+      </>}
 
     <div className="input-buffer-meta mt-5 items-center">
       <span className="hud-code hud-code--accent" aria-hidden="true">Fragmentos · {String(fragments.length).padStart(2, '0')} marcados</span>
       <button type="button" className="clear-link" aria-label="Vaciar la selección" title="Empezar de cero" onClick={onClear} disabled={submitting || !selection.text.trim()}>Vaciar</button>
     </div>
     {fragments.length === 0
-      ? <p className="fragment-empty">{selectionMode ? 'Selecciona texto en la página para añadirlo aquí.' : 'Aún no hay fragmentos. Pulsa «Seleccionar más texto» o escribe en «Editar texto completo».'}</p>
+      ? <p className="fragment-empty">{selectionMode ? 'Selecciona texto en la página para añadirlo aquí.' : 'Aún no hay texto. Pulsa «Seleccionar texto» o escríbelo en «Escribir o pegar texto».'}</p>
       : <ul className="fragment-list">{fragments.map((fragment) => <li key={fragment.id} className="fragment-item">
         <span className="fragment-number" aria-hidden="true">#{fragment.number}</span>
         <p className="fragment-text">{fragment.text}</p>
@@ -175,13 +188,13 @@ function SelectionScreen({ selection, error, selecting, selectionMode, submittin
       </li>)}</ul>}
 
     <details className="metrics-details mt-4">
-      <summary>Editar texto completo<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"><path d="m6 9 6 6 6-6" /></svg></summary>
+      <summary>Escribir o pegar texto<svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="square"><path d="m6 9 6 6 6-6" /></svg></summary>
       <div className="border-t border-line p-3">
         <textarea className="selection-preview text-editor w-full resize-none overflow-y-auto text-sm leading-5" aria-label="Texto para analizar" placeholder="Escribe o pega texto aquí" value={selection.text} onChange={(event) => onEdit(event.target.value)} disabled={submitting || selecting} />
       </div>
     </details>
 
-    {!selectionMode && !conflict && <button type="button" className="secondary-button mt-5" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : 'Seleccionar más texto'}</button>}
+    {!selectionMode && !conflict && <button type="button" className="secondary-button mt-5" onClick={onAddText} disabled={submitting || selecting}>{selecting ? 'Preparando selección…' : fragments.length ? 'Seleccionar más texto' : 'Seleccionar texto'}</button>}
   </>;
 }
 
@@ -313,6 +326,8 @@ export default function App() {
         if (pendingChange.updatedBy === 'page') setStack(['P01', 'P02']);
       }
       const next = changes.analysisOperation?.newValue;
+      // Si se borra (el texto cambió o se empezó de nuevo), no se guarda en memoria un resultado viejo.
+      if ('analysisOperation' in changes && !next) setOperation((previous) => previous?.status === 'working' ? previous : null);
       if (!next) return;
       setOperation(next);
       if (next.status === 'completed') setStack(resultStack());
@@ -441,7 +456,10 @@ export default function App() {
   };
 
   const analyze = async () => {
-    if (analysisLock.current || !selection?.text?.trim()) return;
+    // Bajo el mínimo de palabras el servidor lo rechazaría: el botón ya está bloqueado.
+    if (analysisLock.current || !meterState(countWords(selection?.text ?? '')).ready) return;
+    // El mismo texto ya tiene resultado: se muestra en lugar de crear un análisis duplicado.
+    if (resultForSelection(operation, selectionRef.current)) { open('P05'); return; }
     analysisLock.current = true;
     setSubmitting(true);
     setAnalysisError('');
@@ -535,13 +553,13 @@ export default function App() {
     <main className={`flex flex-1 flex-col px-5 ${current === 'P01' ? 'pb-5 pt-2' : 'pb-6 pt-6'}${current === 'P01' || current === 'P02' ? ' screen-boot' : ''}`}>
       {current === 'P01' ? <>
         <div className="home-core">
-          <span className="hud-code" aria-hidden="true">Consola de análisis de noticias</span>
+          <span className={`hud-code home-status home-status--${health}`} aria-hidden="true">{homeStatus[health]}</span>
           <ScanEye />
         </div>
         <div className="hud-panel hud-panel--accent hud-panel--mark">
           <h1 className="screen-title">¿Dudas de una noticia?</h1>
-          <p className="mt-2 text-sm leading-5 text-muted">Marca el titular y unos párrafos de la noticia. Te mostramos si se parece más a una noticia falsa o a una real.</p>
-          <p className="mt-2 text-[12px] leading-[18px] text-muted opacity-80">Es una orientación, no una verificación de los hechos.</p>
+          <p className="mt-2 text-sm leading-5 text-muted">Selecciona el titular y algunos párrafos de la noticia, y te decimos si podría ser una noticia falsa o real.</p>
+          <p className="mt-2 text-[12px] leading-[18px] text-muted opacity-80">Es una orientación: no comprueba si los hechos son ciertos.</p>
           <ServiceAlert health={health} onRetry={refreshHealth} />
           <button type="button" className="primary-button mt-5" onClick={() => startSelection()} disabled={selecting}>{selecting ? 'Preparando selección…' : 'Escoger texto'}</button>
           <ConflictAlert conflict={conflict} busy={selecting} onRestart={() => startSelection(true)} onKeep={() => { setConflict(null); open('P02'); }} />
@@ -552,7 +570,7 @@ export default function App() {
         {current !== 'P02' && current !== 'P04' && current !== 'P05' && current !== 'P06' && current !== 'P07' && current !== 'P08' && current !== 'P09' && current !== 'P11' && current !== 'P12' && current !== 'P13' && <button type="button" className="text-link mb-5 flex w-fit items-center gap-1.5" onClick={back}><span className="size-5"><Icon name="back" /></span>Volver</button>}
         {stack.includes('P07') && <div hidden={current !== 'P07'}><HistoryScreen deletedAnalysis={deletedAnalysis} onBack={back} onOpen={(id) => { historyScroll.current = popupScroll.current?.scrollTop ?? 0; setHistoryDetail(null); setSelectedAnalysisId(id); open('P08'); }} onChooseText={() => setStack(['P01'])} /></div>}
         {stack.includes('P08') && selectedAnalysisId && <div hidden={current !== 'P08'}><HistoryDetailScreen key={selectedAnalysisId} id={selectedAnalysisId} onBack={back} onLoaded={setHistoryDetail} onDeletingChange={setDetailDeleting} onBreakdown={(item) => { setHistoryDetail(item); open('P06'); }} onDeleted={(id) => { setDeletedAnalysis({ id }); setHistoryDetail(null); setSelectedAnalysisId(null); back(); }} /></div>}
-        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} notice={selectionNotice} conflict={conflict} onAnalyze={analyze} onAddText={() => startSelection()} onRestart={() => startSelection(true)} onKeep={() => setConflict(null)} onDismissNotice={dismissNotice} onStop={stopSelectionMode} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
+        {current === 'P02' && selection ? <SelectionScreen selection={selection} error={analysisError || selectionError} selecting={selecting} selectionMode={selectionMode} submitting={submitting} notice={selectionNotice} conflict={conflict} hasResult={resultForSelection(operation, selection)} onViewResult={() => open('P05')} onAnalyze={analyze} onAddText={() => startSelection()} onRestart={() => startSelection(true)} onKeep={() => setConflict(null)} onDismissNotice={dismissNotice} onStop={stopSelectionMode} onEdit={editSelection} onBack={back} onRemoveFragment={removeFragment} onClear={clearSelection} />
           : current === 'P04' ? <AnalysisScreen operation={operation} onHistory={() => open('P07')} onBack={() => setStack(['P01', 'P02'])} onRetry={analyze} />
           : current === 'P05' ? <ResultScreen result={operation?.result} url={selection?.url} text={selection?.text} onBack={back} onBreakdown={() => open('P06')} onStartOver={startOver} clearing={clearing} error={resultError} />
           : current === 'P06' ? <BreakdownScreen result={stack.at(-2) === 'P08' ? historyDetail : operation?.result} onBack={back} />

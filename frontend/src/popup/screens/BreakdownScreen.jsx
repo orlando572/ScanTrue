@@ -13,7 +13,7 @@ function ModelCard({ model }) {
     </div>
     {percentage !== null ? <>
       <div className="breakdown-model-result">
-        <p className="breakdown-model-percentage" aria-label={`${percentage} de salida para falsa de ${name}`}>{percentage}</p>
+        <p className="breakdown-model-percentage" aria-label={`${percentage} de probabilidad de ser falsa según ${name}`}>{percentage}</p>
         <p className="breakdown-model-caption">{level}</p>
       </div>
       <SegmentTrack value={value} />

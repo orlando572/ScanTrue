@@ -90,17 +90,19 @@ function LevelGlyph({ icon }) {
 export default function ResultGaugePanel({ level, percentage, className = '' }) {
   const rank = level ? tones.indexOf(level.tone) : -1;
   const counted = useCountUp(level?.value ?? 0);
+  // Cifras del valor final: fijan el tamaño y el ancho del número (no se mueve mientras cuenta).
+  const digits = String(Math.round(level?.value ?? 0)).length;
   return <div className={`result-panel hud-panel ${className} ${level ? `result-panel--gauge result-panel--${level.tone}` : 'result-panel--empty'}`}>
     {level ? <>
       <div className="result-summary">
         <div className="result-gauge">
           <Dial value={level.value} />
-          {/* Solo las cifras se centran en el dial; el «%» cuelga a la derecha. */}
-          <span className={`result-gauge-value${level.value === 100 ? ' result-gauge-value--wide' : ''}`} aria-label={`${percentage} de salida para falsa`}>
-            <span aria-hidden="true">{counted}<small>%</small></span>
+          {/* Cifras y «%» forman un bloque centrado en el dial; su tamaño depende de las cifras. */}
+          <span className={`result-gauge-value result-gauge-value--d${digits}`} aria-label={`${percentage} de probabilidad de ser falsa`}>
+            <span aria-hidden="true"><span className="result-gauge-digits" style={{ minWidth: `${digits}ch` }}>{counted}</span><small>%</small></span>
           </span>
           {/* Bajo la regla 0/100, en el hueco inferior del arco: no pisa los segmentos. */}
-          <span className="result-gauge-caption" aria-hidden="true">Salida para falsa</span>
+          <span className="result-gauge-caption" aria-hidden="true">Probabilidad<br />de ser falsa</span>
         </div>
         <div className="result-verdict">
           <LevelGlyph icon={level.icon} />

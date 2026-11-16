@@ -266,9 +266,9 @@ function pageUrl(sender) {
 
 // Carteles que la página muestra junto al texto marcado.
 const pageNotices = {
-  other_page: { level: 'error', title: 'No se añadió', text: 'Este texto es de otra página. Solo se analiza una noticia a la vez.' },
-  duplicate: { level: 'error', title: 'No se añadió', text: 'Ese texto ya está marcado.' },
-  mixed: { level: 'warn', title: 'Revisa', text: 'Parece otra nota de esta misma página.' },
+  other_page: { level: 'error', title: 'No se añadió', text: 'Ese texto es de otra noticia. Solo se analiza una a la vez.' },
+  duplicate: { level: 'error', title: 'No se añadió', text: 'Ese texto ya está en la lista.' },
+  mixed: { level: 'warn', title: 'Revisa', text: 'Parece de otra noticia de esta página.' },
 };
 
 // Devuelve el motivo del rechazo o `null` si el fragmento se guardó.

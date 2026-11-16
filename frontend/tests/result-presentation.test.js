@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { presentInsights, presentResult, presentResultLevel } from '../src/popup/result-presentation.js';
+import { RESULT_NOTE, presentInsights, presentResult, presentResultLevel } from '../src/popup/result-presentation.js';
 
 test('P05 muestra el unificado recibido', () => {
   assert.deepEqual(presentResult({
@@ -89,7 +89,12 @@ test('P05 sitúa los modelos en el espectro y resume que coinciden', () => {
     text: 'Uno dos tres\ncuatro.',
   });
   assert.equal(Object.hasOwn(insights, 'chain'), false);
-  assert.equal(insights.note, 'Salida experimental.');
+  assert.equal(insights.note, RESULT_NOTE);
+});
+
+test('la nota del resultado es propia y clara, venga o no la nota técnica de la API', () => {
+  assert.equal(presentInsights({ resultados: { bilstm: ok('falsa', 0.8) } }).note, RESULT_NOTE);
+  assert.doesNotMatch(RESULT_NOTE, /clasificador|salida|experimental/i);
 });
 
 test('P05 resume que los modelos discrepan', () => {
