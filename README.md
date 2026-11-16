@@ -31,6 +31,20 @@ Los modelos de producción están en `datasets/bilstm_produccion/modelo/` y `dat
 
 ## Ejecutar localmente 🚀
 
+### Arranque rápido
+
+Con las dependencias ya instaladas (pasos 1 y 2 de abajo), un solo comando levanta Anvil, la API y la web:
+
+```bash
+./levantar.sh                   # Ctrl+C lo para todo
+./levantar.sh --sin-blockchain  # sin Anvil
+./levantar.sh --sin-web         # solo Anvil y la API (para la extensión)
+```
+
+Antes de arrancar, el script comprueba el entorno, `backend/.env`, los pesos de mBERT y el contrato desplegado. Arranca Anvil con su estado guardado, espera a que cada servicio responda y reutiliza el que ya esté escuchando en su puerto. Los registros quedan en `backend/.local/logs/`. Web: `http://127.0.0.1:5174`. Administración: `http://127.0.0.1:5174/admin`.
+
+### Paso a paso
+
 Desde la raíz del repositorio:
 
 1. Descarga los pesos de mBERT:
