@@ -1,6 +1,9 @@
 """Panel de administración: resumen, casos y revisión, datasets y versiones de modelos."""
 
+import asyncio
 from datetime import date
+import os
+import uuid
 from typing import Literal
 from uuid import UUID
 
@@ -11,8 +14,6 @@ from backend.api.dependencies import admin_user, service_repository
 from backend.repositories.filters import MAX_QUERY_LENGTH, AnalysisFilters
 from backend.repositories.supabase import SupabaseDataError, SupabaseRepository
 from backend.schemas.admin import (
-    ActivationEntry,
-    ActivationRequest,
     AdminCaseDetail,
     AdminCasePage,
     AdminIdentity,
@@ -22,18 +23,23 @@ from backend.schemas.admin import (
     DatasetDetail,
     DatasetSummary,
     DatasetVersion,
-    DeploymentInfo,
-    DeploymentModel,
+    DeploymentHistoryEntry,
+    DeployRequest,
+    ModelEntryInfo,
     ModelsResponse,
+    RetireRequest,
     Review,
     ReviewRequest,
     VisibilityUpdate,
+    Weights,
 )
 from backend.services.datasets import (
     LegacyVersionError, build_dataset, build_manifest, comun_index, export_csv,
     export_standard_zip, preview_case,
 )
-from backend.services.model_versions import MODELS, ModelVersionError, ModelVersionManager
+from backend.services.model_registry import (
+    MAX_ZIP_BYTES, TYPES, ModelDeploymentManager, ModelVersionError, default_weights,
+)
 
 
 router = APIRouter(prefix="/admin", dependencies=[Depends(admin_user)])
@@ -54,7 +60,7 @@ def summary(
     data = repository.admin_summary()
     versions = getattr(request.app.state, "model_versions", None)
     return data.model_copy(
-        update={"despliegue_activo": getattr(versions, "current_version", None)}
+        update={"despliegue_activo": versions.summary() if versions is not None else None}
     )
 
 
@@ -300,63 +306,65 @@ def delete_dataset(
     return {"eliminado": True}
 
 
-# ── Versiones de modelos ────────────────────────────────────────────
+# ── Modelos desplegados ─────────────────────────────────────────────
 
 
-def _versions(request: Request) -> ModelVersionManager:
+def _versions(request: Request) -> ModelDeploymentManager:
     manager = getattr(request.app.state, "model_versions", None)
     if manager is None:
         raise HTTPException(
             status_code=503,
             detail={
                 "codigo": "versiones_no_disponibles",
-                "mensaje": "El gestor de versiones de modelos no está disponible.",
+                "mensaje": "El gestor de modelos no está disponible.",
             },
         )
     return manager
 
 
-def _models(manager: ModelVersionManager, repository: SupabaseRepository) -> ModelsResponse:
+def _models(request: Request, repository: SupabaseRepository) -> ModelsResponse:
+    manager = _versions(request)
     try:
         usage = repository.model_version_usage()
     except SupabaseDataError:
         usage = {}
-    versions = []
-    for deployment in manager.deployments():
-        combination = deployment.load_combination()
-        versions.append(
-            DeploymentInfo(
-                version=deployment.version,
-                nombre=deployment.name,
-                fecha=deployment.date,
-                notas=deployment.notes,
-                activable=deployment.activable,
-                activa=deployment.version == manager.current_version,
-                pesos=combination.weights if combination else None,
-                temperaturas=combination.temperatures if combination else None,
-                modelos=[
-                    DeploymentModel(
-                        modelo=name,
-                        nombre=deployment.model_names.get(name),
-                        version=deployment.model_versions.get(name),
-                        casos=usage.get((name, deployment.model_versions.get(name)), 0),
-                        metricas=deployment.load_metrics(name),
-                    )
-                    for name in MODELS
-                ],
-            )
-        )
+    deployed = manager.state.deployed
+    groups: dict[str, list[ModelEntryInfo]] = {tipo: [] for tipo in TYPES}
+    for entry in manager.catalog.entries():
+        groups[entry.tipo].append(ModelEntryInfo(
+            id=entry.id, tipo=entry.tipo, version=entry.version, nombre=entry.nombre,
+            fecha=entry.fecha, origen=entry.origen, ruta=entry.ruta, estado=entry.estado,
+            motivo=entry.motivo, notas=entry.notas, temperatura=entry.temperatura,
+            max_tokens=entry.max_tokens,
+            desplegado=deployed.get(entry.tipo) == entry.id,
+            cargado=deployed.get(entry.tipo) == entry.id and entry.tipo in manager.loaded,
+            casos=usage.get((entry.tipo, entry.version), 0),
+            metricas=entry.load_metrics(),
+        ))
+    service = getattr(request.app.state, "analysis_service", None)
+    combination = getattr(service, "combination", None)
+    history = []
+    for item in manager.history():
+        try:
+            history.append(DeploymentHistoryEntry(**item))
+        except Exception:
+            continue  # una entrada antigua o editada a mano no rompe el panel
     return ModelsResponse(
-        activa=manager.current_version,
-        anterior=manager.previous_version(),
-        versiones=versions,
-        historial=[ActivationEntry(**entry) for entry in manager.history()],
+        desplegados=dict(deployed),
+        cargados=sorted(manager.loaded),
+        pesos=Weights(**manager.state.weights),
+        pesos_calibrados=Weights(**default_weights()),
+        combinacion=getattr(combination, "version", None),
+        anterior=manager.previous_state(),
+        modelos=groups,
+        historial=history,
     )
 
 
-def _change(action) -> None:
+async def _change(action) -> None:
+    """Cargar y comprobar modelos tarda: se hace fuera del bucle de eventos."""
     try:
-        action()
+        await asyncio.to_thread(action)
     except ModelVersionError as error:
         raise HTTPException(
             status_code=error.status_code,
@@ -365,32 +373,104 @@ def _change(action) -> None:
 
 
 @router.get("/modelos", response_model=ModelsResponse)
-def list_models(
+async def list_models(
     request: Request,
     repository: SupabaseRepository = Depends(service_repository),
 ) -> ModelsResponse:
-    return _models(_versions(request), repository)
+    return await asyncio.to_thread(_models, request, repository)
 
 
-@router.post("/modelos/activar", response_model=ModelsResponse)
-def activate_model_version(
-    payload: ActivationRequest,
+@router.post("/modelos/desplegar", response_model=ModelsResponse)
+async def deploy_model(
+    payload: DeployRequest,
     request: Request,
     user=Depends(admin_user),
     repository: SupabaseRepository = Depends(service_repository),
 ) -> ModelsResponse:
-    """Carga y comprueba la versión; solo si responde bien sustituye a la activa."""
+    """Carga y comprueba el modelo; solo si responde bien sustituye al de su tipo."""
     manager = _versions(request)
-    _change(lambda: manager.activate(payload.version, user.email))
-    return _models(manager, repository)
+    await _change(lambda: manager.deploy(payload.tipo, payload.id, user.email))
+    return await asyncio.to_thread(_models, request, repository)
+
+
+@router.post("/modelos/retirar", response_model=ModelsResponse)
+async def retire_model(
+    payload: RetireRequest,
+    request: Request,
+    user=Depends(admin_user),
+    repository: SupabaseRepository = Depends(service_repository),
+) -> ModelsResponse:
+    manager = _versions(request)
+    await _change(lambda: manager.retire(payload.tipo, user.email))
+    return await asyncio.to_thread(_models, request, repository)
+
+
+@router.put("/modelos/pesos", response_model=ModelsResponse)
+async def update_weights(
+    payload: Weights,
+    request: Request,
+    user=Depends(admin_user),
+    repository: SupabaseRepository = Depends(service_repository),
+) -> ModelsResponse:
+    manager = _versions(request)
+    await _change(lambda: manager.set_weights(payload.model_dump(), user.email))
+    return await asyncio.to_thread(_models, request, repository)
 
 
 @router.post("/modelos/revertir", response_model=ModelsResponse)
-def revert_model_version(
+async def revert_models(
     request: Request,
     user=Depends(admin_user),
     repository: SupabaseRepository = Depends(service_repository),
 ) -> ModelsResponse:
     manager = _versions(request)
-    _change(lambda: manager.revert(user.email))
-    return _models(manager, repository)
+    await _change(lambda: manager.revert(user.email))
+    return await asyncio.to_thread(_models, request, repository)
+
+
+@router.post("/modelos/importar", response_model=ModelsResponse)
+async def import_model(
+    request: Request,
+    repository: SupabaseRepository = Depends(service_repository),
+) -> ModelsResponse:
+    """Recibe un ZIP (cuerpo crudo) con contrato.json, pesos y, opcional, metricas.json."""
+    manager = _versions(request)
+    length = request.headers.get("content-length")
+    if length and length.isdigit() and int(length) > MAX_ZIP_BYTES:
+        raise HTTPException(413, detail={"codigo": "zip_demasiado_grande",
+                                         "mensaje": "El ZIP supera 2 GB."})
+    staging = manager.catalog.imports_dir / ".importando"
+    await asyncio.to_thread(staging.mkdir, parents=True, exist_ok=True)
+    path = staging / f"{uuid.uuid4().hex}.zip"
+    try:
+        size = 0
+        with path.open("wb") as sink:
+            async for chunk in request.stream():
+                size += len(chunk)
+                if size > MAX_ZIP_BYTES:
+                    raise HTTPException(413, detail={"codigo": "zip_demasiado_grande",
+                                                     "mensaje": "El ZIP supera 2 GB."})
+                await asyncio.to_thread(sink.write, chunk)
+        if size == 0:
+            raise HTTPException(400, detail={"codigo": "zip_vacio",
+                                             "mensaje": "No llegó ningún archivo."})
+        await _change(lambda: manager.catalog.import_zip(path))
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+    return await asyncio.to_thread(_models, request, repository)
+
+
+@router.delete("/modelos/{tipo}/{model_id}", response_model=ModelsResponse)
+async def delete_model(
+    tipo: Literal["bilstm", "mbert"],
+    model_id: str,
+    request: Request,
+    repository: SupabaseRepository = Depends(service_repository),
+) -> ModelsResponse:
+    """Borra un modelo importado que no esté desplegado (los del entrenamiento no se tocan)."""
+    manager = _versions(request)
+    await _change(lambda: manager.delete(tipo, model_id))
+    return await asyncio.to_thread(_models, request, repository)

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from hashlib import sha256
 import json
 from math import exp, isfinite, log
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -21,6 +21,16 @@ COMBINATION_FILE = ROOT / "datasets/combinacion_produccion/combinacion.json"
 LABELS = {"real": 0, "falsa": 1}
 COMBINATION_METHOD = "media_ponderada_logits_calibrados"
 PROBABILITY_EPSILON = 1e-7
+# Modelos base admitidos en el hueco «mbert»: BETO y mBERT, con la revisión que fija
+# mBERT/modelo.py (se copia aquí para no importar código de entrenamiento).
+MODELOS_BASE_ADMITIDOS = {
+    "beto": ("dccuchile/bert-base-spanish-wwm-cased", "c4d86612f51b4f46759c8390d1798c2febe71b93"),
+    "mbert": ("google-bert/bert-base-multilingual-cased", "3f076fdb1ab68d5b2880cb87a0886f315b8146f8"),
+}
+
+
+class UnsupportedBaseModel(ValueError):
+    """El contrato es de un transformer que no es BETO ni mBERT."""
 
 
 def file_sha256(path: Path) -> str:
@@ -31,10 +41,38 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def resolve(path: str) -> Path:
-    """Rutas de los contratos, relativas a la raíz del repositorio."""
-    resolved = (ROOT / path).resolve()
-    if not resolved.is_relative_to(ROOT.resolve()):
+_sha_cache: dict[tuple[str, int, int], str] = {}
+
+
+def cached_sha256(path: Path) -> str:
+    """SHA-256 recordado mientras el archivo no cambie (BETO pesa ~440 MB)."""
+    stat = Path(path).stat()
+    key = (str(Path(path).resolve()), stat.st_size, stat.st_mtime_ns)
+    if key not in _sha_cache:
+        _sha_cache[key] = file_sha256(path)
+    return _sha_cache[key]
+
+
+def resolve(path: str, base: Path | None = None) -> Path:
+    """Ruta de un archivo citado en un contrato.
+
+    Sin `base`, relativa a la raíz del repositorio. Con `base` (la carpeta del contrato) se
+    busca primero dentro de esa carpeta, probando la ruta y sus sufijos cada vez más cortos
+    («datasets/…/final/todo_s42/modelo.pt» → «todo_s42/modelo.pt» → «modelo.pt»), y después
+    en la raíz. Así sirve un contrato tal como lo deja el entrenamiento aunque su carpeta se
+    haya movido; el SHA-256 del contrato confirma que es el archivo correcto.
+    """
+    root = ROOT.resolve()
+    if base is not None:
+        folder = Path(base).resolve()
+        parts = [part for part in PurePosixPath(str(path).replace("\\", "/")).parts
+                 if part not in ("", "/")]
+        for start in range(len(parts)):
+            candidate = folder.joinpath(*parts[start:]).resolve()
+            if candidate.is_relative_to(folder) and candidate.exists():
+                return candidate
+    resolved = (root / path).resolve()
+    if not resolved.is_relative_to(root):
         raise ValueError(f"La ruta del contrato sale del repositorio: {path}")
     return resolved
 
@@ -49,16 +87,32 @@ class ModelContract:
     checkpoint: Path
     checkpoint_sha256: str
     data: dict
+    folder: Path | None = None
+    provisional: bool = False
 
     @classmethod
-    def load(cls, path: Path, model: str) -> "ModelContract":
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    def load(cls, path: Path, model: str, allow_provisional: bool = False) -> "ModelContract":
+        """Lee y valida un contrato. Sus rutas se buscan junto al contrato (ver `resolve`).
+
+        `allow_provisional` solo sirve para listar modelos recién entrenados en el panel:
+        un contrato con temperatura provisional nunca se carga para analizar.
+        """
+        path = Path(path)
+        data = json.loads(path.read_text(encoding="utf-8"))
         if data.get("modelo") != model:
             raise ValueError(f"El contrato {path} no es del modelo {model}")
         if data.get("etiquetas") != LABELS:
             raise ValueError(f"El contrato {model} no usa 0 = real y 1 = falsa")
-        if data.get("temperatura_provisional"):
+        provisional = bool(data.get("temperatura_provisional"))
+        if provisional and not allow_provisional:
             raise ValueError(f"La temperatura del contrato {model} sigue siendo provisional")
+        if model == "mbert":
+            base = data.get("modelo_base") or {}
+            admitted = MODELOS_BASE_ADMITIDOS.get(base.get("clave"))
+            if admitted is None or (base.get("hub_id"), base.get("revision")) != admitted:
+                raise UnsupportedBaseModel(
+                    "Solo se admiten BETO y mBERT con la revisión fijada en mBERT/modelo.py"
+                )
         temperature = float(data["temperatura"])
         threshold = float(data["umbral_falsa"])
         if not isfinite(temperature) or temperature <= 0:
@@ -75,13 +129,19 @@ class ModelContract:
             max_tokens=int(data["max_tokens"]),
             temperature=temperature,
             threshold=threshold,
-            checkpoint=resolve(checkpoint["ruta"]),
+            checkpoint=resolve(checkpoint["ruta"], path.parent),
             checkpoint_sha256=checkpoint["sha256"],
             data=data,
+            folder=path.parent,
+            provisional=provisional,
         )
 
+    def resolve(self, value: str) -> Path:
+        """Otra ruta del contrato (p. ej. el tokenizador), buscada igual que el checkpoint."""
+        return resolve(value, self.folder)
+
     def verify(self, weights: Path) -> None:
-        if file_sha256(weights) != self.checkpoint_sha256:
+        if cached_sha256(weights) != self.checkpoint_sha256:
             raise ValueError(f"Los pesos de {self.model} no coinciden con su contrato: {weights}")
 
 
@@ -136,6 +196,37 @@ class Combination:
             raise ValueError(f"La combinación es de otra versión de {contract.model}")
         if abs(self.temperatures[contract.model] - contract.temperature) > 1e-9:
             raise ValueError(f"La temperatura de {contract.model} no coincide con la combinación")
+
+    @classmethod
+    def for_models(
+        cls, contracts: dict[str, "ModelContract"], weights: dict[str, float],
+        calibrated: "Combination | None" = None,
+    ) -> "Combination":
+        """Combinación de los modelos desplegados con los pesos del panel.
+
+        Si coincide con la calibrada (mismos contratos, temperaturas y pesos), se usa esa tal
+        cual, con su versión: así el resultado es idéntico al de antes del panel.
+        """
+        weights = {name: float(weights.get(name, 0.0)) for name in ("bilstm", "mbert")}
+        if any(w < 0 for w in weights.values()) or abs(sum(weights.values()) - 1.0) > 1e-6:
+            raise ValueError("Los pesos deben ser ≥ 0 y sumar 1")
+        if not contracts:
+            raise ValueError("No hay modelos que combinar")
+        if calibrated is not None and set(contracts) == set(calibrated.model_versions) \
+                and all(calibrated.model_versions[name] == c.version
+                        and abs(calibrated.temperatures[name] - c.temperature) < 1e-9
+                        for name, c in contracts.items()) \
+                and all(abs(calibrated.weights[name] - weights[name]) < 1e-9 for name in weights):
+            return calibrated
+        names = " + ".join(contracts[name].version if name in contracts else "—"
+                           for name in ("bilstm", "mbert"))
+        return cls(
+            version=f"panel: {names} @ {weights['bilstm']:.2f}/{weights['mbert']:.2f}",
+            weights=weights,
+            temperatures={name: c.temperature for name, c in contracts.items()},
+            model_versions={name: c.version for name, c in contracts.items()},
+            threshold=0.5,
+        )
 
     def combine(self, probabilities: dict[str, float]) -> tuple[float, dict[str, float]]:
         """Combina las probabilidades calibradas disponibles. Si solo hay un modelo, usa la suya."""

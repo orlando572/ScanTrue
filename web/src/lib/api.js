@@ -133,6 +133,35 @@ export async function adminApi(path, options) {
   return parse(await adminSend(path, options));
 }
 
+// Sube un archivo grande (un ZIP de modelo) como cuerpo crudo, con progreso de 0 a 1.
+// Usa XMLHttpRequest porque fetch no informa del progreso de subida.
+function upload(path, file, token, onProgress) {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open('POST', `${API_BASE}${path}`);
+    request.setRequestHeader('Accept', 'application/json');
+    request.setRequestHeader('Content-Type', 'application/zip');
+    request.setRequestHeader('Authorization', `Bearer ${token}`);
+    request.upload.onprogress = (event) => { if (event.lengthComputable) onProgress?.(event.loaded / event.total); };
+    request.onload = () => resolve(new Response(request.responseText, { status: request.status }));
+    request.onerror = () => reject(new ApiError(0, 'sin_conexion', 'No pudimos comunicarnos con la API de ScanTrue. Comprueba que esté encendida.'));
+    request.send(file);
+  });
+}
+
+export async function adminUpload(path, file, onProgress) {
+  let session = getSession();
+  if (!session) throw new ApiError(401, 'sesion_requerida', 'Inicia sesión como administrador.');
+  if (session.expiresAt < Date.now() + 30_000 && session.refresh_token) session = await renew(session);
+  let response = await upload(path, file, session.access_token, onProgress);
+  if (response.status === 401 && session.refresh_token) {
+    session = await renew(session);
+    response = await upload(path, file, session.access_token, onProgress);
+  }
+  if (response.status === 401) storeSession(null);
+  return parse(response);
+}
+
 // Descarga con sesión (el CSV de un dataset): devuelve el archivo y su nombre.
 export async function adminDownload(path) {
   const response = await adminSend(path, { timeout: 60_000 });

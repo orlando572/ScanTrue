@@ -1,0 +1,9 @@
+{
+  "tipo": "mbert",
+  "version": "mBERT_BiLSTM_main_len512_seed43",
+  "nombre": "mBERT (octubre)",
+  "fecha": "2026-10-10",
+  "notas": "Modelo anterior a la calibración conjunta. No tiene contrato de inferencia: se conserva solo para comparar sus métricas.",
+  "archivado": true,
+  "metricas": "backend/metrics/archivo_octubre/mbert_evaluaciones.json"
+}

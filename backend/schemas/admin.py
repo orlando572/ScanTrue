@@ -214,45 +214,72 @@ class DatasetDetail(DatasetVersion):
     total: int | None
 
 
-# ── Versiones de modelos ────────────────────────────────────────────
+# ── Modelos desplegados ─────────────────────────────────────────────
+
+ModelType = Literal["bilstm", "mbert"]
 
 
-class DeploymentModel(BaseModel):
-    modelo: Literal["bilstm", "mbert"]
-    nombre: str | None = Field(default=None, description="Nombre propio del modelo en esta versión, si no es el habitual.")
-    version: str | None = None
+class ModelEntryInfo(BaseModel):
+    id: str = Field(description="Identificador en el catálogo: la versión del contrato (más el SHA si se repite).")
+    tipo: ModelType
+    version: str
+    nombre: str
+    fecha: str | None = None
+    origen: Literal["repositorio", "entrenamiento", "importado"]
+    ruta: str | None = Field(default=None, description="Carpeta del contrato, relativa a la raíz del repositorio.")
+    estado: Literal["disponible", "pendiente_calibrar", "no_admitido", "no_valido", "archivado"]
+    motivo: str | None = None
+    notas: str | None = None
+    temperatura: float | None = None
+    max_tokens: int | None = None
+    desplegado: bool = False
+    cargado: bool = Field(default=False, description="Desplegado y cargado en memoria ahora mismo.")
     casos: int = Field(default=0, description="Análisis guardados con esta versión.")
     metricas: MetricsResponse | None = None
 
 
-class DeploymentInfo(BaseModel):
-    version: str
-    nombre: str
-    fecha: str | None = None
-    notas: str | None = None
-    activable: bool
-    activa: bool
+class Weights(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    bilstm: float = Field(ge=0, le=1)
+    mbert: float = Field(ge=0, le=1)
+
+    @model_validator(mode="after")
+    def sum_one(self):
+        if abs(self.bilstm + self.mbert - 1) > 1e-6:
+            raise ValueError("Los pesos deben sumar 1")
+        return self
+
+
+class DeploymentHistoryEntry(BaseModel):
+    accion: Literal["desplegar", "retirar", "pesos", "revertir"]
+    tipo: ModelType | None = None
+    version: str | None = None
     pesos: dict[str, float] | None = None
-    temperaturas: dict[str, float] | None = None
-    modelos: list[DeploymentModel]
-
-
-class ActivationEntry(BaseModel):
-    version: str
-    anterior: str | None = None
-    accion: Literal["activar", "revertir"]
+    anterior: dict | None = None
     fecha: datetime
     por: str | None = None
 
 
 class ModelsResponse(BaseModel):
-    activa: str | None
-    anterior: str | None = Field(description="Versión a la que volvería «revertir».")
-    versiones: list[DeploymentInfo]
-    historial: list[ActivationEntry]
+    desplegados: dict[str, str | None] = Field(description="Modelo desplegado de cada tipo (id), o null si está retirado.")
+    cargados: list[ModelType] = Field(description="Tipos con su modelo cargado y respondiendo.")
+    pesos: Weights
+    pesos_calibrados: Weights | None = Field(default=None, description="Pesos de la combinación calibrada (combinacion.json).")
+    combinacion: str | None = Field(default=None, description="Versión de combinación que usan los análisis nuevos.")
+    anterior: dict | None = Field(default=None, description="Estado al que llevaría «Volver atrás».")
+    modelos: dict[str, list[ModelEntryInfo]]
+    historial: list[DeploymentHistoryEntry]
 
 
-class ActivationRequest(BaseModel):
+class DeployRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    version: str = Field(min_length=1, max_length=160)
+    tipo: ModelType
+    id: str = Field(min_length=1, max_length=200)
+
+
+class RetireRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tipo: ModelType

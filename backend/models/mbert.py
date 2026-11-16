@@ -13,7 +13,7 @@ from pathlib import Path
 import torch
 
 from backend.models.contrato import (
-    MBERT_CONTRACT, ModelContract, calibrated_probability, file_sha256, resolve,
+    MBERT_CONTRACT, ModelContract, cached_sha256, calibrated_probability,
 )
 
 
@@ -29,8 +29,8 @@ class MbertTokenizer:
         self.model_dir = self.contract.checkpoint
         self.checkpoint = self.model_dir / "model.safetensors"
         tokenizer = self.contract.data["tokenizador"]
-        self.tokenizer_dir = resolve(tokenizer["ruta"])
-        if file_sha256(self.tokenizer_dir / "tokenizer.json") != tokenizer["sha256_tokenizer_json"]:
+        self.tokenizer_dir = self.contract.resolve(tokenizer["ruta"])
+        if cached_sha256(self.tokenizer_dir / "tokenizer.json") != tokenizer["sha256_tokenizer_json"]:
             raise ValueError("El tokenizador mBERT no coincide con su contrato")
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.tokenizer_dir,

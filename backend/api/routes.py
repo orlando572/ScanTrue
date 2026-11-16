@@ -19,6 +19,14 @@ from backend.services.identity import IdentityService
 router = APIRouter()
 
 
+def _deployed(request: Request) -> dict[str, str | None]:
+    manager = getattr(request.app.state, "model_versions", None)
+    if manager is None:
+        return {"bilstm": None, "mbert": None}
+    return {tipo: manager.state.deployed.get(tipo) if tipo in manager.loaded else None
+            for tipo in ("bilstm", "mbert")}
+
+
 @router.get("/salud")
 def health(request: Request) -> dict:
     service = getattr(request.app.state, "analysis_service", None)
@@ -40,7 +48,7 @@ def health(request: Request) -> dict:
             else "degradado"
         ),
         "modelos": {
-            "bilstm": available,
+            "bilstm": available and service.predictor is not None,
             "mbert": available and service.mbert_predictor is not None,
         },
         "supabase_configurado": identity is not None,
@@ -48,10 +56,8 @@ def health(request: Request) -> dict:
             identity and identity.settings.secret_key
         ),
         "blockchain": {"configurada": blockchain is not None, "conectada": chain_available},
-        # Versión de modelos activa (backend/despliegues/); la extensión no la usa.
-        "despliegue": getattr(
-            getattr(request.app.state, "model_versions", None), "current_version", None
-        ),
+        # Modelo desplegado de cada tipo (panel /admin/modelos); la extensión no lo usa.
+        "desplegados": _deployed(request),
     }
 
 

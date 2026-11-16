@@ -46,7 +46,7 @@ Si la cuenta no existe, la crea y pide la contraseña por teclado; si existe, la
   - Retira copias exactas y textos con etiquetas contrarias, y retira también las noticias que ya están en la prueba congelada de comun_v1. Las que están en su desarrollo van siempre a entrenamiento.
   - Agrupa los casos de la misma página, del mismo evento o casi iguales, y manda cada grupo entero a entrenamiento o a prueba. La prueba se toma por clase (≈20 % de las falsas y de las reales).
   - Se descarga como CSV con toda la procedencia o como **ZIP para entrenar**: `fragmentos_entrenamiento.csv` y `fragmentos_prueba.csv` con las columnas de comun_v1, `procedencia.csv` y `manifest.json` con el SHA-256 de cada archivo. `datos_comunes/comun.py:leer()` carga esos CSV directamente.
-- **Modelos:** lista las versiones de `backend/despliegues/`, con sus métricas y una comparación lado a lado. **Activar** carga y comprueba la versión antes de sustituir a la actual; **Volver a la anterior** deshace el último cambio.
+- **Modelos:** un modelo desplegado por tipo (BiLSTM y BETO/mBERT). Lista los del repositorio, los que deja el entrenamiento (aparecen solos; «Pendiente de calibrar» hasta la calibración conjunta) y los importados en ZIP, con sus métricas y una comparación dentro de cada tipo. **Desplegar** carga y comprueba el modelo antes de sustituir al de su tipo; **Retirar** deja el análisis con el otro (debe quedar uno). Los pesos se editan con un deslizador (por defecto los calibrados, 20/80). **Volver atrás** deshace el último cambio. Ver [backend/docs/DESPLIEGUE_MODELOS.md](../backend/docs/DESPLIEGUE_MODELOS.md).
 
 ## Tercer criterio (incremento 2)
 

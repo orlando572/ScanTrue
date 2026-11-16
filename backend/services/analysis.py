@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from itertools import islice
 from typing import Protocol
 
-from bilstm.modelo import TOKEN_PATTERN
+from bilstm.modelo import TOKEN_PATTERN, tokenize as word_tokenize
 from backend.models.bilstm import BilstmPredictor
 from backend.models.contrato import Combination
 from backend.models.mbert import MbertTokenizer
@@ -21,6 +21,7 @@ from backend.schemas.analysis import (
 MIN_INPUT_TOKENS = 100
 MAX_ORIGINAL_CHARS = 20_000
 logger = logging.getLogger(__name__)
+MODEL_NAMES = {"bilstm": "BiLSTM", "mbert": "BETO"}
 
 
 class InvalidAnalysisInput(ValueError):
@@ -59,15 +60,19 @@ def clean_fragments(fragments: list[str] | None, text: str) -> list[str] | None:
 
 
 class AnalysisService:
+    """Analiza con los modelos desplegados. Cualquiera de los dos puede faltar, pero no ambos."""
+
     def __init__(
         self,
-        predictor: BilstmPredictor,
+        predictor: BilstmPredictor | None,
         mbert_predictor: Predictor | None = None,
         mbert_text_policy: MbertTokenizer | None = None,
         combination: Combination | None = None,
     ) -> None:
         if mbert_predictor is not None and mbert_text_policy is None:
             raise ValueError("mBERT requiere su tokenizador para validar la entrada")
+        if predictor is None and mbert_predictor is None:
+            raise ValueError("No hay ningún modelo desplegado")
         self.predictor = predictor
         self.mbert_predictor = mbert_predictor
         self.mbert_text_policy = mbert_text_policy
@@ -92,9 +97,14 @@ class AnalysisService:
 
         # Cada modelo lee hasta su propio límite (BiLSTM 192 palabras, mBERT 256 subpalabras).
         # Los dos recortes son prefijos del mismo texto: se guarda y se envía el más largo y
-        # cada predictor recorta dentro de él lo que le corresponde.
-        model_input, truncated = self._bilstm_prefix(text)
-        model_texts = {"bilstm": model_input}
+        # cada predictor recorta dentro de él lo que le corresponde. Sin BiLSTM desplegado,
+        # el texto es el recorte de BETO.
+        model_texts: dict[str, str] = {}
+        if self.predictor is not None:
+            model_input, truncated = self._bilstm_prefix(text)
+            model_texts["bilstm"] = model_input
+        else:
+            model_input, truncated = text, None
         mbert_predictor = self.mbert_predictor
         mbert_prepare_failed = False
         mbert_token_count = None
@@ -104,15 +114,22 @@ class AnalysisService:
                     text
                 )
                 model_texts["mbert"] = mbert_input
-                if len(mbert_input) > len(model_input):
-                    model_input = mbert_input
-                truncated = truncated and mbert_truncated
+                if self.predictor is None:
+                    model_input, truncated = mbert_input, mbert_truncated
+                else:
+                    if len(mbert_input) > len(model_input):
+                        model_input = mbert_input
+                    truncated = truncated and mbert_truncated
             except Exception:
                 logger.exception("Falló la tokenización mBERT")
                 mbert_token_count = None
                 mbert_predictor = None
                 mbert_prepare_failed = True
-        token_count = len(self.predictor.tokenize(model_input))
+        truncated = bool(truncated)
+        # El mínimo de palabras se cuenta siempre con el tokenizador del BiLSTM (una función
+        # pura, sin pesos): la regla es la misma aunque el BiLSTM esté retirado.
+        tokenize = self.predictor.tokenize if self.predictor is not None else word_tokenize
+        token_count = len(tokenize(model_input))
         if token_count == 0:
             raise InvalidAnalysisInput(
                 "texto_ilegible",
@@ -147,7 +164,11 @@ class AnalysisService:
                 results[name] = ModelResult(
                     modelo=name,
                     estado="no_disponible",
-                    error="mBERT no está disponible en este inicio del backend.",
+                    error=(
+                        "mBERT no está disponible en este inicio del backend."
+                        if name == "mbert"
+                        else f"{MODEL_NAMES[name]} no está desplegado en este momento."
+                    ),
                 )
                 continue
             try:
