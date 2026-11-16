@@ -1,0 +1,135 @@
+# Fase 7: primera corrida sobre el conjunto de ajuste (`ajuste_1`)
+
+**Fecha:** 16 nov 2026. **Plan:** [PLAN_INCREMENTO_2.md](PLAN_INCREMENTO_2.md), Fase 7. **Conjunto:** `verificacion_v1`, partición de ajuste (ver [EVALUACION_VERIFICACION.md](EVALUACION_VERIFICACION.md), sección 9). Los datos de la corrida están en `datasets/verificacion_v1/corridas/ajuste_1/` (fuera de Git; `RESUMEN.md`, `resumen.json` y `resultados.jsonl`).
+
+**Esto NO es la prueba final.** Es la línea de partida sobre los casos que sirven para ajustar el sistema. La prueba final (los otros casos del conjunto) no se ha abierto ni se puede abrir: el conjunto no se puede congelar mientras la clase `evidencia_insuficiente` tenga 6 casos de 20.
+
+## 1. Qué se corrió
+
+- **Sistema:** el de `feature/llm` tal como está (`extraccion-v2`, 3 afirmaciones por noticia, 1 consulta por afirmación, 4 páginas por afirmación, Tavily, LLM `Qwen3-4B-Instruct-2507-Q8_0` en `llama-server`, RTX 5060). Sin fuente previa de Google ni base de afirmaciones: el ejecutor de evaluación mide cada caso por sí solo y excluye los medios de verificación y los dominios del caso.
+- **Modo:** en vivo (búsquedas y descargas reales); toda la evidencia quedó guardada en `evidencia_congelada/ajuste1/`, así que **las siguientes corridas pueden ser congeladas, sin gastar créditos de Tavily**.
+- **Casos:** 33 aprobados de la partición de ajuste (10 `contradicha`, 10 `fuera_de_contexto`, 10 `respaldada`, 3 `evidencia_insuficiente`).
+- **Referencias:** A (siempre «evidencia insuficiente») y B (el mismo LLM sin búsqueda).
+- **Duración:** 23,5 s de media por caso (p90 33,5 s). Sin fallas de ejecución.
+
+## 2. Resultado
+
+| Medida | Valor |
+| --- | --- |
+| Aciertos | **5 de 33** (15,2 %; IC 95 % [0,067; 0,309]) |
+| **F1 macro** | **0,144** (IC 95 % [0,036; 0,248]) |
+| Referencia A (siempre insuficiente) | 0,042 [0,000; 0,087]; el sistema la supera por 0,102 (IC de la diferencia [-0,008; 0,207], incluye 0) |
+| Referencia B (LLM sin búsqueda) | 0,183 [0,047; 0,294]; **el sistema no la supera** (diferencia -0,038, IC [-0,169; 0,101]) |
+| Error más grave («respaldada» cuando era contradicha) | 0 |
+| Error grave inverso («contradicha» cuando era respaldada) | 2 |
+| Casos que terminan en «evidencia insuficiente» | **57,6 %** (19 de 33) |
+| Veredictos con evidencia: citas bien hechas | 58 de 61 (**95,1 %**) |
+| Fuentes que llegan al usuario comprobadas aparte | 56 de 56 (100 %) |
+| **Direcciones inventadas / no descargadas** | **0** |
+
+| Clase | Casos | Precisión | Recall | F1 |
+| --- | ---: | ---: | ---: | ---: |
+| `respaldada` | 10 | 0,000 | 0,000 | 0,000 |
+| `contradicha` | 10 | 0,333 | 0,200 | 0,250 |
+| `fuera_de_contexto` | 10 | 0,286 | 0,200 | 0,235 |
+| `evidencia_insuficiente` | 3 | 0,053 | 0,333 | 0,091 |
+
+Matriz de confusión (filas: esperado; columnas: obtenido):
+
+| esperado \ obtenido | respaldada | contradicha | fuera de ctx. | insuficiente |
+| --- | ---: | ---: | ---: | ---: |
+| respaldada | 0 | 2 | 2 | 6 |
+| contradicha | 0 | 2 | 1 | 7 |
+| fuera de ctx. | 1 | 2 | 2 | 5 |
+| insuficiente | 0 | 0 | 2 | 1 |
+
+## 3. Qué dice frente al criterio de aceptación
+
+Criterios del plan: 0 URL inventadas, citas válidas ≥ 95 % y F1 macro por encima de las dos referencias y de la cifra mínima.
+
+| Criterio | Resultado | ¿Cumple? |
+| --- | --- | :---: |
+| 0 direcciones inventadas | 0 | Sí |
+| Citas válidas ≥ 95 % | 95,1 % (58 de 61), justo en el umbral | Sí, por poco |
+| F1 macro por encima de A y de B | Supera a A (sin significancia) y **no supera a B** | **No** |
+| F1 macro por encima de la cifra mínima | Aún no se ha fijado | — |
+
+**Lectura honesta:** el sistema es **seguro** (no inventa fuentes y sus citas existen) pero **todavía no es exacto**: con estos casos, su conclusión no es mejor que preguntarle al mismo LLM sin buscar nada. Esto es lo que el plan esperaba encontrar antes del ajuste (la regla de conclusión «se equivoca con facilidad»); los números lo confirman y lo cuantifican.
+
+## 4. Diagnóstico (de `resultados.jsonl`)
+
+1. **Se rinde demasiado a «evidencia insuficiente»** (19 de 33). Es el error dominante: 7 de 10 `contradicha`, 6 de 10 `respaldada` y 5 de 10 `fuera_de_contexto` terminan ahí. Es la salida «segura» (no le dice mal al lector que algo es cierto o falso), pero no aporta.
+2. **Tres casos no extrajeron ninguna afirmación** (vv1-011, vv1-015, vv1-021; tardaron 0,3 s): el LLM no encontró «afirmaciones concretas que se puedan comprobar» en descripciones de rumores o de una foto. Con `extraccion-v2` («las 3 más importantes… con datos concretos») el filtro es más estricto.
+3. **Muchas afirmaciones sin evidencia:** de las afirmaciones que quedan en `insuficiente`, 16 de 34 son `sin_evidencia` (la búsqueda no devolvió páginas útiles, en parte porque se excluyen los verificadores y los dominios del caso), 3 `cita_no_literal` y 3 `apoyo_incompleto`.
+4. **La regla de conclusión hace casi imposible `respaldada`:** exige que **todas** las afirmaciones sean `apoyada`; en los 10 casos `respaldada` solo 6 de 30 afirmaciones salieron `apoyada`, y 10 salieron `fuera_de_contexto` aunque eran hechos ciertos y bien documentados (el juez de 4B es poco fiable con `fuera_de_contexto`, como ya se midió en la Fase 4).
+5. **El juez a veces contradice hechos ciertos** (2 casos `respaldada` terminaron `contradicha`; 3 de 30 afirmaciones de ese grupo salieron `contradicha`).
+6. **`evidencia_insuficiente` casi no se acierta** (1 de 3), pero con 3 casos no se puede concluir nada de esa clase.
+
+## 5. Límites de estas cifras
+
+- **33 casos** (ajuste): los intervalos son anchos y un solo caso mueve el F1 macro varios puntos. Son cifras orientativas.
+- **La clase `evidencia_insuficiente` tiene 3 casos** en ajuste.
+- **Una sola corrida:** el LLM no es idéntico de una corrida a otra, aun con temperatura 0.
+- **Descripciones, no textos originales:** los casos son `descripcion_verificador` (redactados por quien arma el conjunto), que se parecen menos al texto real que llegaría al sistema.
+- **Sin fuente previa de Google:** la evaluación la excluye (los medios de verificación se descartan para no copiar la respuesta), así que mide el sistema sin esa ayuda.
+- **Las citas válidas están justo en el umbral** (95,1 %): con otra corrida podrían quedar por debajo.
+
+## 6. Qué sigue (propuestas, **sin aplicar**)
+
+El ajuste debe hacerse **solo con estos casos** y dejando anotado cada cambio. Las corridas siguientes pueden ser **congeladas** (sin gastar Tavily). Candidatos, que ya estaban anotados en [CONCLUSION_Y_TRABAJADOR.md](CONCLUSION_Y_TRABAJADOR.md) más lo que mostró esta corrida:
+
+1. **Relajar `respaldada`:** en lugar de «todas `apoyada`», aceptar «la mayoría `apoyada` y ninguna `contradicha`».
+2. **Que `fuera_de_contexto` por afirmación no decida el caso** hasta que el juez sea más fiable (candidato 5 del documento de la Fase 5).
+3. **Exigir 2 fuentes de dominios distintos para dar `contradicha`** (candidato 1), para reducir las contradicciones falsas.
+4. **Extracción:** revisar por qué 3 descripciones de rumores quedan sin afirmaciones (puede ser correcto en parte).
+5. **Fijar la cifra mínima de F1 macro** solo después del ajuste y antes de abrir la prueba final.
+
+Cualquier cambio de la regla de conclusión es una decisión de diseño que conviene confirmar con Orlando.
+
+## 7. Ronda de ajuste 1: cambios anotados ANTES de calcular
+
+**Hora de esta anotación: 16 nov 2026, antes de calcular nada.** Evelyn pidió una sola ronda con dos cambios, anotados de antemano, para limitar el sobreajuste (con 33 casos es fácil que un cambio parezca mejorar solo porque se parece a esos casos).
+
+**Qué cambia: solo la regla que junta los veredictos de las afirmaciones** (versión candidata `conclusion-v2`). El **código de producción no se toca en esta ronda**.
+
+1. **`respaldada` se relaja.** Antes: todas las afirmaciones `apoyada`. Ahora: **ninguna `contradicha` y más de la mitad de las afirmaciones `apoyada`** (las `insuficiente` y las `fuera_de_contexto` cuentan en el total).
+2. **`fuera_de_contexto` por afirmación no decide el caso.** Se trata como «sin evidencia suficiente» para la conclusión. **Consecuencia anotada de antemano:** el caso ya no puede concluir `fuera_de_contexto`; esa conclusión desaparece mientras el juez no sea fiable con ella.
+
+**Regla completa `conclusion-v2`:** sin afirmaciones → `evidencia_insuficiente`; alguna `contradicha` → `contradicha` (sin cambio); `fuera_de_contexto` por afirmación se cuenta como `insuficiente`; más de la mitad `apoyada` → `respaldada`; en cualquier otro caso → `evidencia_insuficiente`.
+
+**Por qué (principios, no casos):** ambos candidatos estaban escritos **antes** de la corrida `ajuste_1`: la propuesta de que `fuera_de_contexto` por afirmación no cuente está en [CONCLUSION_Y_TRABAJADOR.md](CONCLUSION_Y_TRABAJADOR.md) (propuesta 5), y que `respaldada` casi no se alcanza con «todas apoyada» está en [ESTADO_LLM.md](ESTADO_LLM.md) (sección 4) desde la Fase 5.
+
+**Cómo se evalúa:** se **recalcula la conclusión de cada caso con la regla v2** a partir de los veredictos por afirmación ya guardados en `corridas/ajuste_1/resultados.jsonl`. Son las mismas afirmaciones, la misma evidencia y el mismo juez: no se enciende el LLM, no se gasta Tavily y no hay aleatoriedad. Se hace lo mismo con la referencia B (misma regla sobre sus veredictos); la referencia A no cambia.
+
+**Qué espero (anotado antes):** el recall de `respaldada` sube desde 0; el de `fuera_de_contexto` cae a 0 (hoy 2 de 10), lo que por sí solo le resta al F1 macro hasta unos 0,06. El efecto neto puede ser pequeño o incluso negativo.
+
+**Criterio de decisión:** se considera mejora si **el F1 macro sube y el error grave «`respaldada` cuando era `contradicha`» sigue en 0**. **Una sola evaluación, sin probar variantes.** Si no hay mejora, la regla no se adopta. El resultado se documenta igual, sea mejor, igual o peor. Adoptarla en producción es una decisión posterior de Evelyn y de Orlando.
+
+## 8. Resultado de la ronda de ajuste 1 (conclusion-v2 frente a conclusion-v1)
+
+**Método comprobado:** recalculando con la regla antigua los veredictos por afirmación guardados, se reproducen **las 33 predicciones del sistema y las 33 de la referencia B** de `ajuste_1`. Después se aplicó la regla v2 a los mismos veredictos. No se encendió el LLM y **Tavily no se tocó** (créditos usados este mes: 231 de 1.000, igual que antes). Los datos están en `corridas/ajuste_1/recalculo_v2.json`.
+
+| Medida | Antes (v1) | Después (v2) |
+| --- | ---: | ---: |
+| **F1 macro** | **0,144** [0,036; 0,248] | **0,146** [0,033; 0,245] |
+| Aciertos | 5 de 33 | 5 de 33 |
+| Casos que terminan en «evidencia insuficiente» | 57,6 % | 63,6 % |
+| Error grave: «`respaldada`» cuando era `contradicha` | **0** | **1** (vv1-009) |
+| Error grave inverso: «`contradicha`» cuando era `respaldada` | 2 | 2 |
+| Referencia B (misma regla) | 0,183 | 0,162 |
+| Diferencia sistema − B | -0,038 [-0,169; 0,101] | -0,017 [-0,141; 0,108] |
+
+| Clase | F1 antes | F1 después |
+| --- | ---: | ---: |
+| `respaldada` | 0,000 | 0,250 |
+| `contradicha` | 0,250 | 0,250 |
+| `fuera_de_contexto` | 0,235 | 0,000 |
+| `evidencia_insuficiente` | 0,091 | 0,083 |
+
+**Qué cambió caso por caso (10 casos):** 3 pasan de error a acierto (vv1-006 y vv1-048, `respaldada`; vv1-063, `evidencia_insuficiente`) y 3 pasan de acierto a error (vv1-004 y vv1-025, que eran `fuera_de_contexto` y ya no pueden serlo; vv1-003, `evidencia_insuficiente`, que ahora sale `respaldada`). El resto (vv1-009, 012, 046, 062) sigue mal, y **vv1-009 cambia a la peor clase de error**: una noticia que debía salir `contradicha` sale `respaldada`.
+
+**Decisión según el criterio anotado antes** (el F1 macro sube **y** el error grave sigue en 0): **no se cumple.** El F1 macro apenas se mueve (+0,002, dentro del ruido) y aparece un error grave que no existía. **La regla v2 no se adopta.** `conclusion-v1` queda en producción y el código no se tocó.
+
+**Lectura:** la regla de conclusión **no es el cuello de botella principal**. Relajar `respaldada` rescata 2 casos, pero a cambio deja pasar como «respaldada» afirmaciones que el juez de 4B da por `apoyada` sin serlo (vv1-009, vv1-062, vv1-003); y quitar `fuera_de_contexto` pierde los 2 aciertos de esa clase sin ganar nada a cambio. Los problemas que quedan son del **juez** (confunde hechos ciertos con «fuera de contexto» y a veces apoya o contradice mal) y de la **evidencia** (muchas afirmaciones sin páginas útiles). Seguir ajustando solo la regla con estos 33 casos tendría más riesgo de sobreajuste que de mejora real, así que **no se hicieron más variantes**.
+
+**Qué quedaría para después (sin aplicar):** mejorar el juez o usar un modelo mayor (por ejemplo Qwen3-8B), mejorar cómo se elige y entrega la evidencia, y volver a medir con un conjunto de ajuste más grande y con la clase `evidencia_insuficiente` completa.

@@ -81,13 +81,16 @@ export function ModelPanel({ model, output, original, simple = false }) {
   );
 }
 
-// Tercer criterio. Queda listo para el incremento 2: hoy siempre dice «aún no disponible».
-// En el detalle público (`simple`) se ve apagado mientras no esté activo.
-export function WebPanel({ verification, simple = false }) {
+// Tercer criterio: la verificación con fuentes externas (incremento 2). `footer` es para lo que
+// solo ve el administrador (intentos, causa de la falla y el botón de reintento). En el detalle
+// público (`simple`) se ve apagado mientras no haya verificación.
+export function WebPanel({ verification, footer = null, simple = false }) {
   const color = CRITERIA.web.color;
+  const { claims, sources } = verification;
   const off = simple && verification.state === 'none';
+  const wide = verification.state !== 'none';
   return (
-    <article className={`panel${off ? ' panel--off' : ''}`} style={{ '--edge': `color-mix(in srgb, ${color} ${off ? 20 : 45}%, var(--color-line))`, '--c': color }}>
+    <article className={`panel${wide ? ' panel--wide' : ''}${off ? ' panel--off' : ''}`} style={{ '--edge': `color-mix(in srgb, ${color} ${off ? 20 : 45}%, var(--color-line))`, '--c': color }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <CriterionIcon name="web" />
         <div style={{ minWidth: 0, flex: 1 }}>
@@ -113,21 +116,52 @@ export function WebPanel({ verification, simple = false }) {
           del texto, con sus enlaces. Por ahora el resultado depende solo de los dos modelos.
         </p>
       )}
-      {verification.summary && <p style={{ margin: 0 }}>{verification.summary}</p>}
-      {[['Afirmaciones revisadas', verification.claims], ['Fuentes consultadas', verification.sources]].map(([title, items]) => (
-        items.length > 0 && (
-          <div key={title} style={{ marginTop: 14 }}>
-            <span className="label">{title}</span>
-            <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
-              {items.map((item, index) => (
-                <li key={index}>
-                  {item.url ? <a href={item.url} target="_blank" rel="noopener noreferrer nofollow">{item.text}</a> : item.text}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-      ))}
+      {verification.note && <p className="muted" style={{ margin: 0 }}>{verification.note}</p>}
+      {verification.summary && (
+        <>
+          <p style={{ margin: 0 }}>{verification.summary}</p>
+          <p className="label" style={{ margin: '8px 0 0' }}>
+            Resumen redactado por un modelo de lenguaje: puede equivocarse. Lo comprobable son las afirmaciones y sus fuentes.
+          </p>
+        </>
+      )}
+      {claims.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <span className="label">Afirmaciones revisadas</span>
+          <ol className="claims">
+            {claims.map((claim) => (
+              <li key={claim.id}>
+                <span className="chips" style={{ marginBottom: 4 }}>
+                  {claim.verdict && <span className={`tag tone-${claim.verdict.tone}`} style={{ '--tag': 'var(--tone)' }}>{claim.verdict.label}</span>}
+                  {claim.origin && <span className="tag">{claim.origin}</span>}
+                </span>
+                <span>{claim.url ? <a href={claim.url} target="_blank" rel="noopener noreferrer nofollow">{claim.text}</a> : claim.text}</span>
+                {claim.sourceIds.length > 0 && <span className="label" style={{ display: 'block', marginTop: 2 }}>Fuentes: {claim.sourceIds.map((id) => `[${id}]`).join(' ')}</span>}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+      {sources.length > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <span className="label">Fuentes consultadas</span>
+          <ul className="sources">
+            {sources.map((source) => (
+              <li key={source.id}>
+                <span className="n" aria-hidden="true">[{source.id}]</span>
+                <span>
+                  {source.url ? <a href={source.url} target="_blank" rel="noopener noreferrer nofollow">{source.text}</a> : source.text}
+                  {(source.domain || source.consulted) && (
+                    <span className="label" style={{ display: 'block' }}>{[source.domain, source.consulted && `consultada el ${source.consulted}`].filter(Boolean).join(' · ')}</span>
+                  )}
+                  {source.quote && <q className="quote">{source.quote}</q>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {footer}
     </article>
   );
 }

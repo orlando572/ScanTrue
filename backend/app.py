@@ -22,7 +22,9 @@ from backend.blockchain.worker import BlockchainWorker
 from backend.core.config import (
     AnalysisSettings,
     BlockchainSettings,
+    LlmSettings,
     SupabaseSettings,
+    VerificationSettings,
     web_origins,
 )
 from backend.repositories.supabase import SupabaseDataError, SupabaseRepository
@@ -32,8 +34,11 @@ from backend.services.identity import (
     InvalidSessionError,
     SupabaseAuthUnavailable,
 )
+from backend.services.llm_status import LlmProbe
 from backend.services.model_registry import ModelDeploymentManager
 from backend.services.training import TrainingManager
+from backend.services.verification.case import build_case_verifier
+from backend.services.verification.worker import VerificationWorker
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +63,30 @@ async def lifespan(app: FastAPI):
         worker_task = asyncio.create_task(
             BlockchainWorker(repository, app.state.blockchain_client).run()
         )
+    # Estado del LLM para /salud y el panel (incremento 2); sin LLM_BASE_URL queda «no configurado».
+    try:
+        app.state.llm_probe = LlmProbe(LlmSettings.from_environment())
+    except ValueError:
+        logger.exception("La configuración del LLM no es válida")
+        app.state.llm_probe = LlmProbe(None)
+    # Cola de verificación web (incremento 2): apagada salvo VERIFICATION_ENABLED=true.
+    try:
+        verification_settings = VerificationSettings.from_environment()
+    except ValueError:
+        logger.exception("La configuración de la verificación no es válida; queda apagada")
+        verification_settings = None
+    app.state.verification_settings = verification_settings
+    verification_task = None
+    app.state.verification_worker = None
+    if verification_settings and verification_settings.enabled:
+        if repository and settings.secret_key:
+            verifier = build_case_verifier(repository, verification_settings)
+            if verifier is not None:
+                worker = VerificationWorker(repository, verification_settings, process=verifier)
+                app.state.verification_worker = worker  # el panel (Fase 6) lo pausa y reanuda
+                verification_task = asyncio.create_task(worker.run())
+        else:
+            logger.error("VERIFICATION_ENABLED requiere SUPABASE_SECRET_KEY; la cola no arranca")
     # Los modelos desplegados (uno por tipo, backend/services/model_registry.py) se cargan
     # una vez; si uno falla, el servicio sigue con el otro. El panel los cambia sin reiniciar.
     def swap_service(service) -> None:
@@ -78,10 +107,11 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
-        if worker_task:
-            worker_task.cancel()
-            with suppress(asyncio.CancelledError):
-                await worker_task
+        for task in (worker_task, verification_task):
+            if task:
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
 
 
 app = FastAPI(

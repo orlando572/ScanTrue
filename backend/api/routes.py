@@ -3,7 +3,7 @@
 from hashlib import sha256
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 
 from backend.api.dependencies import bearer_token, history_repository, identity_service
 from backend.repositories.supabase import SupabaseRepository
@@ -15,6 +15,7 @@ from backend.services.analysis import (
     ModelUnavailableError,
 )
 from backend.services.identity import IdentityService
+from backend.services.verification.worker import enqueue_new_analysis
 
 router = APIRouter()
 
@@ -33,6 +34,8 @@ def health(request: Request) -> dict:
     identity = getattr(request.app.state, "identity_service", None)
     blockchain = getattr(request.app.state, "blockchain_client", None)
     available = service is not None
+    probe = getattr(request.app.state, "llm_probe", None)
+    llm = probe.status() if probe is not None else None
     chain_available = False
     if blockchain is not None:
         try:
@@ -56,6 +59,11 @@ def health(request: Request) -> dict:
             identity and identity.settings.secret_key
         ),
         "blockchain": {"configurada": blockchain is not None, "conectada": chain_available},
+        # LLM de la verificación web (incremento 2): un LLM caído no degrada el análisis rápido.
+        "llm": {
+            "configurado": llm.configurado if llm else False,
+            "disponible": llm.disponible if llm else False,
+        },
         # Modelo desplegado de cada tipo (panel /admin/modelos); la extensión no lo usa.
         "desplegados": _deployed(request),
     }
@@ -68,6 +76,8 @@ def analyze(
     token: str = Depends(bearer_token),
     identity: IdentityService = Depends(identity_service),
     repository: SupabaseRepository = Depends(history_repository),
+    *,
+    background_tasks: BackgroundTasks = None,
 ) -> CreatedAnalysis:
     service: AnalysisService | None = getattr(
         request.app.state, "analysis_service", None
@@ -113,6 +123,18 @@ def analyze(
         truncated=outcome.truncated,
         model_texts=outcome.model_texts,
     )
+    # La verificación web va aparte: se encola después de responder, así nunca retrasa ni
+    # hace fallar la respuesta rápida. Lo que no se encole lo recoge el barrido del trabajador.
+    enqueue = (
+        enqueue_new_analysis,
+        repository,
+        getattr(request.app.state, "verification_settings", None),
+        analysis_id,
+    )
+    if background_tasks is not None:
+        background_tasks.add_task(*enqueue)
+    else:  # llamada directa, sin servidor (pruebas)
+        enqueue[0](*enqueue[1:])
     return CreatedAnalysis(
         **outcome.response.model_dump(), id=analysis_id,
         texto_recortado=outcome.truncated,

@@ -27,6 +27,7 @@ from backend.schemas.admin import (
     DatasetDetail,
     DatasetSummary,
     DatasetVersion,
+    LlmStatus,
     DeployCalibrationRequest,
     DeploymentHistoryEntry,
     DeployRequest,
@@ -35,6 +36,7 @@ from backend.schemas.admin import (
     RetireRequest,
     Review,
     ReviewRequest,
+    VerificationStatus,
     TrainingJob,
     TrainingList,
     TrainingOptions,
@@ -91,6 +93,10 @@ def list_cases(
     revision: Literal[
         "todos", "pendiente", "revisado", "aprobado", "corregido", "descartado"
     ] = "todos",
+    verificacion: Literal[
+        "sin_verificar", "respaldada", "contradicha", "fuera_de_contexto", "evidencia_insuficiente",
+        "pendiente", "en_proceso", "fallida",
+    ] | None = None,
     orden: Literal["prioridad", "recientes", "antiguos", "mas_falsa", "menos_falsa"] = "prioridad",
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -100,6 +106,7 @@ def list_cases(
         q=q, nivel=nivel, comparacion=comparacion, desde=desde, hasta=hasta, dominio=dominio,
         oculto={"todos": None, "visibles": False, "ocultos": True}[visibilidad],
         revision=None if revision == "todos" else revision,
+        verificacion=verificacion,
         orden=orden,
     )
     return repository.list_admin_cases(filters, limit, offset)
@@ -187,6 +194,91 @@ def clear_review(
 ) -> AdminCaseDetail:
     """Devuelve el caso a «pendiente de revisión»."""
     repository.delete_review(analysis_id)
+    return _case(repository, analysis_id)
+
+
+# ── Verificación web (incremento 2) ─────────────────────────────────
+
+
+def _verification_status(request: Request, repository: SupabaseRepository) -> VerificationStatus:
+    worker = getattr(request.app.state, "verification_worker", None)
+    probe = getattr(request.app.state, "llm_probe", None)
+    llm = probe.status() if probe is not None else None
+    stats = repository.verification_stats()
+    return VerificationStatus(
+        habilitada=worker is not None,
+        en_pausa=bool(worker is not None and worker.paused),
+        llm=LlmStatus(
+            configurado=bool(llm and llm.configurado), disponible=bool(llm and llm.disponible)
+        ),
+        pendientes=stats["pendiente"],
+        en_proceso=stats["en_proceso"],
+        fallidas=stats["fallida"],
+        completadas=stats["completada"],
+        duracion_media_segundos=stats["duracion_media_segundos"],
+    )
+
+
+def _worker(request: Request):
+    worker = getattr(request.app.state, "verification_worker", None)
+    if worker is None:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "codigo": "verificacion_apagada",
+                "mensaje": "La verificación no está encendida en este servidor (VERIFICATION_ENABLED).",
+            },
+        )
+    return worker
+
+
+@router.get("/verificacion", response_model=VerificationStatus)
+def verification_status(
+    request: Request,
+    repository: SupabaseRepository = Depends(service_repository),
+) -> VerificationStatus:
+    return _verification_status(request, repository)
+
+
+@router.post("/verificacion/pausar", response_model=VerificationStatus)
+def pause_verification(
+    request: Request,
+    repository: SupabaseRepository = Depends(service_repository),
+) -> VerificationStatus:
+    """El trabajador deja de reclamar casos (el que está en proceso termina); la cola se conserva."""
+    _worker(request).pause()
+    return _verification_status(request, repository)
+
+
+@router.post("/verificacion/reanudar", response_model=VerificationStatus)
+def resume_verification(
+    request: Request,
+    repository: SupabaseRepository = Depends(service_repository),
+) -> VerificationStatus:
+    _worker(request).resume()
+    return _verification_status(request, repository)
+
+
+@router.post("/casos/{analysis_id}/verificacion/reintentar", response_model=AdminCaseDetail)
+def retry_verification(
+    analysis_id: UUID,
+    repository: SupabaseRepository = Depends(service_repository),
+) -> AdminCaseDetail:
+    """Devuelve a la cola una verificación fallida (o en espera de su turno) para intentarla ya."""
+    outcome = repository.retry_verification(analysis_id)
+    if outcome == "sin_verificacion":
+        raise HTTPException(
+            status_code=404,
+            detail={"codigo": "sin_verificacion", "mensaje": "Este caso no tiene una verificación en la cola."},
+        )
+    if outcome != "reintentada":
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "codigo": "no_se_puede_reintentar",
+                "mensaje": f"Solo se reintenta una verificación fallida o en espera; esta está «{outcome}».",
+            },
+        )
     return _case(repository, analysis_id)
 
 

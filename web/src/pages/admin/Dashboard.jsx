@@ -1,9 +1,10 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CountUp, ErrorState, Loader } from '../../components/ui.jsx';
 import { adminApi } from '../../lib/api.js';
 import { LEVELS } from '../../lib/filters.js';
 import { useLoad } from '../../lib/hooks.js';
-import { percent, share } from '../../lib/presentation.js';
+import { percent, presentQueue, share } from '../../lib/presentation.js';
 
 function Tile({ label, value, note, color, suffix = '' }) {
   return (
@@ -26,6 +27,93 @@ function Bars({ rows, total, fill = false }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+const WORKER_TAGS = { running: 'tag--ok', paused: 'tag--warn', off: '' };
+const LLM_TAGS = { ok: 'tag--ok', down: 'tag--fail', off: '' };
+
+// Cola de la verificación web (incremento 2): casos por estado, LLM, trabajador y pausa.
+function QueuePanel() {
+  const [state, setState] = useState({ data: null, error: null });
+  const [action, setAction] = useState({ busy: false, error: null });
+
+  useEffect(() => {
+    let alive = true;
+    const controller = new AbortController();
+    async function load() {
+      try {
+        const data = await adminApi('/admin/verificacion', { signal: controller.signal });
+        if (alive) setState({ data, error: null });
+      } catch (error) {
+        if (alive && error?.name !== 'AbortError') setState((previous) => ({ ...previous, error }));
+      }
+    }
+    load();
+    const timer = setInterval(() => { if (!document.hidden) load(); }, 10_000);
+    return () => { alive = false; controller.abort(); clearInterval(timer); };
+  }, []);
+
+  async function toggle(path) {
+    if (action.busy) return;
+    setAction({ busy: true, error: null });
+    try {
+      setState({ data: await adminApi(path, { method: 'POST' }), error: null });
+      setAction({ busy: false, error: null });
+    } catch (error) { setAction({ busy: false, error }); }
+  }
+
+  const { data, error } = state;
+  const view = data ? presentQueue(data) : null;
+  return (
+    <section className="panel" aria-labelledby="queue-title">
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+        <h2 id="queue-title" className="h-panel" style={{ margin: 0 }}>Verificación web</h2>
+        {view && (
+          <span className="chips">
+            <span className={`tag ${WORKER_TAGS[view.worker.state]}`}>Trabajador: {view.worker.label}</span>
+            <span className={`tag ${LLM_TAGS[view.llm.state]}`}>LLM: {view.llm.label}</span>
+          </span>
+        )}
+      </div>
+      {!data && !error && <p className="muted" style={{ margin: 0 }}>Leyendo el estado de la cola…</p>}
+      {error && !data && <ErrorState error={error} />}
+      {data && (
+        <>
+          <div className="tiles">
+            <Tile label="En cola" value={data.pendientes} note="Esperando su turno" color="var(--color-acid)" />
+            <Tile label="Verificando" value={data.en_proceso} note="Reservados por el trabajador" color="var(--color-violet)" />
+            <Tile label="Fallidas" value={data.fallidas} note="Sin intentos restantes" color={data.fallidas > 0 ? 'var(--color-false)' : undefined} />
+            <Tile label="Completadas" value={data.completadas} note={`Duración media · ${view.average}`} color="var(--color-real)" />
+          </div>
+          {!data.habilitada && (
+            <p className="queue-note" style={{ marginTop: 14 }}>
+              El trabajador de verificación no está encendido en este servidor (<span className="mono">VERIFICATION_ENABLED</span>):
+              los casos en cola no avanzan. Lo ya verificado se sigue mostrando.
+            </p>
+          )}
+          {data.habilitada && data.en_pausa && (
+            <p className="queue-note" style={{ marginTop: 14 }}>
+              En pausa: no se toman casos nuevos y la cola se conserva. La pausa no sobrevive a un reinicio de la API.
+            </p>
+          )}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 16, marginTop: 16 }}>
+            {data.habilitada && (
+              <button
+                type="button" className="btn btn--ghost btn--small" disabled={action.busy}
+                onClick={() => toggle(data.en_pausa ? '/admin/verificacion/reanudar' : '/admin/verificacion/pausar')}
+              >
+                {action.busy ? 'Enviando…' : data.en_pausa ? 'Reanudar la verificación' : 'Pausar la verificación'}
+              </button>
+            )}
+            {data.fallidas > 0 && <Link className="text-link" to="/admin/casos?verificacion=fallida">Ver las fallidas <span aria-hidden="true">→</span></Link>}
+            {view.waiting > 0 && <Link className="text-link" to="/admin/casos?verificacion=pendiente">Ver las que esperan <span aria-hidden="true">→</span></Link>}
+          </div>
+          {action.error && <p className="alert" style={{ margin: '12px 0 0' }} role="alert">{action.error.message}</p>}
+          {error && <p className="label" style={{ margin: '12px 0 0' }}>No se pudo actualizar; se muestra el último estado leído.</p>}
+        </>
+      )}
+    </section>
   );
 }
 
@@ -56,6 +144,8 @@ export default function Dashboard() {
           <Link className="btn btn--small" to="/admin/casos?revision=pendiente&comparacion=discrepan">Revisarlos</Link>
         </div>
       )}
+
+      <QueuePanel />
 
       <div className="dash-grid">
         <section className="panel dash-panel">

@@ -19,6 +19,8 @@ datasets/
 ├── combinacion_produccion/  combinacion.json: temperaturas y pesos (0,2 BiLSTM / 0,8 BETO) que lee el backend
 ├── modelos_base/            Modelos base de Hugging Face para mBERT (mbert/, beto/, …)
 ├── comun_v1/                Conjunto común (versión 1.1), el mismo para BiLSTM y mBERT
+├── verificacion_v1/         Evaluación de la verificación web (incremento 2, Fase 7): casos, tabla de equivalencias, manifiesto,
+│                            evidencia_congelada/ y corridas/. Ver docs/llm/EVALUACION_VERIFICACION.md (el código está en backend/evaluacion/)
 └── comun_v1_corridas/       Resultados con el conjunto común
     ├── referencias/         Referencias: solo longitud y TF-IDF
     ├── bilstm/              Experimentos B0–B8, decisiones.json y modelo final B6 (final/)

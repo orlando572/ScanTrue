@@ -14,7 +14,7 @@
   3. Se consulta primero la base de verificaciones anteriores y luego internet (búsqueda hecha por el backend).
   4. Qwen compara y concluye: respaldada, contradicha, fuera de contexto o evidencia insuficiente, con fuentes.
 - **Equipo:** LLM en la RTX 5060 como servidor de API; búsqueda y cola en el backend.
-- **ML:** LLM cuantizado a 4 bits, uso de herramientas (*tool use*), razonamiento sobre evidencia.
+- **ML:** LLM cuantizado a 8 bits (Qwen3-4B-Instruct-2507, variante Q8_0), uso de herramientas (*tool use*), razonamiento sobre evidencia.
 
 ### 3. Revisión de resultados y creación de datasets
 - **Qué hace:** convierte los análisis en datos de calidad.
